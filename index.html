@@ -108,6 +108,15 @@
             gap: 20px;
             font-size: 0.9em;
             color: #666;
+            align-items: center;
+        }
+        .controls-bar {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .rep-table {
             width: 100%;
@@ -196,6 +205,12 @@
         .action-btn.secondary:hover {
             background: #5a6268;
         }
+        .action-btn.danger {
+            background: #dc3545;
+        }
+        .action-btn.danger:hover {
+            background: #c82333;
+        }
         .editable {
             background: transparent;
             border: 1px solid transparent;
@@ -259,6 +274,10 @@
             height: 100px;
             resize: vertical;
         }
+        .form-group small {
+            color: #666;
+            font-size: 0.8em;
+        }
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -306,6 +325,12 @@
             background: linear-gradient(45deg, #28a745, #20c997);
             transition: width 0.3s ease;
         }
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr 1fr;
@@ -320,6 +345,10 @@
             }
             .rep-table th, .rep-table td {
                 padding: 8px 4px;
+            }
+            .controls-bar {
+                flex-direction: column;
+                align-items: stretch;
             }
         }
     </style>
@@ -371,186 +400,23 @@
         </div>
 
         <div id="teams" class="tab-content active">
-            <!-- CSC Team -->
-            <div class="team-section">
-                <div class="team-header">
-                    <div class="team-name">ENT-CSC-C (SWIM)</div>
-                    <div class="team-stats">
-                        <span>DM: Tara Jayne-O'Donnell</span>
-                        <span>PSM: Noah Arling</span>
-                        <span>9 AMs</span>
-                        <span>Engagement: 78%</span>
-                    </div>
+            <div class="controls-bar">
+                <div>
+                    <button class="action-btn" onclick="addNewContact()">+ Add Individual</button>
+                    <button class="action-btn" onclick="addNewTeam()">+ Add Team</button>
+                    <button class="action-btn secondary" onclick="exportAllData()">Export All Data</button>
                 </div>
-                <table class="rep-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Role</th>
-                            <th>Geo</th>
-                            <th>Tier</th>
-                            <th>Rel Score</th>
-                            <th>Last Contact</th>
-                            <th>Response</th>
-                            <th>Pipeline</th>
-                            <th>Next Steps</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Demaree Barton</strong></td>
-                            <td>AM</td>
-                            <td>HQ1</td>
-                            <td><span class="status-badge status-tier1">Tier 1</span></td>
-                            <td><span class="relationship-score score-4">4</span></td>
-                            <td>6/10/2025</td>
-                            <td>✅ Yes</td>
-                            <td>$85K</td>
-                            <td>Joint account review</td>
-                            <td>
-                                <button class="action-btn" onclick="updateContact('demaree')">Update</button>
-                                <button class="action-btn secondary" onclick="addDealForContact('demaree', 'Demaree Barton')">+ Deal</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Lars Branvold</strong></td>
-                            <td>AM</td>
-                            <td>HQ1</td>
-                            <td><span class="status-badge status-tier1">Tier 1</span></td>
-                            <td><span class="relationship-score score-4">4</span></td>
-                            <td>6/8/2025</td>
-                            <td>✅ Yes</td>
-                            <td>$120K</td>
-                            <td>VMware migration opp</td>
-                            <td>
-                                <button class="action-btn" onclick="updateContact('lars')">Update</button>
-                                <button class="action-btn secondary" onclick="addDealForContact('lars', 'Lars Branvold')">+ Deal</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Will Desmond</strong></td>
-                            <td>AM</td>
-                            <td>HQ1</td>
-                            <td><span class="status-badge status-tier1">Tier 1</span></td>
-                            <td><span class="relationship-score score-4">4</span></td>
-                            <td>6/5/2025</td>
-                            <td>✅ Yes</td>
-                            <td>$95K</td>
-                            <td>PPA discussion</td>
-                            <td>
-                                <button class="action-btn" onclick="updateContact('will')">Update</button>
-                                <button class="action-btn secondary" onclick="addDealForContact('will', 'Will Desmond')">+ Deal</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Jayme Bergman</strong></td>
-                            <td>AM</td>
-                            <td>HQ2</td>
-                            <td><span class="status-badge status-tier2">Tier 2</span></td>
-                            <td><span class="relationship-score score-3">3</span></td>
-                            <td>6/1/2025</td>
-                            <td>✅ Yes</td>
-                            <td>$45K</td>
-                            <td>Account mapping</td>
-                            <td>
-                                <button class="action-btn" onclick="updateContact('jayme')">Update</button>
-                                <button class="action-btn secondary" onclick="addDealForContact('jayme', 'Jayme Bergman')">+ Deal</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Matt Martin</strong></td>
-                            <td>AM</td>
-                            <td>ATX</td>
-                            <td><span class="status-badge status-tier2">Tier 2</span></td>
-                            <td><span class="relationship-score score-3">3</span></td>
-                            <td>5/28/2025</td>
-                            <td>✅ Yes</td>
-                            <td>$30K</td>
-                            <td>Follow-up call</td>
-                            <td>
-                                <button class="action-btn" onclick="updateContact('matt')">Update</button>
-                                <button class="action-btn secondary" onclick="addDealForContact('matt', 'Matt Martin')">+ Deal</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Devin Sercu</strong></td>
-                            <td>AM</td>
-                            <td>ATX</td>
-                            <td><span class="status-badge status-tier3">Tier 3</span></td>
-                            <td><span class="relationship-score score-2">2</span></td>
-                            <td>6/9/2025</td>
-                            <td>❌ No</td>
-                            <td>$0</td>
-                            <td>Initial outreach</td>
-                            <td>
-                                <button class="action-btn" onclick="updateContact('devin')">Update</button>
-                                <button class="action-btn secondary" onclick="addDealForContact('devin', 'Devin Sercu')">+ Deal</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div>
+                    <input type="text" id="searchContacts" class="search-input" placeholder="Search contacts..." oninput="filterContacts()">
+                    <select id="filterByTeam" class="search-input" onchange="filterContacts()" style="width: auto; margin-left: 10px;">
+                        <option value="">All Teams</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- ISV Teams -->
-            <div class="team-section">
-                <div class="team-header">
-                    <div class="team-name">ISV - DA, GenAI</div>
-                    <div class="team-stats">
-                        <span>DM: TBD</span>
-                        <span>PSM: TBD</span>
-                        <span>3 AMs</span>
-                        <span>Engagement: 33%</span>
-                    </div>
-                </div>
-                <table class="rep-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Role</th>
-                            <th>Geo</th>
-                            <th>Tier</th>
-                            <th>Rel Score</th>
-                            <th>Last Contact</th>
-                            <th>Response</th>
-                            <th>Pipeline</th>
-                            <th>Next Steps</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Helen Har Theisen</strong></td>
-                            <td>AM</td>
-                            <td>TBD</td>
-                            <td><span class="status-badge status-tier3">Tier 3</span></td>
-                            <td><span class="relationship-score score-1">1</span></td>
-                            <td>6/9/2025</td>
-                            <td>❌ No</td>
-                            <td>$0</td>
-                            <td>Initial contact</td>
-                            <td>
-                                <button class="action-btn" onclick="updateContact('helen')">Update</button>
-                                <button class="action-btn secondary" onclick="addDealForContact('helen', 'Helen Har Theisen')">+ Deal</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Luca Doan</strong></td>
-                            <td>AM</td>
-                            <td>TBD</td>
-                            <td><span class="status-badge status-tier3">Tier 3</span></td>
-                            <td><span class="relationship-score score-1">1</span></td>
-                            <td>6/9/2025</td>
-                            <td>❌ No</td>
-                            <td>$0</td>
-                            <td>Email outreach</td>
-                            <td>
-                                <button class="action-btn" onclick="updateContact('luca')">Update</button>
-                                <button class="action-btn secondary" onclick="addDealForContact('luca', 'Luca Doan')">+ Deal</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Dynamic Teams Container -->
+            <div id="teamsContainer">
+                <!-- Teams will be populated here -->
             </div>
         </div>
 
@@ -593,6 +459,116 @@
         <div id="analytics" class="tab-content">
             <h3>Performance Analytics - Coming Soon</h3>
             <p>Advanced analytics and reporting features will be added in future steps.</p>
+        </div>
+    </div>
+
+    <!-- Add Contact Modal -->
+    <div id="contactModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeContactModal()">&times;</span>
+            <h2 id="contactModalTitle">Add New Individual</h2>
+            <form id="contactForm">
+                <input type="hidden" id="contactId" name="id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactName">Name:</label>
+                        <input type="text" id="contactName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactRole">Role:</label>
+                        <select id="contactRole" name="role" required>
+                            <option value="AM">Account Manager (AM)</option>
+                            <option value="PSM">Partner Solutions Manager (PSM)</option>
+                            <option value="DM">District Manager (DM)</option>
+                            <option value="PDM">Partner Development Manager (PDM)</option>
+                            <option value="ISV">ISV Partner</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactTeam">Team:</label>
+                        <select id="contactTeam" name="team" required>
+                            <option value="">Select Team</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactGeo">Geography:</label>
+                        <input type="text" id="contactGeo" name="geo" placeholder="e.g., HQ1, ATX, Remote">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactTier">Tier Status:</label>
+                        <select id="contactTier" name="tier">
+                            <option value="tier3">Tier 3 - Prospect</option>
+                            <option value="tier2">Tier 2 - Active Partner</option>
+                            <option value="tier1">Tier 1 - Strategic Partner</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactScore">Relationship Score:</label>
+                        <select id="contactScore" name="relationshipScore">
+                            <option value="1">1 - Cold/No Response</option>
+                            <option value="2">2 - Initial Contact</option>
+                            <option value="3">3 - Engaged</option>
+                            <option value="4">4 - Strong Partnership</option>
+                            <option value="5">5 - Strategic Alliance</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactLastContact">Last Contact Date:</label>
+                        <input type="date" id="contactLastContact" name="lastContact">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactPipeline">Pipeline Value:</label>
+                        <input type="text" id="contactPipeline" name="pipeline" placeholder="$0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="contactNextSteps">Next Steps:</label>
+                    <textarea id="contactNextSteps" name="nextSteps" placeholder="Initial outreach planned..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Save Contact</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Team Modal -->
+    <div id="teamModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTeamModal()">&times;</span>
+            <h2>Add New Team</h2>
+            <form id="teamForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="teamName">Team Name:</label>
+                        <input type="text" id="teamName" name="name" placeholder="e.g., SMB - APAC" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="teamId">Team ID:</label>
+                        <input type="text" id="teamId" name="id" placeholder="e.g., smb-apac" required>
+                        <small>Use lowercase, hyphens only (e.g., smb-apac)</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="teamDM">District Manager:</label>
+                        <input type="text" id="teamDM" name="dm" placeholder="TBD">
+                    </div>
+                    <div class="form-group">
+                        <label for="teamPSM">Partner Solutions Manager:</label>
+                        <input type="text" id="teamPSM" name="psm" placeholder="TBD">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="teamDescription">Description:</label>
+                    <textarea id="teamDescription" name="description" placeholder="Brief description of the team's focus area..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Create Team</button>
+            </form>
         </div>
     </div>
 
@@ -653,61 +629,77 @@
         </div>
     </div>
 
-    <!-- Update Contact Modal -->
-    <div id="updateModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h2 id="modalTitle">Update Contact</h2>
-            <form id="updateForm">
-                <div class="form-group">
-                    <label for="contactDate">Last Contact Date:</label>
-                    <input type="date" id="contactDate" name="contactDate">
-                </div>
-                <div class="form-group">
-                    <label for="relationshipScore">Relationship Score (1-5):</label>
-                    <select id="relationshipScore" name="relationshipScore">
-                        <option value="1">1 - Cold/No Response</option>
-                        <option value="2">2 - Initial Contact</option>
-                        <option value="3">3 - Engaged</option>
-                        <option value="4">4 - Strong Partnership</option>
-                        <option value="5">5 - Strategic Alliance</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="tier">Tier Status:</label>
-                    <select id="tier" name="tier">
-                        <option value="tier1">Tier 1 - Strategic Partner</option>
-                        <option value="tier2">Tier 2 - Active Partner</option>
-                        <option value="tier3">Tier 3 - Prospect</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="pipelineValue">Pipeline Value:</label>
-                    <input type="text" id="pipelineValue" name="pipelineValue" placeholder="$0">
-                </div>
-                <div class="form-group">
-                    <label for="nextSteps">Next Steps:</label>
-                    <textarea id="nextSteps" name="nextSteps" placeholder="Enter next steps..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="notes">Meeting Notes:</label>
-                    <textarea id="notes" name="notes" placeholder="Enter meeting notes and key discussion points..."></textarea>
-                </div>
-                <button type="submit" class="btn-primary">Save Updates</button>
-            </form>
-        </div>
-    </div>
-
     <!-- Notification -->
     <div id="notification" class="notification">
         <span id="notificationText"></span>
     </div>
 
     <script>
-        // Deal management system
+        // Data structures
         let dealsData = [];
+        let contactsData = {
+            'csc': [
+                {
+                    id: 'demaree',
+                    name: 'Demaree Barton',
+                    role: 'AM',
+                    geo: 'HQ1',
+                    tier: 'tier1',
+                    relationshipScore: 4,
+                    lastContact: '6/10/2025',
+                    pipeline: '$85K',
+                    nextSteps: 'Joint account review'
+                },
+                {
+                    id: 'lars',
+                    name: 'Lars Branvold',
+                    role: 'AM',
+                    geo: 'HQ1',
+                    tier: 'tier1',
+                    relationshipScore: 4,
+                    lastContact: '6/8/2025',
+                    pipeline: '$120K',
+                    nextSteps: 'VMware migration opp'
+                },
+                {
+                    id: 'will',
+                    name: 'Will Desmond',
+                    role: 'AM',
+                    geo: 'HQ1',
+                    tier: 'tier1',
+                    relationshipScore: 4,
+                    lastContact: '6/5/2025',
+                    pipeline: '$95K',
+                    nextSteps: 'PPA discussion'
+                }
+            ],
+            'isv-genai': [
+                {
+                    id: 'helen',
+                    name: 'Helen Har Theisen',
+                    role: 'AM',
+                    geo: 'TBD',
+                    tier: 'tier3',
+                    relationshipScore: 1,
+                    lastContact: '6/9/2025',
+                    pipeline: '$0',
+                    nextSteps: 'Initial contact'
+                }
+            ]
+        };
 
-        // Deal stages configuration
+        let teamsConfig = {
+            'csc': { name: 'ENT-CSC-C (SWIM)', dm: 'Tara Jayne-O\'Donnell', psm: 'Noah Arling' },
+            'isv-genai': { name: 'ISV - GenAI', dm: 'TBD', psm: 'TBD' },
+            'isv-data': { name: 'ISV - Data Analytics', dm: 'TBD', psm: 'TBD' },
+            'isv-manufacturing': { name: 'ISV - Manufacturing', dm: 'TBD', psm: 'TBD' },
+            'smb-east': { name: 'SMB - East', dm: 'TBD', psm: 'TBD' },
+            'smb-west': { name: 'SMB - West', dm: 'TBD', psm: 'TBD' },
+            'smb-central': { name: 'SMB - Central', dm: 'TBD', psm: 'TBD' },
+            'enterprise-global': { name: 'Enterprise - Global', dm: 'TBD', psm: 'TBD' },
+            'partner-ops': { name: 'Partner Operations', dm: 'TBD', psm: 'TBD' }
+        };
+
         const dealStages = {
             'prequalified': { name: 'Prequalified', probability: 10 },
             'qualified': { name: 'Qualified', probability: 25 },
@@ -720,33 +712,336 @@
             'deal-lost': { name: 'Deal Lost', probability: 0 }
         };
 
+        // Tab navigation
         function showTab(tabName) {
-            // Hide all tab contents
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(content => content.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => 
+                content.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => 
+                tab.classList.remove('active'));
             
-            // Remove active class from all tabs
-            const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(tab => tab.classList.remove('active'));
-            
-            // Show selected tab content
             document.getElementById(tabName).classList.add('active');
-            
-            // Add active class to clicked tab
             event.target.classList.add('active');
             
-            // Render content based on tab
             if (tabName === 'deals') {
                 renderDealsTable();
             }
         }
 
+        // Contact management
+        function addNewContact() {
+            document.getElementById('contactModalTitle').textContent = 'Add New Individual';
+            document.getElementById('contactForm').reset();
+            document.getElementById('contactId').value = '';
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('contactLastContact').value = today;
+            document.getElementById('contactPipeline').value = '$0';
+            document.getElementById('contactNextSteps').value = 'Initial outreach planned';
+            
+            document.getElementById('contactModal').style.display = 'block';
+        }
+
+        function closeContactModal() {
+            document.getElementById('contactModal').style.display = 'none';
+        }
+
+        function handleContactSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const contact = Object.fromEntries(formData.entries());
+            
+            if (!contact.id) {
+                contact.id = contact.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            }
+            
+            contact.relationshipScore = parseInt(contact.relationshipScore);
+            
+            if (!contactsData[contact.team]) {
+                contactsData[contact.team] = [];
+            }
+            
+            const teamContacts = contactsData[contact.team];
+            const existingIndex = teamContacts.findIndex(c => c.id === contact.id);
+            
+            if (existingIndex >= 0) {
+                teamContacts[existingIndex] = contact;
+                showNotification('Contact updated successfully');
+            } else {
+                teamContacts.push(contact);
+                showNotification('Contact added successfully');
+            }
+            
+            closeContactModal();
+            renderAllTeams();
+            updateDashboardMetrics();
+            saveData();
+        }
+
+        // Team management
+        function addNewTeam() {
+            document.getElementById('teamForm').reset();
+            document.getElementById('teamModal').style.display = 'block';
+        }
+
+        function closeTeamModal() {
+            document.getElementById('teamModal').style.display = 'none';
+        }
+
+        function handleTeamSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const team = Object.fromEntries(formData.entries());
+            
+            if (teamsConfig[team.id]) {
+                showNotification('Team ID already exists. Please choose a different ID.', 3000, 'warning');
+                return;
+            }
+            
+            teamsConfig[team.id] = {
+                name: team.name,
+                dm: team.dm || 'TBD',
+                psm: team.psm || 'TBD',
+                description: team.description || ''
+            };
+            
+            contactsData[team.id] = [];
+            
+            updateTeamDropdowns();
+            closeTeamModal();
+            renderAllTeams();
+            saveData();
+            showNotification(`Team "${team.name}" created successfully`);
+        }
+
+        function updateTeamDropdowns() {
+            const contactTeamSelect = document.getElementById('contactTeam');
+            const filterTeamSelect = document.getElementById('filterByTeam');
+            
+            contactTeamSelect.innerHTML = '<option value="">Select Team</option>';
+            filterTeamSelect.innerHTML = '<option value="">All Teams</option>';
+            
+            Object.keys(teamsConfig).forEach(teamId => {
+                const option1 = document.createElement('option');
+                option1.value = teamId;
+                option1.textContent = teamsConfig[teamId].name;
+                contactTeamSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = teamId;
+                option2.textContent = teamsConfig[teamId].name;
+                filterTeamSelect.appendChild(option2);
+            });
+        }
+
+        function editContact(contactId, teamId) {
+            const contact = contactsData[teamId]?.find(c => c.id === contactId);
+            if (contact) {
+                document.getElementById('contactModalTitle').textContent = 'Edit Contact';
+                document.getElementById('contactId').value = contact.id;
+                document.getElementById('contactName').value = contact.name;
+                document.getElementById('contactRole').value = contact.role;
+                document.getElementById('contactTeam').value = teamId;
+                document.getElementById('contactGeo').value = contact.geo;
+                document.getElementById('contactTier').value = contact.tier;
+                document.getElementById('contactScore').value = contact.relationshipScore;
+                document.getElementById('contactLastContact').value = contact.lastContact;
+                document.getElementById('contactPipeline').value = contact.pipeline;
+                document.getElementById('contactNextSteps').value = contact.nextSteps;
+                
+                document.getElementById('contactModal').style.display = 'block';
+            }
+        }
+
+        function deleteContact(contactId, teamId) {
+            if (confirm('Are you sure you want to delete this contact?')) {
+                contactsData[teamId] = contactsData[teamId].filter(c => c.id !== contactId);
+                renderAllTeams();
+                updateDashboardMetrics();
+                saveData();
+                showNotification('Contact deleted successfully');
+            }
+        }
+
+        function addContactToTeam(teamId) {
+            document.getElementById('contactModalTitle').textContent = `Add Member to ${teamsConfig[teamId].name}`;
+            document.getElementById('contactForm').reset();
+            document.getElementById('contactId').value = '';
+            document.getElementById('contactTeam').value = teamId;
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('contactLastContact').value = today;
+            document.getElementById('contactPipeline').value = '$0';
+            document.getElementById('contactNextSteps').value = 'Initial outreach planned';
+            
+            document.getElementById('contactModal').style.display = 'block';
+        }
+
+        function renderAllTeams() {
+            const container = document.getElementById('teamsContainer');
+            container.innerHTML = '';
+            
+            Object.keys(teamsConfig).forEach(teamId => {
+                const teamConfig = teamsConfig[teamId];
+                const teamContacts = contactsData[teamId] || [];
+                
+                if (teamContacts.length === 0) {
+                    const emptyTeamSection = document.createElement('div');
+                    emptyTeamSection.className = 'team-section';
+                    emptyTeamSection.innerHTML = `
+                        <div class="team-header">
+                            <div class="team-name">${teamConfig.name}</div>
+                            <div class="team-stats">
+                                <span>DM: ${teamConfig.dm}</span>
+                                <span>PSM: ${teamConfig.psm}</span>
+                                <span>0 members</span>
+                                <button class="action-btn" onclick="addContactToTeam('${teamId}')">+ Add Member</button>
+                            </div>
+                        </div>
+                        <p style="text-align: center; color: #666; padding: 20px;">No team members yet. Click "Add Member" to get started.</p>
+                    `;
+                    container.appendChild(emptyTeamSection);
+                    return;
+                }
+                
+                const engagedContacts = teamContacts.filter(c => c.relationshipScore > 2).length;
+                const engagementRate = Math.round((engagedContacts / teamContacts.length) * 100);
+                
+                const teamSection = document.createElement('div');
+                teamSection.className = 'team-section';
+                teamSection.innerHTML = `
+                    <div class="team-header">
+                        <div class="team-name">${teamConfig.name}</div>
+                        <div class="team-stats">
+                            <span>DM: ${teamConfig.dm}</span>
+                            <span>PSM: ${teamConfig.psm}</span>
+                            <span>${teamContacts.length} members</span>
+                            <span>Engagement: ${engagementRate}%</span>
+                            <button class="action-btn" onclick="addContactToTeam('${teamId}')">+ Add Member</button>
+                        </div>
+                    </div>
+                    <table class="rep-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Geo</th>
+                                <th>Tier</th>
+                                <th>Rel Score</th>
+                                <th>Last Contact</th>
+                                <th>Response</th>
+                                <th>Pipeline</th>
+                                <th>Next Steps</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${teamContacts.map(contact => renderContactRow(contact, teamId)).join('')}
+                        </tbody>
+                    </table>
+                `;
+                container.appendChild(teamSection);
+            });
+        }
+
+        function renderContactRow(contact, teamId) {
+            const responseStatus = contact.relationshipScore > 2 ? '✅ Yes' : '❌ No';
+            
+            return `
+                <tr data-contact="${contact.id}" data-team="${teamId}">
+                    <td><strong>${contact.name}</strong></td>
+                    <td>${contact.role}</td>
+                    <td>${contact.geo}</td>
+                    <td><span class="status-badge status-${contact.tier}" onclick="toggleTier(this, '${contact.id}', '${teamId}')">${contact.tier.charAt(0).toUpperCase() + contact.tier.slice(1)}</span></td>
+                    <td><span class="relationship-score score-${contact.relationshipScore}" onclick="changeScore(this, '${contact.id}', '${teamId}')">${contact.relationshipScore}</span></td>
+                    <td class="editable" contenteditable="true" data-field="lastContact" data-contact="${contact.id}" data-team="${teamId}">${contact.lastContact}</td>
+                    <td>${responseStatus}</td>
+                    <td class="editable" contenteditable="true" data-field="pipeline" data-contact="${contact.id}" data-team="${teamId}">${contact.pipeline}</td>
+                    <td class="editable" contenteditable="true" data-field="nextSteps" data-contact="${contact.id}" data-team="${teamId}">${contact.nextSteps}</td>
+                    <td>
+                        <button class="action-btn" onclick="editContact('${contact.id}', '${teamId}')">Edit</button>
+                        <button class="action-btn secondary" onclick="addDealForContact('${contact.id}', '${contact.name}')">+ Deal</button>
+                        <button class="action-btn danger" onclick="deleteContact('${contact.id}', '${teamId}')">Delete</button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function toggleTier(element, contactId, teamId) {
+            const tiers = ['tier1', 'tier2', 'tier3'];
+            const tierLabels = ['Tier 1', 'Tier 2', 'Tier 3'];
+            const currentTier = element.textContent.toLowerCase().replace(' ', '');
+            const currentIndex = tiers.indexOf(currentTier);
+            const nextIndex = (currentIndex + 1) % tiers.length;
+            
+            element.className = `status-badge status-${tiers[nextIndex]}`;
+            element.textContent = tierLabels[nextIndex];
+            
+            const contact = contactsData[teamId]?.find(c => c.id === contactId);
+            if (contact) {
+                contact.tier = tiers[nextIndex];
+                saveData();
+            }
+            
+            showNotification('Tier updated');
+        }
+
+        function changeScore(element, contactId, teamId) {
+            let currentScore = parseInt(element.textContent);
+            currentScore = currentScore >= 5 ? 1 : currentScore + 1;
+            
+            element.textContent = currentScore;
+            element.className = `relationship-score score-${currentScore}`;
+            
+            const contact = contactsData[teamId]?.find(c => c.id === contactId);
+            if (contact) {
+                contact.relationshipScore = currentScore;
+                
+                const row = element.closest('tr');
+                const responseCell = row.cells[6];
+                responseCell.textContent = currentScore > 2 ? '✅ Yes' : '❌ No';
+                
+                saveData();
+            }
+            
+            showNotification('Relationship score updated');
+        }
+
+        function filterContacts() {
+            const searchTerm = document.getElementById('searchContacts').value.toLowerCase();
+            const teamFilter = document.getElementById('filterByTeam').value;
+            
+            document.querySelectorAll('.team-section').forEach(section => {
+                const teamHeader = section.querySelector('.team-name').textContent;
+                const teamId = Object.keys(teamsConfig).find(id => teamsConfig[id].name === teamHeader);
+                
+                let showTeam = !teamFilter || teamFilter === teamId;
+                let hasVisibleRows = false;
+                
+                const table = section.querySelector('.rep-table');
+                if (table) {
+                    section.querySelectorAll('.rep-table tbody tr').forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        const matchesSearch = !searchTerm || text.includes(searchTerm);
+                        
+                        if (showTeam && matchesSearch) {
+                            row.style.display = '';
+                            hasVisibleRows = true;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                }
+                
+                section.style.display = (showTeam && (hasVisibleRows || !table)) ? '' : 'none';
+            });
+        }
+
+        // Deal management
         function addNewDeal() {
             document.getElementById('dealModalTitle').textContent = 'Add New Deal';
             document.getElementById('dealForm').reset();
             document.getElementById('dealId').value = '';
             
-            // Set default close date to 30 days from now
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 30);
             document.getElementById('dealCloseDate').value = futureDate.toISOString().split('T')[0];
@@ -761,7 +1056,6 @@
             document.getElementById('dealContact').value = contactName;
             document.getElementById('dealContactId').value = contactId;
             
-            // Set default close date
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 30);
             document.getElementById('dealCloseDate').value = futureDate.toISOString().split('T')[0];
@@ -778,17 +1072,14 @@
             const formData = new FormData(e.target);
             const deal = Object.fromEntries(formData.entries());
             
-            // Generate ID if new deal
             if (!deal.id) {
                 deal.id = 'deal_' + Date.now();
                 deal.createdDate = new Date().toISOString().split('T')[0];
             }
             
-            // Convert value to number
             deal.value = parseInt(deal.value) || 0;
             deal.probability = parseInt(deal.probability) || 0;
             
-            // Find existing deal or add new one
             const existingIndex = dealsData.findIndex(d => d.id === deal.id);
             if (existingIndex >= 0) {
                 dealsData[existingIndex] = deal;
@@ -875,18 +1166,26 @@
                     <td>${deal.closeDate}</td>
                     <td>
                         <button class="action-btn" onclick="editDeal('${deal.id}')">Edit</button>
-                        <button class="action-btn secondary" onclick="deleteDeal('${deal.id}')">Delete</button>
+                        <button class="action-btn danger" onclick="deleteDeal('${deal.id}')">Delete</button>
                     </td>
                 </tr>
             `).join('');
         }
 
         function updateDashboardMetrics() {
+            const allContacts = Object.values(contactsData).flat();
+            const engagedContacts = allContacts.filter(c => c.relationshipScore > 2).length;
+            const engagementRate = allContacts.length > 0 ? Math.round((engagedContacts / allContacts.length) * 100) : 0;
+            
             const activeDeals = dealsData.filter(d => !['deal-won', 'deal-lost'].includes(d.stage));
             const totalPipelineValue = activeDeals.reduce((sum, deal) => sum + deal.value, 0);
             
+            document.getElementById('engagementRate').textContent = `${engagementRate}%`;
             document.getElementById('activeDeals').textContent = activeDeals.length;
             document.getElementById('pipelineValue').textContent = `${(totalPipelineValue/1000000).toFixed(1)}M`;
+            
+            document.getElementById('engagementProgress').style.width = `${engagementRate}%`;
+            document.getElementById('dealsProgress').style.width = `${Math.min(activeDeals.length * 5, 100)}%`;
         }
 
         function exportDeals() {
@@ -903,6 +1202,18 @@
             downloadFile(csv, 'aws_deals_export.csv', 'text/csv');
         }
 
+        function exportAllData() {
+            const allData = {
+                contacts: contactsData,
+                teams: teamsConfig,
+                deals: dealsData,
+                exportDate: new Date().toISOString()
+            };
+            
+            const jsonStr = JSON.stringify(allData, null, 2);
+            downloadFile(jsonStr, 'aws_partner_system_export.json', 'application/json');
+        }
+
         function downloadFile(content, filename, contentType) {
             const blob = new Blob([content], { type: contentType });
             const url = window.URL.createObjectURL(blob);
@@ -914,15 +1225,6 @@
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
             showNotification(`${filename} downloaded successfully`);
-        }
-
-        function updateContact(repName) {
-            const today = new Date().toLocaleDateString();
-            alert(`Contact update for ${repName} logged for ${today}. \n\nNext steps:\n• Update relationship score\n• Log interaction details\n• Schedule follow-up\n• Update pipeline status`);
-        }
-
-        function closeModal() {
-            document.getElementById('updateModal').style.display = 'none';
         }
 
         function showNotification(message, duration = 3000, type = 'success') {
@@ -948,6 +1250,8 @@
         function saveData() {
             try {
                 const data = {
+                    contacts: contactsData,
+                    teams: teamsConfig,
                     deals: dealsData,
                     lastUpdated: new Date().toISOString()
                 };
@@ -962,9 +1266,10 @@
                 const saved = localStorage.getItem('awsPartnerTrackerData');
                 if (saved) {
                     const data = JSON.parse(saved);
+                    contactsData = data.contacts || contactsData;
+                    teamsConfig = data.teams || teamsConfig;
                     dealsData = data.deals || [];
                     
-                    // Load sample data if empty
                     if (dealsData.length === 0) {
                         loadSampleDeals();
                     }
@@ -1002,53 +1307,64 @@
                     closeDate: '2025-08-15',
                     description: 'VMware to AWS migration project',
                     createdDate: '2025-06-05'
-                },
-                {
-                    id: 'deal3',
-                    name: 'GenAI Platform Integration',
-                    contact: 'Will Desmond',
-                    contactId: 'will',
-                    value: 175000,
-                    stage: 'proposal-development',
-                    probability: 40,
-                    closeDate: '2025-09-01',
-                    description: 'AI/ML platform integration',
-                    createdDate: '2025-06-10'
                 }
             ];
             saveData();
         }
 
-        // Close modals when clicking outside
-        window.onclick = function(event) {
-            const dealModal = document.getElementById('dealModal');
-            const updateModal = document.getElementById('updateModal');
-            
-            if (event.target === dealModal) {
-                closeDealModal();
-            }
-            if (event.target === updateModal) {
-                closeModal();
-            }
+        function setupEditableFields() {
+            document.addEventListener('blur', function(e) {
+                if (e.target.classList.contains('editable')) {
+                    const field = e.target.dataset.field;
+                    const contactId = e.target.dataset.contact;
+                    const teamId = e.target.dataset.team;
+                    const value = e.target.textContent.trim();
+                    
+                    if (contactId && teamId && field) {
+                        const contact = contactsData[teamId]?.find(c => c.id === contactId);
+                        if (contact) {
+                            contact[field] = value;
+                            saveData();
+                            showNotification(`${field} updated for ${contact.name}`);
+                        }
+                    }
+                }
+            }, true);
         }
 
-        // Form submission handlers
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const modals = ['dealModal', 'contactModal', 'teamModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        // Initialize application
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
+            renderAllTeams();
             updateDashboardMetrics();
+            updateTeamDropdowns();
+            setupEditableFields();
             
-            // Deal form submission
+            // Form submissions
             document.getElementById('dealForm').addEventListener('submit', handleDealSubmit);
+            document.getElementById('contactForm').addEventListener('submit', handleContactSubmit);
+            document.getElementById('teamForm').addEventListener('submit', handleTeamSubmit);
             
-            showNotification('Deal management system loaded successfully!', 4000);
-        });
-
-        // Auto-update probability when stage changes
-        document.getElementById('dealStage').addEventListener('change', function() {
-            const selectedStage = this.value;
-            if (dealStages[selectedStage]) {
-                document.getElementById('dealProbability').value = dealStages[selectedStage].probability;
-            }
+            // Auto-update probability when stage changes
+            document.getElementById('dealStage').addEventListener('change', function() {
+                const selectedStage = this.value;
+                if (dealStages[selectedStage]) {
+                    document.getElementById('dealProbability').value = dealStages[selectedStage].probability;
+                }
+            });
+            
+            showNotification('Partner Management System loaded successfully!', 4000);
         });
     </script>
 </body>
