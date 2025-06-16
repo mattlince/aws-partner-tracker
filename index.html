@@ -211,6 +211,12 @@
         .action-btn.danger:hover {
             background: #c82333;
         }
+        .action-btn.success {
+            background: #28a745;
+        }
+        .action-btn.success:hover {
+            background: #218838;
+        }
         .editable {
             background: transparent;
             border: 1px solid transparent;
@@ -245,6 +251,8 @@
             width: 80%;
             max-width: 600px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-height: 80vh;
+            overflow-y: auto;
         }
         .close {
             color: #aaa;
@@ -331,6 +339,122 @@
             border-radius: 6px;
             font-size: 14px;
         }
+        
+        /* Touchpoint Tracking Styles */
+        .touchpoint-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .touchpoint-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .touchpoint-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .touchpoint-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #17a2b8;
+        }
+        .touchpoint-item.call { border-left-color: #28a745; }
+        .touchpoint-item.email { border-left-color: #ffc107; }
+        .touchpoint-item.slack { border-left-color: #6f42c1; }
+        .touchpoint-item.meeting { border-left-color: #fd7e14; }
+        .touchpoint-item.other { border-left-color: #6c757d; }
+        
+        .touchpoint-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .touchpoint-icon.call { background: #28a745; }
+        .touchpoint-icon.email { background: #ffc107; color: #000; }
+        .touchpoint-icon.slack { background: #6f42c1; }
+        .touchpoint-icon.meeting { background: #fd7e14; }
+        .touchpoint-icon.other { background: #6c757d; }
+        
+        .touchpoint-content {
+            flex: 1;
+        }
+        .touchpoint-meta {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .touchpoint-date {
+            font-size: 0.85em;
+            color: #666;
+            font-weight: bold;
+        }
+        .touchpoint-type {
+            font-size: 0.75em;
+            padding: 2px 6px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .touchpoint-notes {
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+        .touchpoint-next-steps {
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+        }
+        .next-step-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #fff3cd;
+            border-radius: 6px;
+            border-left: 4px solid #ffc107;
+        }
+        .next-step-item.overdue {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .next-step-item.completed {
+            background: #d4edda;
+            border-left-color: #28a745;
+            opacity: 0.7;
+        }
+        .next-step-date {
+            font-weight: bold;
+            margin-right: 10px;
+            min-width: 80px;
+        }
+        .next-step-action {
+            flex: 1;
+        }
+        .next-step-actions {
+            margin-left: 10px;
+        }
+
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr 1fr;
@@ -349,6 +473,13 @@
             .controls-bar {
                 flex-direction: column;
                 align-items: stretch;
+            }
+            .touchpoint-item {
+                flex-direction: column;
+            }
+            .touchpoint-icon {
+                margin-bottom: 10px;
+                align-self: flex-start;
             }
         }
     </style>
@@ -394,6 +525,7 @@
         <div class="tabs">
             <button class="tab active" onclick="showTab('teams')">Team Overview</button>
             <button class="tab" onclick="showTab('deals')">Active Deals</button>
+            <button class="tab" onclick="showTab('touchpoints')">Touchpoint Tracker</button>
             <button class="tab" onclick="showTab('pipeline')">Pipeline Tracker</button>
             <button class="tab" onclick="showTab('relationships')">Relationship Matrix</button>
             <button class="tab" onclick="showTab('analytics')">Performance Analytics</button>
@@ -443,6 +575,49 @@
                         <!-- Deals will be populated here -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <div id="touchpoints" class="tab-content">
+            <div class="controls-bar">
+                <div>
+                    <button class="action-btn" onclick="addNewTouchpoint()">+ Log Touchpoint</button>
+                    <button class="action-btn success" onclick="addNextStep()">+ Schedule Next Step</button>
+                    <button class="action-btn secondary" onclick="exportTouchpoints()">Export Activity</button>
+                </div>
+                <div>
+                    <select id="filterByContact" class="search-input" onchange="filterTouchpoints()">
+                        <option value="">All Contacts</option>
+                    </select>
+                    <select id="filterByType" class="search-input" onchange="filterTouchpoints()" style="margin-left: 10px;">
+                        <option value="">All Types</option>
+                        <option value="call">Calls</option>
+                        <option value="email">Emails</option>
+                        <option value="slack">Slack</option>
+                        <option value="meeting">Meetings</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="touchpoint-section">
+                <div class="touchpoint-header">
+                    <h3>Upcoming Next Steps</h3>
+                    <span id="nextStepsCount">0 pending</span>
+                </div>
+                <div id="nextStepsList">
+                    <!-- Next steps will be populated here -->
+                </div>
+            </div>
+
+            <div class="touchpoint-section">
+                <div class="touchpoint-header">
+                    <h3>Recent Activity</h3>
+                    <span id="touchpointsCount">0 touchpoints logged</span>
+                </div>
+                <div class="touchpoint-list" id="touchpointsList">
+                    <!-- Touchpoints will be populated here -->
+                </div>
             </div>
         </div>
 
@@ -629,6 +804,107 @@
         </div>
     </div>
 
+    <!-- Touchpoint Modal -->
+    <div id="touchpointModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTouchpointModal()">&times;</span>
+            <h2 id="touchpointModalTitle">Log Touchpoint</h2>
+            <form id="touchpointForm">
+                <input type="hidden" id="touchpointId" name="id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="touchpointContact">Contact:</label>
+                        <select id="touchpointContact" name="contactId" required>
+                            <option value="">Select Contact</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="touchpointType">Type:</label>
+                        <select id="touchpointType" name="type" required>
+                            <option value="call">Phone Call</option>
+                            <option value="email">Email</option>
+                            <option value="slack">Slack Message</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="touchpointDate">Date:</label>
+                        <input type="date" id="touchpointDate" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="touchpointTime">Time (optional):</label>
+                        <input type="time" id="touchpointTime" name="time">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="touchpointNotes">Notes:</label>
+                    <textarea id="touchpointNotes" name="notes" placeholder="Key discussion points, outcomes, etc." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="touchpointOutcome">Outcome/Follow-up:</label>
+                    <textarea id="touchpointOutcome" name="outcome" placeholder="What are the next steps or follow-up actions?"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Log Touchpoint</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Next Step Modal -->
+    <div id="nextStepModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeNextStepModal()">&times;</span>
+            <h2 id="nextStepModalTitle">Schedule Next Step</h2>
+            <form id="nextStepForm">
+                <input type="hidden" id="nextStepId" name="id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nextStepContact">Contact:</label>
+                        <select id="nextStepContact" name="contactId" required>
+                            <option value="">Select Contact</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="nextStepType">Action Type:</label>
+                        <select id="nextStepType" name="type" required>
+                            <option value="call">Schedule Call</option>
+                            <option value="email">Send Email</option>
+                            <option value="meeting">Schedule Meeting</option>
+                            <option value="follow-up">Follow Up</option>
+                            <option value="proposal">Send Proposal</option>
+                            <option value="other">Other Action</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nextStepDueDate">Due Date:</label>
+                        <input type="date" id="nextStepDueDate" name="dueDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="nextStepPriority">Priority:</label>
+                        <select id="nextStepPriority" name="priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="nextStepAction">Action Description:</label>
+                    <textarea id="nextStepAction" name="action" placeholder="Describe what needs to be done..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="nextStepNotes">Additional Notes:</label>
+                    <textarea id="nextStepNotes" name="notes" placeholder="Context, preparation needed, etc."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Schedule Next Step</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Notification -->
     <div id="notification" class="notification">
         <span id="notificationText"></span>
@@ -637,6 +913,8 @@
     <script>
         // Data structures
         let dealsData = [];
+        let touchpointsData = [];
+        let nextStepsData = [];
         let contactsData = {
             'csc': [
                 {
@@ -712,6 +990,14 @@
             'deal-lost': { name: 'Deal Lost', probability: 0 }
         };
 
+        const touchpointTypes = {
+            'call': { name: 'Call', icon: '📞' },
+            'email': { name: 'Email', icon: '📧' },
+            'slack': { name: 'Slack', icon: '💬' },
+            'meeting': { name: 'Meeting', icon: '🤝' },
+            'other': { name: 'Other', icon: '📝' }
+        };
+
         // Tab navigation
         function showTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(content => 
@@ -724,6 +1010,10 @@
             
             if (tabName === 'deals') {
                 renderDealsTable();
+            } else if (tabName === 'touchpoints') {
+                renderTouchpoints();
+                renderNextSteps();
+                updateTouchpointDropdowns();
             }
         }
 
@@ -774,6 +1064,7 @@
             closeContactModal();
             renderAllTeams();
             updateDashboardMetrics();
+            updateTouchpointDropdowns();
             saveData();
         }
 
@@ -830,6 +1121,30 @@
                 option2.value = teamId;
                 option2.textContent = teamsConfig[teamId].name;
                 filterTeamSelect.appendChild(option2);
+            });
+        }
+
+        function updateTouchpointDropdowns() {
+            const touchpointContactSelect = document.getElementById('touchpointContact');
+            const nextStepContactSelect = document.getElementById('nextStepContact');
+            const filterContactSelect = document.getElementById('filterByContact');
+            
+            touchpointContactSelect.innerHTML = '<option value="">Select Contact</option>';
+            nextStepContactSelect.innerHTML = '<option value="">Select Contact</option>';
+            filterContactSelect.innerHTML = '<option value="">All Contacts</option>';
+            
+            Object.keys(contactsData).forEach(teamId => {
+                const team = contactsData[teamId];
+                if (team && team.length > 0) {
+                    team.forEach(contact => {
+                        [touchpointContactSelect, nextStepContactSelect, filterContactSelect].forEach(select => {
+                            const option = document.createElement('option');
+                            option.value = contact.id;
+                            option.textContent = `${contact.name} (${teamsConfig[teamId]?.name || teamId})`;
+                            select.appendChild(option);
+                        });
+                    });
+                }
             });
         }
 
@@ -960,6 +1275,7 @@
                     <td>
                         <button class="action-btn" onclick="editContact('${contact.id}', '${teamId}')">Edit</button>
                         <button class="action-btn secondary" onclick="addDealForContact('${contact.id}', '${contact.name}')">+ Deal</button>
+                        <button class="action-btn success" onclick="addTouchpointForContact('${contact.id}')">+ Touch</button>
                         <button class="action-btn danger" onclick="deleteContact('${contact.id}', '${teamId}')">Delete</button>
                     </td>
                 </tr>
@@ -1172,6 +1488,305 @@
             `).join('');
         }
 
+        // Touchpoint management
+        function addNewTouchpoint() {
+            document.getElementById('touchpointModalTitle').textContent = 'Log Touchpoint';
+            document.getElementById('touchpointForm').reset();
+            document.getElementById('touchpointId').value = '';
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('touchpointDate').value = today;
+            
+            document.getElementById('touchpointModal').style.display = 'block';
+        }
+
+        function addTouchpointForContact(contactId) {
+            document.getElementById('touchpointModalTitle').textContent = 'Log Touchpoint';
+            document.getElementById('touchpointForm').reset();
+            document.getElementById('touchpointId').value = '';
+            document.getElementById('touchpointContact').value = contactId;
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('touchpointDate').value = today;
+            
+            document.getElementById('touchpointModal').style.display = 'block';
+        }
+
+        function closeTouchpointModal() {
+            document.getElementById('touchpointModal').style.display = 'none';
+        }
+
+        function handleTouchpointSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const touchpoint = Object.fromEntries(formData.entries());
+            
+            if (!touchpoint.id) {
+                touchpoint.id = 'touch_' + Date.now();
+                touchpoint.createdDate = new Date().toISOString();
+            }
+            
+            const existingIndex = touchpointsData.findIndex(t => t.id === touchpoint.id);
+            if (existingIndex >= 0) {
+                touchpointsData[existingIndex] = touchpoint;
+                showNotification('Touchpoint updated successfully');
+            } else {
+                touchpointsData.push(touchpoint);
+                showNotification('Touchpoint logged successfully');
+            }
+            
+            closeTouchpointModal();
+            renderTouchpoints();
+            saveData();
+        }
+
+        function addNextStep() {
+            document.getElementById('nextStepModalTitle').textContent = 'Schedule Next Step';
+            document.getElementById('nextStepForm').reset();
+            document.getElementById('nextStepId').value = '';
+            
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('nextStepDueDate').value = tomorrow.toISOString().split('T')[0];
+            
+            document.getElementById('nextStepModal').style.display = 'block';
+        }
+
+        function closeNextStepModal() {
+            document.getElementById('nextStepModal').style.display = 'none';
+        }
+
+        function handleNextStepSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const nextStep = Object.fromEntries(formData.entries());
+            
+            if (!nextStep.id) {
+                nextStep.id = 'step_' + Date.now();
+                nextStep.createdDate = new Date().toISOString();
+                nextStep.completed = false;
+            }
+            
+            const existingIndex = nextStepsData.findIndex(s => s.id === nextStep.id);
+            if (existingIndex >= 0) {
+                nextStepsData[existingIndex] = nextStep;
+                showNotification('Next step updated successfully');
+            } else {
+                nextStepsData.push(nextStep);
+                showNotification('Next step scheduled successfully');
+            }
+            
+            closeNextStepModal();
+            renderNextSteps();
+            saveData();
+        }
+
+        function getContactName(contactId) {
+            for (const teamId in contactsData) {
+                const contact = contactsData[teamId].find(c => c.id === contactId);
+                if (contact) return contact.name;
+            }
+            return 'Unknown Contact';
+        }
+
+        function renderTouchpoints() {
+            const container = document.getElementById('touchpointsList');
+            if (!container) return;
+            
+            const filteredTouchpoints = filterTouchpointsData();
+            const sortedTouchpoints = filteredTouchpoints.sort((a, b) => {
+                const dateA = new Date(a.date + (a.time ? ' ' + a.time : ''));
+                const dateB = new Date(b.date + (b.time ? ' ' + b.time : ''));
+                return dateB - dateA;
+            });
+            
+            if (sortedTouchpoints.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No touchpoints logged yet.</p>';
+                document.getElementById('touchpointsCount').textContent = '0 touchpoints logged';
+                return;
+            }
+            
+            container.innerHTML = sortedTouchpoints.map(touchpoint => {
+                const contactName = getContactName(touchpoint.contactId);
+                const typeInfo = touchpointTypes[touchpoint.type];
+                const dateObj = new Date(touchpoint.date);
+                const dateStr = dateObj.toLocaleDateString();
+                const timeStr = touchpoint.time || '';
+                
+                return `
+                    <div class="touchpoint-item ${touchpoint.type}">
+                        <div class="touchpoint-icon ${touchpoint.type}">
+                            ${typeInfo.icon}
+                        </div>
+                        <div class="touchpoint-content">
+                            <div class="touchpoint-meta">
+                                <span class="touchpoint-date">${dateStr}${timeStr ? ' at ' + timeStr : ''}</span>
+                                <span class="touchpoint-type status-badge status-${touchpoint.type}">${typeInfo.name}</span>
+                            </div>
+                            <div style="font-weight: bold; margin-bottom: 5px;">${contactName}</div>
+                            <div class="touchpoint-notes">${touchpoint.notes}</div>
+                            ${touchpoint.outcome ? `<div class="touchpoint-next-steps"><strong>Follow-up:</strong> ${touchpoint.outcome}</div>` : ''}
+                        </div>
+                        <div style="margin-left: 10px;">
+                            <button class="action-btn" onclick="editTouchpoint('${touchpoint.id}')">Edit</button>
+                            <button class="action-btn danger" onclick="deleteTouchpoint('${touchpoint.id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('touchpointsCount').textContent = `${sortedTouchpoints.length} touchpoint${sortedTouchpoints.length !== 1 ? 's' : ''} logged`;
+        }
+
+        function renderNextSteps() {
+            const container = document.getElementById('nextStepsList');
+            if (!container) return;
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const sortedSteps = nextStepsData
+                .filter(step => !step.completed)
+                .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+            
+            if (sortedSteps.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No upcoming next steps scheduled.</p>';
+                document.getElementById('nextStepsCount').textContent = '0 pending';
+                return;
+            }
+            
+            container.innerHTML = sortedSteps.map(step => {
+                const contactName = getContactName(step.contactId);
+                const dueDate = new Date(step.dueDate);
+                const isOverdue = dueDate < today;
+                const dueDateStr = dueDate.toLocaleDateString();
+                
+                let className = 'next-step-item';
+                if (isOverdue) className += ' overdue';
+                
+                return `
+                    <div class="${className}">
+                        <div class="next-step-date">${dueDateStr}</div>
+                        <div class="next-step-action">
+                            <div style="font-weight: bold;">${contactName} - ${step.action}</div>
+                            ${step.notes ? `<div style="font-size: 0.9em; color: #666; margin-top: 5px;">${step.notes}</div>` : ''}
+                            <div style="font-size: 0.8em; margin-top: 5px;">
+                                <span class="status-badge" style="background: ${step.priority === 'high' ? '#dc3545' : step.priority === 'medium' ? '#ffc107' : '#6c757d'}; color: ${step.priority === 'medium' ? '#000' : 'white'};">
+                                    ${step.priority.toUpperCase()} PRIORITY
+                                </span>
+                            </div>
+                        </div>
+                        <div class="next-step-actions">
+                            <button class="action-btn success" onclick="completeNextStep('${step.id}')">Complete</button>
+                            <button class="action-btn" onclick="editNextStep('${step.id}')">Edit</button>
+                            <button class="action-btn danger" onclick="deleteNextStep('${step.id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            const overdueCount = sortedSteps.filter(step => new Date(step.dueDate) < today).length;
+            document.getElementById('nextStepsCount').textContent = `${sortedSteps.length} pending${overdueCount > 0 ? ` (${overdueCount} overdue)` : ''}`;
+        }
+
+        function filterTouchpointsData() {
+            const contactFilter = document.getElementById('filterByContact')?.value || '';
+            const typeFilter = document.getElementById('filterByType')?.value || '';
+            
+            return touchpointsData.filter(touchpoint => {
+                const matchesContact = !contactFilter || touchpoint.contactId === contactFilter;
+                const matchesType = !typeFilter || touchpoint.type === typeFilter;
+                return matchesContact && matchesType;
+            });
+        }
+
+        function filterTouchpoints() {
+            renderTouchpoints();
+        }
+
+        function editTouchpoint(touchpointId) {
+            const touchpoint = touchpointsData.find(t => t.id === touchpointId);
+            if (touchpoint) {
+                document.getElementById('touchpointModalTitle').textContent = 'Edit Touchpoint';
+                document.getElementById('touchpointId').value = touchpoint.id;
+                document.getElementById('touchpointContact').value = touchpoint.contactId;
+                document.getElementById('touchpointType').value = touchpoint.type;
+                document.getElementById('touchpointDate').value = touchpoint.date;
+                document.getElementById('touchpointTime').value = touchpoint.time || '';
+                document.getElementById('touchpointNotes').value = touchpoint.notes;
+                document.getElementById('touchpointOutcome').value = touchpoint.outcome || '';
+                
+                document.getElementById('touchpointModal').style.display = 'block';
+            }
+        }
+
+        function deleteTouchpoint(touchpointId) {
+            if (confirm('Are you sure you want to delete this touchpoint?')) {
+                touchpointsData = touchpointsData.filter(t => t.id !== touchpointId);
+                renderTouchpoints();
+                saveData();
+                showNotification('Touchpoint deleted successfully');
+            }
+        }
+
+        function editNextStep(stepId) {
+            const step = nextStepsData.find(s => s.id === stepId);
+            if (step) {
+                document.getElementById('nextStepModalTitle').textContent = 'Edit Next Step';
+                document.getElementById('nextStepId').value = step.id;
+                document.getElementById('nextStepContact').value = step.contactId;
+                document.getElementById('nextStepType').value = step.type;
+                document.getElementById('nextStepDueDate').value = step.dueDate;
+                document.getElementById('nextStepPriority').value = step.priority;
+                document.getElementById('nextStepAction').value = step.action;
+                document.getElementById('nextStepNotes').value = step.notes || '';
+                
+                document.getElementById('nextStepModal').style.display = 'block';
+            }
+        }
+
+        function completeNextStep(stepId) {
+            const step = nextStepsData.find(s => s.id === stepId);
+            if (step) {
+                step.completed = true;
+                step.completedDate = new Date().toISOString();
+                renderNextSteps();
+                saveData();
+                showNotification('Next step marked as completed');
+            }
+        }
+
+        function deleteNextStep(stepId) {
+            if (confirm('Are you sure you want to delete this next step?')) {
+                nextStepsData = nextStepsData.filter(s => s.id !== stepId);
+                renderNextSteps();
+                saveData();
+                showNotification('Next step deleted successfully');
+            }
+        }
+
+        function exportTouchpoints() {
+            if (touchpointsData.length === 0 && nextStepsData.length === 0) {
+                showNotification('No activity data to export', 3000, 'warning');
+                return;
+            }
+            
+            let csv = 'Type,Date,Time,Contact,Activity Type,Notes,Outcome,Status\n';
+            
+            touchpointsData.forEach(touchpoint => {
+                const contactName = getContactName(touchpoint.contactId);
+                csv += `"Touchpoint","${touchpoint.date}","${touchpoint.time || ''}","${contactName}","${touchpointTypes[touchpoint.type].name}","${touchpoint.notes}","${touchpoint.outcome || ''}","Completed"\n`;
+            });
+            
+            nextStepsData.forEach(step => {
+                const contactName = getContactName(step.contactId);
+                const status = step.completed ? 'Completed' : 'Pending';
+                csv += `"Next Step","${step.dueDate}","","${contactName}","${step.type}","${step.action}","${step.notes || ''}","${status}"\n`;
+            });
+            
+            downloadFile(csv, 'aws_activity_export.csv', 'text/csv');
+        }
+
         function updateDashboardMetrics() {
             const allContacts = Object.values(contactsData).flat();
             const engagedContacts = allContacts.filter(c => c.relationshipScore > 2).length;
@@ -1207,6 +1822,8 @@
                 contacts: contactsData,
                 teams: teamsConfig,
                 deals: dealsData,
+                touchpoints: touchpointsData,
+                nextSteps: nextStepsData,
                 exportDate: new Date().toISOString()
             };
             
@@ -1248,41 +1865,95 @@
         }
 
         function saveData() {
-            try {
-                const data = {
-                    contacts: contactsData,
-                    teams: teamsConfig,
-                    deals: dealsData,
-                    lastUpdated: new Date().toISOString()
-                };
-                localStorage.setItem('awsPartnerTrackerData', JSON.stringify(data));
-            } catch (error) {
-                console.error('Error saving data:', error);
-            }
+            const data = {
+                contacts: contactsData,
+                teams: teamsConfig,
+                deals: dealsData,
+                touchpoints: touchpointsData,
+                nextSteps: nextStepsData,
+                lastUpdated: new Date().toISOString()
+            };
+            // Note: localStorage is not available in artifacts, so data will reset on page reload
+            console.log('Data would be saved:', data);
         }
 
         function loadData() {
-            try {
-                const saved = localStorage.getItem('awsPartnerTrackerData');
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    contactsData = data.contacts || contactsData;
-                    teamsConfig = data.teams || teamsConfig;
-                    dealsData = data.deals || [];
-                    
-                    if (dealsData.length === 0) {
-                        loadSampleDeals();
-                    }
-                } else {
-                    loadSampleDeals();
-                }
-            } catch (error) {
-                console.error('Error loading data:', error);
-                loadSampleDeals();
-            }
+            // Initialize with sample data since localStorage is not available
+            loadSampleData();
         }
 
-        function loadSampleDeals() {
+        function loadSampleData() {
+            // Sample touchpoints
+            touchpointsData = [
+                {
+                    id: 'touch1',
+                    contactId: 'demaree',
+                    type: 'call',
+                    date: '2025-06-15',
+                    time: '14:30',
+                    notes: 'Discussed upcoming PPA opportunity and timeline. Demaree confirmed budget approval for Q3.',
+                    outcome: 'Schedule technical deep dive for next week',
+                    createdDate: '2025-06-15T14:30:00Z'
+                },
+                {
+                    id: 'touch2',
+                    contactId: 'lars',
+                    type: 'email',
+                    date: '2025-06-14',
+                    notes: 'Sent VMware migration case studies and cost analysis. Included reference architecture.',
+                    outcome: 'Waiting for technical team review',
+                    createdDate: '2025-06-14T10:15:00Z'
+                },
+                {
+                    id: 'touch3',
+                    contactId: 'will',
+                    type: 'meeting',
+                    date: '2025-06-13',
+                    time: '11:00',
+                    notes: 'Joint customer meeting with AWS SA. Discussed cloud migration strategy and partner engagement model.',
+                    outcome: 'Will to provide customer referrals',
+                    createdDate: '2025-06-13T11:00:00Z'
+                }
+            ];
+
+            // Sample next steps
+            nextStepsData = [
+                {
+                    id: 'step1',
+                    contactId: 'demaree',
+                    type: 'meeting',
+                    dueDate: '2025-06-18',
+                    priority: 'high',
+                    action: 'Technical deep dive meeting for PPA opportunity',
+                    notes: 'Include SA and customer technical team. Focus on architecture and implementation timeline.',
+                    completed: false,
+                    createdDate: '2025-06-15T14:30:00Z'
+                },
+                {
+                    id: 'step2',
+                    contactId: 'lars',
+                    type: 'follow-up',
+                    dueDate: '2025-06-17',
+                    priority: 'medium',
+                    action: 'Follow up on VMware migration proposal review',
+                    notes: 'Check if technical team has completed review of case studies',
+                    completed: false,
+                    createdDate: '2025-06-14T10:15:00Z'
+                },
+                {
+                    id: 'step3',
+                    contactId: 'helen',
+                    type: 'call',
+                    dueDate: '2025-06-16',
+                    priority: 'high',
+                    action: 'Initial outreach call to establish relationship',
+                    notes: 'Introduction to GenAI partner program and available resources',
+                    completed: false,
+                    createdDate: '2025-06-10T09:00:00Z'
+                }
+            ];
+
+            // Sample deals
             dealsData = [
                 {
                     id: 'deal1',
@@ -1309,6 +1980,7 @@
                     createdDate: '2025-06-05'
                 }
             ];
+            
             saveData();
         }
 
@@ -1334,7 +2006,7 @@
 
         // Close modals when clicking outside
         window.onclick = function(event) {
-            const modals = ['dealModal', 'contactModal', 'teamModal'];
+            const modals = ['dealModal', 'contactModal', 'teamModal', 'touchpointModal', 'nextStepModal'];
             modals.forEach(modalId => {
                 const modal = document.getElementById(modalId);
                 if (event.target === modal) {
@@ -1349,12 +2021,15 @@
             renderAllTeams();
             updateDashboardMetrics();
             updateTeamDropdowns();
+            updateTouchpointDropdowns();
             setupEditableFields();
             
             // Form submissions
             document.getElementById('dealForm').addEventListener('submit', handleDealSubmit);
             document.getElementById('contactForm').addEventListener('submit', handleContactSubmit);
             document.getElementById('teamForm').addEventListener('submit', handleTeamSubmit);
+            document.getElementById('touchpointForm').addEventListener('submit', handleTouchpointSubmit);
+            document.getElementById('nextStepForm').addEventListener('submit', handleNextStepSubmit);
             
             // Auto-update probability when stage changes
             document.getElementById('dealStage').addEventListener('change', function() {
@@ -1364,7 +2039,7 @@
                 }
             });
             
-            showNotification('Partner Management System loaded successfully!', 4000);
+            showNotification('Partner Management System with Touchpoint Tracking loaded successfully!', 4000);
         });
     </script>
 </body>
