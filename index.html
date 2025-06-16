@@ -1,4 +1,639 @@
-<!DOCTYPE html>
+ <!-- Deal Modal -->
+    <div id="dealModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="dealModalTitle">Add New Deal</h2>
+                <span class="close" onclick="closeModal('dealModal')">&times;</span>
+            </div>
+            <form id="dealForm">
+                <input type="hidden" id="dealId" name="id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dealName">Deal Name:</label>
+                        <input type="text" id="dealName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dealValue">Deal Value ($):</label>
+                        <input type="text" id="dealValue" name="value" placeholder="250000" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dealContact">Contact:</label>
+                        <select id="dealContact" name="contactId" required>
+                            <option value="">Select Contact</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dealTeam">Team:</label>
+                        <select id="dealTeam" name="team" required>
+                            <option value="">Select Team</option>
+                            ${Object.keys(teamConfigs).map(teamId => 
+                                `<option value="${teamId}">${teamConfigs[teamId].name}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dealStage">Stage:</label>
+                        <select id="dealStage" name="stage" required>
+                            ${dealStages.map(stage => 
+                                `<option value="${stage.id}">${stage.name}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dealProbability">Probability (%):</label>
+                        <input type="number" id="dealProbability" name="probability" min="0" max="100" value="25">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dealCloseDate">Expected Close Date:</label>
+                        <input type="date" id="dealCloseDate" name="closeDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dealType">Deal Type:</label>
+                        <input type="text" id="dealType" name="type" placeholder="PPA, Migration, Integration">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="dealDescription">Description:</label>
+                    <textarea id="dealDescription" name="description" placeholder="Brief description of the opportunity..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="dealNextSteps">Next Steps:</label>
+                    <textarea id="dealNextSteps" name="nextSteps" placeholder="What are the next actions for this deal..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Save Deal</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Touchpoint Modal -->
+    <div id="touchpointModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="touchpointModalTitle">Log Touchpoint</h2>
+                <span class="close" onclick="closeModal('touchpointModal')">&times;</span>
+            </div>
+            <form id="touchpointForm">
+                <input type="hidden" id="touchpointId" name="id">
+                <input type="hidden" id="touchpointContactId" name="contactId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="touchpointContact">Contact:</label>
+                        <input type="text" id="touchpointContact" readonly style="background: #f8f9fa;">
+                    </div>
+                    <div class="form-group">
+                        <label for="touchpointType">Type:</label>
+                        <select id="touchpointType" name="type" required>
+                            <option value="email">Email</option>
+                            <option value="call">Phone Call</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="event">Event</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="demo">Demo</option>
+                            <option value="presentation">Presentation</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="touchpointDate">Date:</label>
+                        <input type="date" id="touchpointDate" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="touchpointOutcome">Outcome:</label>
+                        <select id="touchpointOutcome" name="outcome">
+                            <option value="positive">Positive</option>
+                            <option value="neutral">Neutral</option>
+                            <option value="negative">Negative</option>
+                            <option value="no-response">No Response</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="touchpointSubject">Subject/Topic:</label>
+                    <input type="text" id="touchpointSubject" name="subject" placeholder="What was discussed..." required>
+                </div>
+                <div class="form-group">
+                    <label for="touchpointNotes">Notes:</label>
+                    <textarea id="touchpointNotes" name="notes" placeholder="Detailed notes about the interaction..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Save Touchpoint</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Follow-up Modal -->
+    <div id="followUpModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Schedule Follow-up</h2>
+                <span class="close" onclick="closeModal('followUpModal')">&times;</span>
+            </div>
+            <form id="followUpForm">
+                <input type="hidden" id="followUpContactId" name="contactId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="followUpContact">Contact:</label>
+                        <input type="text" id="followUpContact" readonly style="background: #f8f9fa;">
+                    </div>
+                    <div class="form-group">
+                        <label for="followUpType">Type:</label>
+                        <select id="followUpType" name="type" required>
+                            <option value="call">Phone Call</option>
+                            <option value="email">Email</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="demo">Demo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="followUpDate">Scheduled Date:</label>
+                        <input type="date" id="followUpDate" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="followUpTime">Time (optional):</label>
+                        <input type="time" id="followUpTime" name="time">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="followUpSubject">Subject/Purpose:</label>
+                    <input type="text" id="followUpSubject" name="subject" placeholder="Purpose of follow-up..." required>
+                </div>
+                <div class="form-group">
+                    <label for="followUpNotes">Notes:</label>
+                    <textarea id="followUpNotes" name="notes" placeholder="Any preparation notes or context..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Schedule Follow-up</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Modal -->
+    <div id="bulkActionsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Bulk Actions</h2>
+                <span class="close" onclick="closeModal('bulkActionsModal')">&times;</span>
+            </div>
+            <form id="bulkActionsForm">
+                <div class="form-group">
+                    <label for="bulkAction">Action:</label>
+                    <select id="bulkAction" name="action" required onchange="toggleBulkActionFields(this.value)">
+                        <option value="">Select Action</option>
+                        <option value="updateTier">Update Tier</option>
+                        <option value="addNote">Add Note</option>
+                        <option value="scheduleFollowUp">Schedule Follow-up</option>
+                    </select>
+                </div>
+                <div id="bulkTierGroup" class="form-group" style="display: none;">
+                    <label for="bulkNewTier">New Tier:</label>
+                    <select id="bulkNewTier" name="newTier">
+                        <option value="tier1">Tier 1</option>
+                        <option value="tier2">Tier 2</option>
+                        <option value="tier3">Tier 3</option>
+                    </select>
+                </div>
+                <div id="bulkNoteGroup" class="form-group" style="display: none;">
+                    <label for="bulkNote">Note to Add:</label>
+                    <textarea id="bulkNote" name="note" placeholder="Note to add to selected contacts..."></textarea>
+                </div>
+                <div id="bulkFollowUpGroup" class="form-group" style="display: none;">
+                    <label for="bulkFollowUpDate">Follow-up Date:</label>
+                    <input type="date" id="bulkFollowUpDate" name="followUpDate">
+                </div>
+                <p style="color: #666; font-size: 0.9em; margin: 10px 0;">
+                    Select contacts using checkboxes in the teams table, then choose an action above.
+                </p>
+                <button type="submit" class="btn-primary">Apply to Selected Contacts</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Campaign Analytics Modal -->
+    <div id="campaignAnalyticsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Campaign Analytics</h2>
+                <span class="close" onclick="closeModal('campaignAnalyticsModal')">&times;</span>
+            </div>
+            <div id="campaignAnalyticsContent">
+                <!-- Content populated by renderCampaignAnalytics() -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Deal Details Modal -->
+    <div id="dealDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="dealDetailsTitle">Deal Details</h2>
+                <span class="close" onclick="closeModal('dealDetailsModal')">&times;</span>
+            </div>
+            <div id="dealDetailsContent">
+                <!-- Content populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <span id="notificationText"></span>
+    </div>
+
+    <script>
+        // Enhanced data structure
+        let systemData = {
+            lastUpdated: new Date(),
+            teams: {},
+            deals: [],
+            touchpoints: [],
+            marketingCampaigns: [],
+            analytics: {},
+            settings: {
+                autoSaveInterval: 30000,
+                defaultView: 'teams',
+                notifications: true
+            }
+        };
+
+        // Team configurations
+        const teamConfigs = {
+            'csc': { name: 'ENT-CSC-C (SWIM)', dm: 'Tara Jayne-O\'Donnell', psm: 'Noah Arling' },
+            'isv-genai': { name: 'ISV - GenAI', dm: 'TBD', psm: 'TBD' },
+            'isv-data': { name: 'ISV - Data Analytics', dm: 'TBD', psm: 'TBD' },
+            'isv-manufacturing': { name: 'ISV - Manufacturing', dm: 'TBD', psm: 'TBD' },
+            'smb-east': { name: 'SMB - East', dm: 'TBD', psm: 'TBD' },
+            'smb-west': { name: 'SMB - West', dm: 'TBD', psm: 'TBD' },
+            'smb-central': { name: 'SMB - Central', dm: 'TBD', psm: 'TBD' },
+            'enterprise-global': { name: 'Enterprise - Global', dm: 'TBD', psm: 'TBD' },
+            'partner-ops': { name: 'Partner Operations', dm: 'TBD', psm: 'TBD' }
+        };
+
+        // Deal stage configuration
+        const dealStages = [
+            { id: 'prequalified', name: 'Prequalified', color: '#6c757d' },
+            { id: 'qualified', name: 'Qualified', color: '#17a2b8' },
+            { id: 'proposal-development', name: 'Proposal Development', color: '#ffc107' },
+            { id: 'proposal-delivered', name: 'Proposal Delivered', color: '#fd7e14' },
+            { id: 'legal', name: 'Legal Review', color: '#6f42c1' },
+            { id: 'out-for-signature', name: 'Out for Signature', color: '#20c997' },
+            { id: 'signed', name: 'Signed', color: '#28a745' },
+            { id: 'deal-won', name: 'Deal Won', color: '#28a745' },
+            { id: 'deal-lost', name: 'Deal Lost', color: '#dc3545' }
+        ];
+
+        // Enhanced deal management functions
+        function addDeal() {
+            openModal('dealModal', { mode: 'add' });
+        }
+
+        function editDeal(dealId) {
+            const deal = systemData.deals.find(d => d.id === dealId);
+            if (deal) {
+                openModal('dealModal', { mode: 'edit', deal });
+            }
+        }
+
+        function viewDealDetails(dealId) {
+            const deal = systemData.deals.find(d => d.id === dealId);
+            if (deal) {
+                const container = document.getElementById('dealDetailsContent');
+                const contact = getContactByIdFull(deal.contactId);
+                const stage = dealStages.find(s => s.id === deal.stage);
+                
+                container.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h3>Deal Information</h3>
+                            <p><strong>Name:</strong> ${deal.name}</p>
+                            <p><strong>Value:</strong> ${(deal.value/1000).toFixed(0)}K</p>
+                            <p><strong>Stage:</strong> <span style="background: ${stage?.color}; color: white; padding: 2px 8px; border-radius: 4px;">${stage?.name}</span></p>
+                            <p><strong>Probability:</strong> ${deal.probability}%</p>
+                            <p><strong>Close Date:</strong> ${deal.closeDate}</p>
+                            <p><strong>Type:</strong> ${deal.type}</p>
+                        </div>
+                        <div>
+                            <h3>Contact Information</h3>
+                            <p><strong>Contact:</strong> ${contact?.name || 'Unknown'}</p>
+                            <p><strong>Team:</strong> ${teamConfigs[deal.team]?.name || deal.team}</p>
+                            <p><strong>Contact Score:</strong> ${contact?.relationshipScore || 'N/A'}</p>
+                            <p><strong>Last Contact:</strong> ${contact?.lastContact || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <h3>Description</h3>
+                        <p>${deal.description || 'No description provided'}</p>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <h3>Next Steps</h3>
+                        <p>${deal.nextSteps || 'No next steps defined'}</p>
+                    </div>
+                `;
+                
+                document.getElementById('dealDetailsTitle').textContent = `Deal Details - ${deal.name}`;
+                openModal('dealDetailsModal');
+            }
+        }
+
+        function handleDealFormSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const deal = Object.fromEntries(formData.entries());
+            
+            // Convert value to number
+            deal.value = parseFloat(deal.value.replace(/[$,]/g, '')) || 0;
+            deal.probability = parseInt(deal.probability) || 0;
+            
+            if (!deal.id) {
+                deal.id = 'deal_' + Date.now();
+                deal.createdDate = new Date().toISOString().split('T')[0];
+            }
+            
+            const existingIndex = systemData.deals.findIndex(d => d.id === deal.id);
+            if (existingIndex >= 0) {
+                systemData.deals[existingIndex] = { ...systemData.deals[existingIndex], ...deal };
+                showNotification(`Deal "${deal.name}" updated successfully`);
+            } else {
+                systemData.deals.push(deal);
+                showNotification(`Deal "${deal.name}" added successfully`);
+            }
+            
+            saveData();
+            renderDeals();
+            calculateMetrics();
+            closeModal('dealModal');
+        }
+
+        function changeDealStage(dealId, newStage) {
+            const deal = systemData.deals.find(d => d.id === dealId);
+            if (deal) {
+                deal.stage = newStage;
+                deal.lastUpdated = new Date().toISOString().split('T')[0];
+                
+                // Auto-update probability based on stage
+                const stageProbabilities = {
+                    'prequalified': 10,
+                    'qualified': 25,
+                    'proposal-development': 40,
+                    'proposal-delivered': 60,
+                    'legal': 75,
+                    'out-for-signature': 90,
+                    'signed': 95,
+                    'deal-won': 100,
+                    'deal-lost': 0
+                };
+                
+                deal.probability = stageProbabilities[newStage] || deal.probability;
+                
+                saveData();
+                renderDeals();
+                calculateMetrics();
+                showNotification(`Deal moved to ${dealStages.find(s => s.id === newStage)?.name}`);
+            }
+        }
+
+        // Touchpoint management functions
+        function logTouchpoint(contactId) {
+            const contact = getContactByIdFull(contactId);
+            if (contact) {
+                document.getElementById('touchpointContactId').value = contactId;
+                document.getElementById('touchpointContact').value = contact.name;
+                document.getElementById('touchpointDate').value = new Date().toISOString().split('T')[0];
+                openModal('touchpointModal', { mode: 'add', contactId });
+            }
+        }
+
+        function editTouchpoint(touchpointId) {
+            const touchpoint = systemData.touchpoints.find(tp => tp.id === touchpointId);
+            if (touchpoint) {
+                const contact = getContactByIdFull(touchpoint.contactId);
+                
+                // Populate form
+                document.getElementById('touchpointId').value = touchpoint.id;
+                document.getElementById('touchpointContactId').value = touchpoint.contactId;
+                document.getElementById('touchpointContact').value = contact?.name || 'Unknown';
+                document.getElementById('touchpointType').value = touchpoint.type;
+                document.getElementById('touchpointDate').value = touchpoint.date;
+                document.getElementById('touchpointOutcome').value = touchpoint.outcome || 'positive';
+                document.getElementById('touchpointSubject').value = touchpoint.subject;
+                document.getElementById('touchpointNotes').value = touchpoint.notes || '';
+                
+                document.getElementById('touchpointModalTitle').textContent = 'Edit Touchpoint';
+                openModal('touchpointModal', { mode: 'edit', touchpoint });
+            }
+        }
+
+        function handleTouchpointFormSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const touchpoint = Object.fromEntries(formData.entries());
+            
+            if (!touchpoint.id) {
+                touchpoint.id = 'tp_' + Date.now();
+            }
+            
+            const existingIndex = systemData.touchpoints.findIndex(tp => tp.id === touchpoint.id);
+            if (existingIndex >= 0) {
+                systemData.touchpoints[existingIndex] = { ...systemData.touchpoints[existingIndex], ...touchpoint };
+                showNotification('Touchpoint updated successfully');
+            } else {
+                systemData.touchpoints.push(touchpoint);
+                showNotification('Touchpoint logged successfully');
+                
+                // Update contact's last contact date
+                updateContactLastContact(touchpoint.contactId, touchpoint.date);
+            }
+            
+            saveData();
+            renderTouchpoints();
+            renderTeams();
+            calculateMetrics();
+            closeModal('touchpointModal');
+        }
+
+        // Follow-up scheduling
+        function scheduleFollowUp(contactId) {
+            const contact = getContactByIdFull(contactId);
+            if (contact) {
+                document.getElementById('followUpContactId').value = contactId;
+                document.getElementById('followUpContact').value = contact.name;
+                
+                // Set default date to tomorrow
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                document.getElementById('followUpDate').value = tomorrow.toISOString().split('T')[0];
+                
+                openModal('followUpModal', { contactId });
+            }
+        }
+
+        function handleFollowUpFormSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const followUp = Object.fromEntries(formData.entries());
+            
+            // Create a future touchpoint
+            const touchpoint = {
+                id: 'fu_' + Date.now(),
+                contactId: followUp.contactId,
+                type: followUp.type,
+                date: followUp.date,
+                subject: followUp.subject,
+                notes: followUp.notes,
+                status: 'scheduled'
+            };
+            
+            systemData.touchpoints.push(touchpoint);
+            
+            // Update contact's next contact date
+            for (let teamId in systemData.teams) {
+                const contact = systemData.teams[teamId].find(c => c.id === followUp.contactId);
+                if (contact) {
+                    contact.nextContact = followUp.date;
+                    break;
+                }
+            }
+            
+            saveData();
+            renderTouchpoints();
+            renderTeams();
+            calculateMetrics();
+            closeModal('followUpModal');
+            showNotification('Follow-up scheduled successfully');
+        }
+
+        // Bulk actions implementation
+        function bulkActions() {
+            openModal('bulkActionsModal');
+        }
+
+        function toggleBulkActionFields(action) {
+            document.getElementById('bulkTierGroup').style.display = action === 'updateTier' ? 'block' : 'none';
+            document.getElementById('bulkNoteGroup').style.display = action === 'addNote' ? 'block' : 'none';
+            document.getElementById('bulkFollowUpGroup').style.display = action === 'scheduleFollowUp' ? 'block' : 'none';
+        }
+
+        function handleBulkActionsSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const action = formData.get('action');
+            const selectedContacts = Array.from(document.querySelectorAll('.contact-checkbox:checked'))
+                .map(cb => ({ contactId: cb.dataset.contactId, teamId: cb.dataset.teamId }));
+            
+            if (selectedContacts.length === 0) {
+                showNotification('Please select contacts first', 3000, 'warning');
+                return;
+            }
+            
+            selectedContacts.forEach(({ contactId, teamId }) => {
+                const contact = systemData.teams[teamId]?.find(c => c.id === contactId);
+                if (contact) {
+                    switch (action) {
+                        case 'updateTier':
+                            contact.tier = formData.get('newTier');
+                            break;
+                        case 'addNote':
+                            contact.notes = (contact.notes || '') + '\n' + formData.get('note');
+                            break;
+                        case 'scheduleFollowUp':
+                            contact.nextContact = formData.get('followUpDate');
+                            break;
+                    }
+                }
+            });
+            
+            saveData();
+            renderTeams();
+            calculateMetrics();
+            closeModal('bulkActionsModal');
+            showNotification(`Bulk action applied to ${selectedContacts.length} contacts`);
+        }
+
+        // Campaign analytics
+        function campaignAnalytics() {
+            openModal('campaignAnalyticsModal');
+            renderCampaignAnalytics();
+        }
+
+        function renderCampaignAnalytics() {
+            const container = document.getElementById('campaignAnalyticsContent');
+            if (!container) return;
+
+            const analytics = systemData.marketingCampaigns.map(campaign => {
+                const responseRate = campaign.metrics?.sent > 0 ? 
+                    ((campaign.responses?.length || 0) / campaign.metrics.sent * 100).toFixed(1) : 0;
+                const openRate = campaign.metrics?.sent > 0 ? 
+                    ((campaign.metrics.opened || 0) / campaign.metrics.sent * 100).toFixed(1) : 0;
+                
+                return {
+                    ...campaign,
+                    responseRate,
+                    openRate
+                };
+            });
+
+            container.innerHTML = `
+                <table class="rep-table">
+                    <thead>
+                        <tr>
+                            <th>Campaign</th>
+                            <th>Type</th>
+                            <th>Sent</th>
+                            <th>Opened</th>
+                            <th>Responses</th>
+                            <th>Open Rate</th>
+                            <th>Response Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${analytics.map(campaign => `
+                            <tr>
+                                <td><strong>${campaign.name}</strong></td>
+                                <td>${campaign.type}</td>
+                                <td>${campaign.metrics?.sent || 0}</td>
+                                <td>${campaign.metrics?.opened || 0}</td>
+                                <td>${campaign.responses?.length || 0}</td>
+                                <td>${campaign.openRate}%</td>
+                                <td>${campaign.responseRate}%</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Utility functions
+        function getContactByIdFull(contactId) {
+            for (let teamId in systemData.teams) {
+                const contact = systemData.teams[teamId].find(c => c.id === contactId);
+                if (contact) return { ...contact, teamId };
+            }
+            return null;
+        }
+
+        function updateContactLastContact(contactId, date) {
+            for (let teamId in systemData.teams) {
+                const contact = systemData.teams[teamId].find(c => c.id === contactId);
+                if (contact) {
+                    contact.lastContact = date;
+                    break;
+                }
+            }
+        }
+
+        function showAnalytics() {
+            showTab('analytics');
+        }
+
+        function editCampaign(campaignId) {
+            showNotification(`Campaign editing for ${campaignId} coming soon`, 3000, 'info');
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1225,25 +1860,163 @@
             document.getElementById('coverageRatio').textContent = `${coverageRatio.toFixed(1)}x`;
         }
 
+        // Enhanced event listeners setup
         function setupEventListeners() {
             // Search functionality
-            document.getElementById('searchInput')?.addEventListener('input', function(e) {
-                filterContacts();
-            });
+            document.getElementById('searchInput')?.addEventListener('input', filterContacts);
             
             // Filter functionality
             document.getElementById('teamFilter')?.addEventListener('change', filterContacts);
             document.getElementById('tierFilter')?.addEventListener('change', filterContacts);
             
-            // Editable field updates
+            // Editable field updates for deals
             document.addEventListener('blur', function(e) {
                 if (e.target.classList.contains('editable')) {
-                    updateContactField(e.target);
+                    if (e.target.dataset.dealId) {
+                        updateDealField(e.target);
+                    } else {
+                        updateContactField(e.target);
+                    }
                 }
             }, true);
             
             // Form submissions
             document.getElementById('contactForm')?.addEventListener('submit', handleContactFormSubmit);
+            document.getElementById('dealForm')?.addEventListener('submit', handleDealFormSubmit);
+            document.getElementById('touchpointForm')?.addEventListener('submit', handleTouchpointFormSubmit);
+            document.getElementById('followUpForm')?.addEventListener('submit', handleFollowUpFormSubmit);
+            document.getElementById('bulkActionsForm')?.addEventListener('submit', handleBulkActionsSubmit);
+        }
+
+        function updateDealField(element) {
+            const field = element.dataset.field;
+            const value = element.textContent.trim();
+            const dealId = element.dataset.dealId;
+            
+            if (!dealId || !field) return;
+            
+            const deal = systemData.deals.find(d => d.id === dealId);
+            if (deal && deal[field] !== undefined) {
+                deal[field] = value;
+                deal.lastUpdated = new Date().toISOString().split('T')[0];
+                saveData();
+                showNotification(`Deal ${field} updated`);
+                calculateMetrics();
+            }
+        }
+
+        // Enhanced modal functions
+        function openModal(modalType, data = {}) {
+            let modal, form;
+            
+            switch(modalType) {
+                case 'addContact':
+                case 'editContact':
+                    modal = document.getElementById('contactModal');
+                    form = document.getElementById('contactForm');
+                    document.getElementById('contactModalTitle').textContent = 
+                        modalType === 'addContact' ? 'Add New Contact' : 'Edit Contact';
+                    
+                    if (modalType === 'editContact' && data.contact) {
+                        populateContactForm(data.contact);
+                    } else {
+                        form.reset();
+                        document.getElementById('lastContact').value = new Date().toISOString().split('T')[0];
+                    }
+                    break;
+                    
+                case 'dealModal':
+                    modal = document.getElementById('dealModal');
+                    form = document.getElementById('dealForm');
+                    document.getElementById('dealModalTitle').textContent = 
+                        data.mode === 'add' ? 'Add New Deal' : 'Edit Deal';
+                    
+                    // Populate contact dropdown
+                    populateContactDropdown();
+                    
+                    if (data.mode === 'edit' && data.deal) {
+                        populateDealForm(data.deal);
+                    } else {
+                        form.reset();
+                        // Set default close date to 30 days from now
+                        const futureDate = new Date();
+                        futureDate.setDate(futureDate.getDate() + 30);
+                        document.getElementById('dealCloseDate').value = futureDate.toISOString().split('T')[0];
+                    }
+                    break;
+                    
+                case 'touchpointModal':
+                    modal = document.getElementById('touchpointModal');
+                    form = document.getElementById('touchpointForm');
+                    document.getElementById('touchpointModalTitle').textContent = 
+                        data.mode === 'add' ? 'Log Touchpoint' : 'Edit Touchpoint';
+                    
+                    if (data.mode !== 'edit') {
+                        form.reset();
+                    }
+                    break;
+                    
+                case 'followUpModal':
+                    modal = document.getElementById('followUpModal');
+                    form = document.getElementById('followUpForm');
+                    form.reset();
+                    break;
+                    
+                case 'bulkActionsModal':
+                    modal = document.getElementById('bulkActionsModal');
+                    form = document.getElementById('bulkActionsForm');
+                    form.reset();
+                    toggleBulkActionFields('');
+                    break;
+                    
+                case 'campaignAnalyticsModal':
+                    modal = document.getElementById('campaignAnalyticsModal');
+                    break;
+                    
+                case 'dealDetailsModal':
+                    modal = document.getElementById('dealDetailsModal');
+                    break;
+                    
+                default:
+                    showNotification(`${modalType} modal not implemented yet`);
+                    return;
+            }
+            
+            if (modal) {
+                modal.style.display = 'block';
+            }
+        }
+
+        function populateContactDropdown() {
+            const dropdown = document.getElementById('dealContact');
+            dropdown.innerHTML = '<option value="">Select Contact</option>';
+            
+            Object.keys(systemData.teams).forEach(teamId => {
+                systemData.teams[teamId].forEach(contact => {
+                    const option = document.createElement('option');
+                    option.value = contact.id;
+                    option.textContent = `${contact.name} (${teamConfigs[teamId].name})`;
+                    dropdown.appendChild(option);
+                });
+            });
+        }
+
+        function populateDealForm(deal) {
+            document.getElementById('dealId').value = deal.id;
+            document.getElementById('dealName').value = deal.name;
+            document.getElementById('dealValue').value = deal.value;
+            document.getElementById('dealContact').value = deal.contactId;
+            document.getElementById('dealTeam').value = deal.team;
+            document.getElementById('dealStage').value = deal.stage;
+            document.getElementById('dealProbability').value = deal.probability;
+            document.getElementById('dealCloseDate').value = deal.closeDate;
+            document.getElementById('dealType').value = deal.type || '';
+            document.getElementById('dealDescription').value = deal.description || '';
+            document.getElementById('dealNextSteps').value = deal.nextSteps || '';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
         }
 
         function filterContacts() {
@@ -1572,33 +2345,267 @@
             showNotification(`${filename} downloaded successfully`);
         }
 
-        // Advanced functions (placeholders for future implementation)
+        // Deal stage configuration
+        const dealStages = [
+            { id: 'prequalified', name: 'Prequalified', color: '#6c757d' },
+            { id: 'qualified', name: 'Qualified', color: '#17a2b8' },
+            { id: 'proposal-development', name: 'Proposal Development', color: '#ffc107' },
+            { id: 'proposal-delivered', name: 'Proposal Delivered', color: '#fd7e14' },
+            { id: 'legal', name: 'Legal Review', color: '#6f42c1' },
+            { id: 'out-for-signature', name: 'Out for Signature', color: '#20c997' },
+            { id: 'signed', name: 'Signed', color: '#28a745' },
+            { id: 'deal-won', name: 'Deal Won', color: '#28a745' },
+            { id: 'deal-lost', name: 'Deal Lost', color: '#dc3545' }
+        ];
+
+        // Enhanced deal management functions
+        function addDeal() {
+            openModal('dealModal', { mode: 'add' });
+        }
+
+        function editDeal(dealId) {
+            const deal = systemData.deals.find(d => d.id === dealId);
+            if (deal) {
+                openModal('dealModal', { mode: 'edit', deal });
+            }
+        }
+
+        function viewDealDetails(dealId) {
+            const deal = systemData.deals.find(d => d.id === dealId);
+            if (deal) {
+                openModal('dealDetailsModal', { deal });
+            }
+        }
+
+        function handleDealFormSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const deal = Object.fromEntries(formData.entries());
+            
+            // Convert value to number
+            deal.value = parseFloat(deal.value.replace(/[$,]/g, '')) || 0;
+            deal.probability = parseInt(deal.probability) || 0;
+            
+            if (!deal.id) {
+                deal.id = 'deal_' + Date.now();
+                deal.createdDate = new Date().toISOString().split('T')[0];
+            }
+            
+            const existingIndex = systemData.deals.findIndex(d => d.id === deal.id);
+            if (existingIndex >= 0) {
+                systemData.deals[existingIndex] = { ...systemData.deals[existingIndex], ...deal };
+                showNotification(`Deal "${deal.name}" updated successfully`);
+            } else {
+                systemData.deals.push(deal);
+                showNotification(`Deal "${deal.name}" added successfully`);
+            }
+            
+            saveData();
+            renderDeals();
+            calculateMetrics();
+            closeModal('dealModal');
+        }
+
+        function changeDealStage(dealId, newStage) {
+            const deal = systemData.deals.find(d => d.id === dealId);
+            if (deal) {
+                deal.stage = newStage;
+                deal.lastUpdated = new Date().toISOString().split('T')[0];
+                
+                // Auto-update probability based on stage
+                const stageProbabilities = {
+                    'prequalified': 10,
+                    'qualified': 25,
+                    'proposal-development': 40,
+                    'proposal-delivered': 60,
+                    'legal': 75,
+                    'out-for-signature': 90,
+                    'signed': 95,
+                    'deal-won': 100,
+                    'deal-lost': 0
+                };
+                
+                deal.probability = stageProbabilities[newStage] || deal.probability;
+                
+                saveData();
+                renderDeals();
+                calculateMetrics();
+                showNotification(`Deal moved to ${dealStages.find(s => s.id === newStage)?.name}`);
+            }
+        }
+
+        // Touchpoint management functions
+        function logTouchpoint(contactId) {
+            openModal('touchpointModal', { mode: 'add', contactId });
+        }
+
+        function editTouchpoint(touchpointId) {
+            const touchpoint = systemData.touchpoints.find(tp => tp.id === touchpointId);
+            if (touchpoint) {
+                openModal('touchpointModal', { mode: 'edit', touchpoint });
+            }
+        }
+
+        function handleTouchpointFormSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const touchpoint = Object.fromEntries(formData.entries());
+            
+            if (!touchpoint.id) {
+                touchpoint.id = 'tp_' + Date.now();
+            }
+            
+            const existingIndex = systemData.touchpoints.findIndex(tp => tp.id === touchpoint.id);
+            if (existingIndex >= 0) {
+                systemData.touchpoints[existingIndex] = { ...systemData.touchpoints[existingIndex], ...touchpoint };
+                showNotification('Touchpoint updated successfully');
+            } else {
+                systemData.touchpoints.push(touchpoint);
+                showNotification('Touchpoint logged successfully');
+            }
+            
+            saveData();
+            renderTouchpoints();
+            calculateMetrics();
+            closeModal('touchpointModal');
+        }
+
+        // Follow-up scheduling
+        function scheduleFollowUp(contactId) {
+            openModal('followUpModal', { contactId });
+        }
+
+        function handleFollowUpFormSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const followUp = Object.fromEntries(formData.entries());
+            
+            // Create a future touchpoint
+            const touchpoint = {
+                id: 'fu_' + Date.now(),
+                contactId: followUp.contactId,
+                type: followUp.type,
+                date: followUp.date,
+                subject: followUp.subject,
+                notes: followUp.notes,
+                status: 'scheduled'
+            };
+            
+            systemData.touchpoints.push(touchpoint);
+            
+            // Update contact's next contact date
+            for (let teamId in systemData.teams) {
+                const contact = systemData.teams[teamId].find(c => c.id === followUp.contactId);
+                if (contact) {
+                    contact.nextContact = followUp.date;
+                    break;
+                }
+            }
+            
+            saveData();
+            renderTouchpoints();
+            renderTeams();
+            calculateMetrics();
+            closeModal('followUpModal');
+            showNotification('Follow-up scheduled successfully');
+        }
+
+        // Bulk actions implementation
         function bulkActions() {
-            showNotification('Bulk actions feature coming soon', 3000, 'info');
+            openModal('bulkActionsModal');
         }
 
-        function scheduleFollowUp() {
-            showNotification('Follow-up scheduling feature coming soon', 3000, 'info');
+        function handleBulkActionsSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const action = formData.get('action');
+            const selectedContacts = Array.from(document.querySelectorAll('.contact-checkbox:checked'))
+                .map(cb => ({ contactId: cb.dataset.contactId, teamId: cb.dataset.teamId }));
+            
+            if (selectedContacts.length === 0) {
+                showNotification('Please select contacts first', 3000, 'warning');
+                return;
+            }
+            
+            selectedContacts.forEach(({ contactId, teamId }) => {
+                const contact = systemData.teams[teamId]?.find(c => c.id === contactId);
+                if (contact) {
+                    switch (action) {
+                        case 'updateTier':
+                            contact.tier = formData.get('newTier');
+                            break;
+                        case 'addNote':
+                            contact.notes = (contact.notes || '') + '\n' + formData.get('note');
+                            break;
+                        case 'scheduleFollowUp':
+                            contact.nextContact = formData.get('followUpDate');
+                            break;
+                    }
+                }
+            });
+            
+            saveData();
+            renderTeams();
+            calculateMetrics();
+            closeModal('bulkActionsModal');
+            showNotification(`Bulk action applied to ${selectedContacts.length} contacts`);
         }
 
+        // Campaign analytics
         function campaignAnalytics() {
-            showNotification('Campaign analytics feature coming soon', 3000, 'info');
+            openModal('campaignAnalyticsModal');
+            renderCampaignAnalytics();
+        }
+
+        function renderCampaignAnalytics() {
+            const container = document.getElementById('campaignAnalyticsContent');
+            if (!container) return;
+
+            const analytics = systemData.marketingCampaigns.map(campaign => {
+                const responseRate = campaign.metrics?.sent > 0 ? 
+                    ((campaign.responses?.length || 0) / campaign.metrics.sent * 100).toFixed(1) : 0;
+                const openRate = campaign.metrics?.sent > 0 ? 
+                    ((campaign.metrics.opened || 0) / campaign.metrics.sent * 100).toFixed(1) : 0;
+                
+                return {
+                    ...campaign,
+                    responseRate,
+                    openRate
+                };
+            });
+
+            container.innerHTML = `
+                <table class="rep-table">
+                    <thead>
+                        <tr>
+                            <th>Campaign</th>
+                            <th>Type</th>
+                            <th>Sent</th>
+                            <th>Opened</th>
+                            <th>Responses</th>
+                            <th>Open Rate</th>
+                            <th>Response Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${analytics.map(campaign => `
+                            <tr>
+                                <td><strong>${campaign.name}</strong></td>
+                                <td>${campaign.type}</td>
+                                <td>${campaign.metrics?.sent || 0}</td>
+                                <td>${campaign.metrics?.opened || 0}</td>
+                                <td>${campaign.responses?.length || 0}</td>
+                                <td>${campaign.openRate}%</td>
+                                <td>${campaign.responseRate}%</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
         }
 
         function showAnalytics() {
             showTab('analytics');
-        }
-
-        function editDeal(dealId) {
-            showNotification(`Deal editing for ${dealId} coming soon`, 3000, 'info');
-        }
-
-        function viewDealDetails(dealId) {
-            showNotification(`Deal details for ${dealId} coming soon`, 3000, 'info');
-        }
-
-        function editTouchpoint(touchpointId) {
-            showNotification(`Touchpoint editing for ${touchpointId} coming soon`, 3000, 'info');
         }
 
         function editCampaign(campaignId) {
