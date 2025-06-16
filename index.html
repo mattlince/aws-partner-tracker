@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master AWS Partner Engagement Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(45deg, #232F3E, #FF9900);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.2em; opacity: 0.9; }
+        .last-updated {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .metric-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+        .metric-card:hover { transform: translateY(-5px); }
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .tabs {
+            display: flex;
+            background: #e9ecef;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        .tab.active {
+            background: white;
+            border-bottom: 3px solid #FF9900;
+            font-weight: bold;
+            color: #232F3E;
+        }
+        .tab:hover:not(.active) {
+            background: #f8f9fa;
+        }
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        .tab-content.active { display: block; }
+        .team-section {
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+        }
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .team-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #232F3E;
+        }
+        .team-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .rep-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .rep-table th {
+            background: #232F3E;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .rep-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+        .rep-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        .editable {
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+        .editable:hover {
+            background: #f8f9fa;
+            border-color: #ddd;
+        }
+        .editable:focus {
+            outline: none;
+            border-color: #FF9900;
+            background: white;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .status-badge:hover { transform: scale(1.05); }
+        .status-tier1 { background: #d4edda; color: #155724; }
+        .status-tier2 { background: #fff3cd; color: #856404; }
+        .status-tier3 { background: #f8d7da; color: #721c24; }
+        .status-met { background: #d1ecf1; color: #0c5460; }
+        .relationship-score {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .relationship-score:hover { transform: scale(1.1); }
+        .score-5 { background: #28a745; }
+        .score-4 { background: #17a2b8; }
+        .score-3 { background: #ffc107; color: #000; }
+        .score-2 { background: #fd7e14; }
+        .score-1 { background: #dc3545; }
+        .pipeline-visual {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .pipeline-stage {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease;
+        }
+        .pipeline-stage:hover { transform: translateY(-2px); }
+        .stage-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stage-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .action-btn {
+            background: #FF9900;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+        .action-btn:hover { 
+            background: #e68900; 
+            transform: translateY(-1px);
+        }
+        .action-btn:active {
+            transform: translateY(0);
+        }
+        .notes-input {
+            width: 100%;
+            min-height: 60px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 0.85em;
+            resize: vertical;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover { color: #000; }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #232F3E;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        .btn-primary {
+            background: #FF9900;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: #e68900;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #28a745;
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .export-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background 0.3s ease;
+        }
+        .export-btn:hover {
+            background: #138496;
+        }
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+                padding: 20px;
+            }
+            .pipeline-visual {
+                grid-template-columns: 1fr 1fr;
+            }
+            .team-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .rep-table {
+                font-size: 0.8em;
+            }
+            .rep-table th, .rep-table td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="last-updated">Last Updated: <span id="lastUpdated"></span></div>
+            <h1>AWS Partner Engagement Tracker</h1>
+            <p>Master Dashboard for 9 Teams • 51 AMs • $2.9M Annual Target</p>
+        </div>
+
+        <div class="dashboard">
+            <div class="metric-card" onclick="showMetricDetail('engagement')">
+                <div class="metric-value" style="color: #28a745;" id="engagementRate">73%</div>
+                <div class="metric-label">Total Engagement Rate</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 73%;" id="engagementProgress"></div>
+                </div>
+            </div>
+            <div class="metric-card" onclick="showMetricDetail('pipeline')">
+                <div class="metric-value" style="color: #17a2b8;" id="pipelineValue">$1.2M</div>
+                <div class="metric-label">Active Pipeline</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 60%;" id="pipelineProgress"></div>
+                </div>
+            </div>
+            <div class="metric-card" onclick="showMetricDetail('opportunities')">
+                <div class="metric-value" style="color: #ffc107;" id="opportunityCount">18</div>
+                <div class="metric-label">Active Opportunities</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 45%;" id="opportunityProgress"></div>
+                </div>
+            </div>
+            <div class="metric-card" onclick="showMetricDetail('coverage')">
+                <div class="metric-value" style="color: #fd7e14;" id="coverageRatio">4.2x</div>
+                <div class="metric-label">Pipeline Coverage</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 85%;" id="coverageProgress"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('teams')">Team Overview</button>
+            <button class="tab" onclick="showTab('pipeline')">Pipeline Tracker</button>
+            <button class="tab" onclick="showTab('relationships')">Relationship Matrix</button>
+            <button class="tab" onclick="showTab('analytics')">Performance Analytics</button>
+        </div>
+
+        <div id="teams" class="tab-content active">
+            <div style="margin-bottom: 20px;">
+                <button class="export-btn" onclick="exportData('csv')">Export to CSV</button>
+                <button class="export-btn" onclick="exportData('json')">Export to JSON</button>
+                <button class="action-btn" onclick="addNewContact()" style="float: right;">Add New Contact</button>
+            </div>
+            
+            <!-- CSC Team -->
+            <div class="team-section">
+                <div class="team-header">
+                    <div class="team-name">ENT-CSC-C (SWIM)</div>
+                    <div class="team-stats">
+                        <span>DM: Tara Jayne-O'Donnell</span>
+                        <span>PSM: Noah Arling</span>
+                        <span>9 AMs</span>
+                        <span>Engagement: <span id="cscEngagement">78%</span></span>
+                    </div>
+                </div>
+                <table class="rep-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Geo</th>
+                            <th>Tier</th>
+                            <th>Rel Score</th>
+                            <th>Last Contact</th>
+                            <th>Response</th>
+                            <th>Pipeline</th>
+                            <th>Next Steps</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cscTeamData">
+                        <tr data-rep="demaree">
+                            <td><strong>Demaree Barton</strong></td>
+                            <td>AM</td>
+                            <td>HQ1</td>
+                            <td><span class="status-badge status-tier1" onclick="toggleTier(this)">Tier 1</span></td>
+                            <td><span class="relationship-score score-4" onclick="changeScore(this)">4</span></td>
+                            <td class="editable" contenteditable="true">6/10/2025</td>
+                            <td>✅ Yes</td>
+                            <td class="editable" contenteditable="true">$85K</td>
+                            <td class="editable" contenteditable="true">Joint account review</td>
+                            <td><button class="action-btn" onclick="updateContact('demaree')">Update</button></td>
+                        </tr>
+                        <tr data-rep="lars">
+                            <td><strong>Lars Branvold</strong></td>
+                            <td>AM</td>
+                            <td>HQ1</td>
+                            <td><span class="status-badge status-tier1" onclick="toggleTier(this)">Tier 1</span></td>
+                            <td><span class="relationship-score score-4" onclick="changeScore(this)">4</span></td>
+                            <td class="editable" contenteditable="true">6/8/2025</td>
+                            <td>✅ Yes</td>
+                            <td class="editable" contenteditable="true">$120K</td>
+                            <td class="editable" contenteditable="true">VMware migration opp</td>
+                            <td><button class="action-btn" onclick="updateContact('lars')">Update</button></td>
+                        </tr>
+                        <tr data-rep="will">
+                            <td><strong>Will Desmond</strong></td>
+                            <td>AM</td>
+                            <td>HQ1</td>
+                            <td><span class="status-badge status-tier1" onclick="toggleTier(this)">Tier 1</span></td>
+                            <td><span class="relationship-score score-4" onclick="changeScore(this)">4</span></td>
+                            <td class="editable" contenteditable="true">6/5/2025</td>
+                            <td>✅ Yes</td>
+                            <td class="editable" contenteditable="true">$95K</td>
+                            <td class="editable" contenteditable="true">PPA discussion</td>
+                            <td><button class="action-btn" onclick="updateContact('will')">Update</button></td>
+                        </tr>
+                        <tr data-rep="jayme">
+                            <td><strong>Jayme Bergman</strong></td>
+                            <td>AM</td>
+                            <td>HQ2</td>
+                            <td><span class="status-badge status-tier2" onclick="toggleTier(this)">Tier 2</span></td>
+                            <td><span class="relationship-score score-3" onclick="changeScore(this)">3</span></td>
+                            <td class="editable" contenteditable="true">6/1/2025</td>
+                            <td>✅ Yes</td>
+                            <td class="editable" contenteditable="true">$45K</td>
+                            <td class="editable" contenteditable="true">Account mapping</td>
+                            <td><button class="action-btn" onclick="updateContact('jayme')">Update</button></td>
+                        </tr>
+                        <tr data-rep="matt">
+                            <td><strong>Matt Martin</strong></td>
+                            <td>AM</td>
+                            <td>ATX</td>
+                            <td><span class="status-badge status-tier2" onclick="toggleTier(this)">Tier 2</span></td>
+                            <td><span class="relationship-score score-3" onclick="changeScore(this)">3</span></td>
+                            <td class="editable" contenteditable="true">5/28/2025</td>
+                            <td>✅ Yes</td>
+                            <td class="editable" contenteditable="true">$30K</td>
+                            <td class="editable" contenteditable="true">Follow-up call</td>
+                            <td><button class="action-btn" onclick="updateContact('matt')">Update</button></td>
+                        </tr>
+                        <tr data-rep="devin">
+                            <td><strong>Devin Sercu</strong></td>
+                            <td>AM</td>
+                            <td>ATX</td>
+                            <td><span class="status-badge status-tier3" onclick="toggleTier(this)">Tier 3</span></td>
+                            <td><span class="relationship-score score-2" onclick="changeScore(this)">2</span></td>
+                            <td class="editable" contenteditable="true">6/9/2025</td>
+                            <td>❌ No</td>
+                            <td class="editable" contenteditable="true">$0</td>
+                            <td class="editable" contenteditable="true">Initial outreach</td>
+                            <td><button class="action-btn" onclick="updateContact('devin')">Update</button></td>
+                        </tr>
+                        <tr data-rep="fairy">
+                            <td><strong>Fairy Fernandez</strong></td>
+                            <td>AM</td>
+                            <td>HQ2</td>
+                            <td><span class="status-badge status-tier3" onclick="toggleTier(this)">Tier 3</span></td>
+                            <td><span class="relationship-score score-2" onclick="changeScore(this)">2</span></td>
+                            <td class="editable" contenteditable="true">6/9/2025</td>
+                            <td>❌ No</td>
+                            <td class="editable" contenteditable="true">$0</td>
+                            <td class="editable" contenteditable="true">LinkedIn outreach</td>
+                            <td><button class="action-btn" onclick="updateContact('fairy')">Update</button></td>
+                        </tr>
+                        <tr data-rep="gina">
+                            <td><strong>Gina Tam</strong></td>
+                            <td>AM</td>
+                            <td>HQ1</td>
+                            <td><span class="status-badge status-tier3" onclick="toggleTier(this)">Tier 3</span></td>
+                            <td><span class="relationship-score score-1" onclick="changeScore(this)">1</span></td>
+                            <td class="editable" contenteditable="true">6/9/2025</td>
+                            <td>❌ No</td>
+                            <td class="editable" contenteditable="true">$0</td>
+                            <td class="editable" contenteditable="true">Email + phone</td>
+                            <td><button class="action-btn" onclick="updateContact('gina')">Update</button></td>
+                        </tr>
+                        <tr data-rep="keegan">
+                            <td><strong>Keegan Andres</strong></td>
+                            <td>AM</td>
+                            <td>HQ1</td>
+                            <td><span class="status-badge status-tier3" onclick="toggleTier(this)">Tier 3</span></td>
+                            <td><span class="relationship-score score-1" onclick="changeScore(this)">1</span></td>
+                            <td class="editable" contenteditable="true">6/9/2025</td>
+                            <td>❌ No</td>
+                            <td class="editable" contenteditable="true">$0</td>
+                            <td class="editable" contenteditable="true">Multiple touchpoints</td>
+                            <td><button class="action-btn" onclick="updateContact('keegan')">Update</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ISV Teams -->
+            <div class="team-section">
+                <div class="team-header">
+                    <div class="team-name">ISV - DA, GenAI</div>
+                    <div class="team-stats">
+                        <span>DM: TBD</span>
+                        <span>PSM: TBD</span>
+                        <span>3 AMs</span>
+                        <span>Engagement: <span id="isvEngagement">33%</span></span>
+                    </div>
+                </div>
+                <table class="rep-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Geo</th>
+                            <th>Tier</th>
+                            <th>Rel Score</th>
+                            <th>Last Contact</th>
+                            <th>Response</th>
+                            <th>Pipeline</th>
+                            <th>Next Steps</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isvTeamData">
+                        <tr data-rep="helen">
+                            <td><strong>Helen Har Theisen</strong></td>
+                            <td>AM</td>
+                            <td>TBD</td>
+                            <td><span class="status-badge status-tier3" onclick="toggleTier(this)">Tier 3</span></td>
+                            <td><span class="relationship-score score-1" onclick="changeScore(this)">1</span></td>
+                            <td class="editable" contenteditable="true">6/9/2025</td>
+                            <td>❌ No</td>
+                            <td class="editable" contenteditable="true">$0</td>
+                            <td class="editable" contenteditable="true">Initial contact</td>
+                            <td><button class="action-btn" onclick="updateContact('helen')">Update</button></td>
+                        </tr>
+                        <tr data-rep="luca">
+                            <td><strong>Luca Doan</strong></td>
+                            <td>AM</td>
+                            <td>TBD</td>
+                            <td><span class="status-badge status-tier3" onclick="toggleTier(this)">Tier 3</span></td>
+                            <td><span class="relationship-score score-1" onclick="changeScore(this)">1</span></td>
+                            <td class="editable" contenteditable="true">6/9/2025</td>
+                            <td>❌ No</td>
+                            <td class="editable" contenteditable="true">$0</td>
+                            <td class="editable" contenteditable="true">Email outreach</td>
+                            <td><button class="action-btn" onclick="updateContact('luca')">Update</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="pipeline" class="tab-content">
+            <div class="pipeline-visual">
+                <div class="pipeline-stage">
+                    <div class="stage-value" style="color: #17a2b8;" id="qualifiedLeads">24</div>
+                    <div class="stage-label">Qualified Leads</div>
+                </div>
+                <div class="pipeline-stage">
+                    <div class="stage-value" style="color: #ffc107;" id="activeOpps">18</div>
+                    <div class="stage-label">Active Opportunities</div>
+                </div>
+                <div class="pipeline-stage">
+                    <div class="stage-value" style="color: #fd7e14;" id="proposalStage">8</div>
+                    <div class="stage-label">Proposal Stage</div>
+                </div>
+                <div class="pipeline-stage">
+                    <div class="stage-value" style="color: #28a745;" id="closingMonth">3</div>
+                    <div class="stage-label">Closing This Month</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px;">
+                <h3 style="margin-bottom: 20px; color: #232F3E;">Top Opportunities by Value</h3>
+                <table class="rep-table">
+                    <thead>
+                        <tr>
+                            <th>Opportunity</th>
+                            <th>AM/Team</th>
+                            <th>Type</th>
+                            <th>Value</th>
+                            <th>Stage</th>
+                            <th>Close Date</th>
+                            <th>Probability</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Enterprise PPA - Manufacturing Co</strong></td>
+                            <td>Lars Branvold / CSC</td>
+                            <td>PPA</td>
+                            <td><strong>$450K</strong></td>
+                            <td>Proposal</td>
+                            <td class="editable" contenteditable="true">July 30</td>
+                            <td class="editable" contenteditable="true">75%</td>
+                            <td><button class="action-btn" onclick="viewOpportunity('ppa-manufacturing')">View Details</button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>VMware Migration - Tech Startup</strong></td>
+                            <td>Matthew Nixon / ISV</td>
+                            <td>Migration</td>
+                            <td><strong>$280K</strong></td>
+                            <td>Discovery</td>
+                            <td class="editable" contenteditable="true">Aug 15</td>
+                            <td class="editable" contenteditable="true">60%</td>
+                            <td><button class="action-btn" onclick="viewOpportunity('vmware-migration')">View Details</button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>GenAI Optimization</strong></td>
+                            <td>Demaree Barton / CSC</td>
+                            <td>Optimization</td>
+                            <td><strong>$175K</strong></td>
+                            <td>Qualified</td>
+                            <td class="editable" contenteditable="true">Sept 1</td>
+                            <td class="editable" contenteditable="true">45%</td>
+                            <td><button class="action-btn" onclick="viewOpportunity('genai-optimization')">View Details</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="relationships" class="tab-content">
+            <h3 style="margin-bottom: 20px; color: #232F3E;">Relationship Health Matrix</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #28a745;" id="tier1Count">12</div>
+                    <div class="metric-label">Tier 1 Relationships</div>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 10px;">Strong partnerships, regular collaboration</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #ffc107;" id="tier2Count">18</div>
+                    <div class="metric-label">Tier 2 Relationships</div>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 10px;">Developing partnerships, monthly contact</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #dc3545;" id="tier3Count">21</div>
+                    <div class="metric-label">Tier 3 Relationships</div>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 10px;">New/cold relationships, need attention</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h4 style="margin-bottom: 15px;">Relationship Progression Goals</h4>
+                <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Tier 3 → Tier 2 (Q3 Goal: 10 AMs)</span>
+                            <span id="tier32Progress">60%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 60%;" id="tier32ProgressBar"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Tier 2 → Tier 1 (Q3 Goal: 6 AMs)</span>
+                            <span id="tier21Progress">33%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 33%;" id="tier21ProgressBar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="analytics" class="tab-content">
+            <h3 style="margin-bottom: 20px; color: #232F3E;">Performance Analytics</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
+                    <h4>Monthly Quota Progress</h4>
+                    <div style="margin: 20px 0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span>July Target: $81K</span>
+                            <span id="julyProgress">$65K (80%)</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 80%;" id="julyProgressBar"></div>
+                        </div>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span>August Target: $163K</span>
+                            <span id="augustPipeline">Pipeline: $652K</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 100%; background: linear-gradient(45deg, #17a2b8, #6f42c1);" id="augustProgressBar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
+                    <h4>Team Performance Ranking</h4>
+                    <div style="margin-top: 20px;" id="teamRankings">
+                        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                            <span>1. CSC Team</span>
+                            <span style="color: #28a745; font-weight: bold;">$375K Pipeline</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                            <span>2. ISV Manufacturing</span>
+                            <span style="color: #17a2b8; font-weight: bold;">$280K Pipeline</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                            <span>3. ISV GenAI</span>
+                            <span style="color: #ffc107; font-weight: bold;">$145K Pipeline</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.08);">
+                <h4>Weekly Activity Summary</h4>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 20px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: #232F3E;" id="proposalsSubmitted">4</div>
+                        <div style="color: #666; font-size: 0.9em;">Proposals Submitted</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: #232F3E;" id="contactsMade">28</div>
+                        <div style="color: #666; font-size: 0.9em;">AM Contacts Made</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: #232F3E;" id="meetingsScheduled">12</div>
+                        <div style="color: #666; font-size: 0.9em;">Meetings Scheduled</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: #232F3E;" id="newOpportunities">6</div>
+                        <div style="color: #666; font-size: 0.9em;">New Opportunities</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Contact Modal -->
+    <div id="updateModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">Update Contact</h2>
+            <form id="updateForm">
+                <div class="form-group">
+                    <label for="contactDate">Last Contact Date:</label>
+                    <input type="date" id="contactDate" name="contactDate">
+                </div>
+                <div class="form-group">
+                    <label for="relationshipScore">Relationship Score (1-5):</label>
+                    <select id="relationshipScore" name="relationshipScore">
+                        <option value="1">1 - Cold/No Response</option>
+                        <option value="2">2 - Initial Contact</option>
+                        <option value="3">3 - Engaged</option>
+                        <option value="4">4 - Strong Partnership</option>
+                        <option value="5">5 - Strategic Alliance</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tier">Tier Status:</label>
+                    <select id="tier" name="tier">
+                        <option value="tier1">Tier 1 - Strategic Partner</option>
+                        <option value="tier2">Tier 2 - Active Partner</option>
+                        <option value="tier3">Tier 3 - Prospect</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pipelineValue">Pipeline Value:</label>
+                    <input type="text" id="pipelineValue" name="pipelineValue" placeholder="$0">
+                </div>
+                <div class="form-group">
+                    <label for="nextSteps">Next Steps:</label>
+                    <textarea id="nextSteps" name="nextSteps" placeholder="Enter next steps..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="notes">Meeting Notes:</label>
+                    <textarea id="notes" name="notes" placeholder="Enter meeting notes and key discussion points..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Save Updates</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add New Contact Modal -->
+    <div id="addContactModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddModal()">&times;</span>
+            <h2>Add New Contact</h2>
+            <form id="addContactForm">
+                <div class="form-group">
+                    <label for="newContactName">Name:</label>
+                    <input type="text" id="newContactName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="newContactRole">Role:</label>
+                    <input type="text" id="newContactRole" name="role" value="AM">
+                </div>
+                <div class="form-group">
+                    <label for="newContactGeo">Geography:</label>
+                    <input type="text" id="newContactGeo" name="geo">
+                </div>
+                <div class="form-group">
+                    <label for="newContactTeam">Team:</label>
+                    <select id="newContactTeam" name="team">
+                        <option value="csc">ENT-CSC-C (SWIM)</option>
+                        <option value="isv">ISV - DA, GenAI</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Add Contact</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <span id="notificationText"></span>
+    </div>
+
+    <script>
+        // Data storage
+        let trackerData = {
+            lastUpdated: new Date(),
+            teams: {
+                csc: [],
+                isv: []
+            },
+            metrics: {
+                engagementRate: 73,
+                pipelineValue: 1200000,
+                opportunityCount: 18,
+                coverageRatio: 4.2
+            },
+            goals: {
+                tier32Progress: 60,
+                tier21Progress: 33
+            }
+        };
+
+        // Initialize the application
+        function initializeApp() {
+            updateLastUpdated();
+            loadDataFromTable();
+            calculateMetrics();
+            
+            // Auto-save every 30 seconds
+            setInterval(saveData, 30000);
+            
+            // Add event listeners for editable fields
+            addEditableListeners();
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            document.getElementById('lastUpdated').textContent = now.toLocaleString();
+            trackerData.lastUpdated = now;
+        }
+
+        function loadDataFromTable() {
+            // Load existing data from CSC team table
+            const cscRows = document.querySelectorAll('#cscTeamData tr');
+            trackerData.teams.csc = Array.from(cscRows).map(row => {
+                const cells = row.querySelectorAll('td');
+                return {
+                    name: cells[0].textContent.trim(),
+                    role: cells[1].textContent.trim(),
+                    geo: cells[2].textContent.trim(),
+                    tier: cells[3].textContent.trim(),
+                    relationshipScore: parseInt(cells[4].textContent.trim()),
+                    lastContact: cells[5].textContent.trim(),
+                    response: cells[6].textContent.trim(),
+                    pipeline: cells[7].textContent.trim(),
+                    nextSteps: cells[8].textContent.trim(),
+                    id: row.dataset.rep
+                };
+            });
+
+            // Load ISV team data
+            const isvRows = document.querySelectorAll('#isvTeamData tr');
+            trackerData.teams.isv = Array.from(isvRows).map(row => {
+                const cells = row.querySelectorAll('td');
+                return {
+                    name: cells[0].textContent.trim(),
+                    role: cells[1].textContent.trim(),
+                    geo: cells[2].textContent.trim(),
+                    tier: cells[3].textContent.trim(),
+                    relationshipScore: parseInt(cells[4].textContent.trim()),
+                    lastContact: cells[5].textContent.trim(),
+                    response: cells[6].textContent.trim(),
+                    pipeline: cells[7].textContent.trim(),
+                    nextSteps: cells[8].textContent.trim(),
+                    id: row.dataset.rep
+                };
+            });
+        }
+
+        function addEditableListeners() {
+            const editableElements = document.querySelectorAll('.editable');
+            editableElements.forEach(element => {
+                element.addEventListener('blur', function() {
+                    saveData();
+                    showNotification('Data updated automatically');
+                });
+                
+                element.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        this.blur();
+                    }
+                });
+            });
+        }
+
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        function updateContact(repId) {
+            const modal = document.getElementById('updateModal');
+            const form = document.getElementById('updateForm');
+            document.getElementById('modalTitle').textContent = `Update Contact - ${repId}`;
+            
+            // Pre-fill form with current data if available
+            const contactData = findContactData(repId);
+            if (contactData) {
+                document.getElementById('contactDate').value = convertDateFormat(contactData.lastContact);
+                document.getElementById('relationshipScore').value = contactData.relationshipScore;
+                document.getElementById('tier').value = contactData.tier.toLowerCase().replace(' ', '');
+                document.getElementById('pipelineValue').value = contactData.pipeline;
+                document.getElementById('nextSteps').value = contactData.nextSteps;
+            }
+            
+            form.onsubmit = function(e) {
+                e.preventDefault();
+                saveContactUpdate(repId);
+                closeModal();
+            };
+            
+            modal.style.display = 'block';
+        }
+
+        function findContactData(repId) {
+            for (let team in trackerData.teams) {
+                const contact = trackerData.teams[team].find(c => c.id === repId);
+                if (contact) return contact;
+            }
+            return null;
+        }
+
+        function convertDateFormat(dateStr) {
+            // Convert from M/D/YYYY to YYYY-MM-DD
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const month = parts[0].padStart(2, '0');
+                const day = parts[1].padStart(2, '0');
+                const year = parts[2];
+                return `${year}-${month}-${day}`;
+            }
+            return dateStr;
+        }
+
+        function saveContactUpdate(repId) {
+            const form = document.getElementById('updateForm');
+            const formData = new FormData(form);
+            
+            // Update the table row
+            const row = document.querySelector(`tr[data-rep="${repId}"]`);
+            if (row) {
+                const cells = row.querySelectorAll('td');
+                
+                // Update last contact date
+                const contactDate = new Date(formData.get('contactDate'));
+                cells[5].textContent = contactDate.toLocaleDateString();
+                
+                // Update relationship score
+                const score = formData.get('relationshipScore');
+                const scoreElement = cells[4].querySelector('.relationship-score');
+                scoreElement.textContent = score;
+                scoreElement.className = `relationship-score score-${score}`;
+                
+                // Update tier
+                const tier = formData.get('tier');
+                const tierElement = cells[3].querySelector('.status-badge');
+                tierElement.textContent = tier.charAt(0).toUpperCase() + tier.slice(1);
+                tierElement.className = `status-badge status-${tier}`;
+                
+                // Update pipeline value
+                cells[7].textContent = formData.get('pipelineValue');
+                
+                // Update next steps
+                cells[8].textContent = formData.get('nextSteps');
+                
+                // Update response status if score > 2
+                if (parseInt(score) > 2) {
+                    cells[6].textContent = '✅ Yes';
+                }
+            }
+            
+            // Save to data structure
+            updateLastUpdated();
+            loadDataFromTable();
+            calculateMetrics();
+            saveData();
+            
+            showNotification(`Contact ${repId} updated successfully`);
+        }
+
+        function toggleTier(element) {
+            const tiers = ['tier1', 'tier2', 'tier3'];
+            const tierLabels = ['Tier 1', 'Tier 2', 'Tier 3'];
+            const currentTier = element.textContent.toLowerCase().replace(' ', '');
+            const currentIndex = tiers.indexOf(currentTier);
+            const nextIndex = (currentIndex + 1) % tiers.length;
+            
+            element.className = `status-badge status-${tiers[nextIndex]}`;
+            element.textContent = tierLabels[nextIndex];
+            
+            saveData();
+            calculateMetrics();
+            showNotification('Tier updated');
+        }
+
+        function changeScore(element) {
+            let currentScore = parseInt(element.textContent);
+            currentScore = currentScore >= 5 ? 1 : currentScore + 1;
+            
+            element.textContent = currentScore;
+            element.className = `relationship-score score-${currentScore}`;
+            
+            // Update response status
+            const row = element.closest('tr');
+            const responseCell = row.cells[6];
+            responseCell.textContent = currentScore > 2 ? '✅ Yes' : '❌ No';
+            
+            saveData();
+            calculateMetrics();
+            showNotification('Relationship score updated');
+        }
+
+        function calculateMetrics() {
+            loadDataFromTable();
+            
+            // Calculate engagement rate
+            const allContacts = [...trackerData.teams.csc, ...trackerData.teams.isv];
+            const engagedContacts = allContacts.filter(c => c.relationshipScore > 2).length;
+            const engagementRate = Math.round((engagedContacts / allContacts.length) * 100);
+            
+            // Calculate total pipeline
+            let totalPipeline = 0;
+            allContacts.forEach(c => {
+                const pipelineStr = c.pipeline.replace(/[$,]/g, '');
+                const pipelineValue = parseFloat(pipelineStr.replace('K', '000')) || 0;
+                totalPipeline += pipelineValue;
+            });
+            
+            // Update dashboard metrics
+            document.getElementById('engagementRate').textContent = `${engagementRate}%`;
+            document.getElementById('engagementProgress').style.width = `${engagementRate}%`;
+            
+            document.getElementById('pipelineValue').textContent = `${(totalPipeline / 1000).toFixed(1)}K`;
+            
+            // Update tier counts
+            const tier1Count = allContacts.filter(c => c.tier.includes('Tier 1')).length;
+            const tier2Count = allContacts.filter(c => c.tier.includes('Tier 2')).length;
+            const tier3Count = allContacts.filter(c => c.tier.includes('Tier 3')).length;
+            
+            document.getElementById('tier1Count').textContent = tier1Count;
+            document.getElementById('tier2Count').textContent = tier2Count;
+            document.getElementById('tier3Count').textContent = tier3Count;
+            
+            // Update team engagement rates
+            const cscEngaged = trackerData.teams.csc.filter(c => c.relationshipScore > 2).length;
+            const cscEngagementRate = Math.round((cscEngaged / trackerData.teams.csc.length) * 100);
+            document.getElementById('cscEngagement').textContent = `${cscEngagementRate}%`;
+            
+            const isvEngaged = trackerData.teams.isv.filter(c => c.relationshipScore > 2).length;
+            const isvEngagementRate = Math.round((isvEngaged / trackerData.teams.isv.length) * 100);
+            document.getElementById('isvEngagement').textContent = `${isvEngagementRate}%`;
+        }
+
+        function addNewContact() {
+            const modal = document.getElementById('addContactModal');
+            const form = document.getElementById('addContactForm');
+            
+            form.onsubmit = function(e) {
+                e.preventDefault();
+                const formData = new FormData(form);
+                
+                // Create new row
+                const team = formData.get('team');
+                const tableBody = team === 'csc' ? document.getElementById('cscTeamData') : document.getElementById('isvTeamData');
+                
+                const newRow = document.createElement('tr');
+                const repId = formData.get('name').toLowerCase().replace(/\s+/g, '');
+                newRow.dataset.rep = repId;
+                
+                newRow.innerHTML = `
+                    <td><strong>${formData.get('name')}</strong></td>
+                    <td>${formData.get('role')}</td>
+                    <td>${formData.get('geo')}</td>
+                    <td><span class="status-badge status-tier3" onclick="toggleTier(this)">Tier 3</span></td>
+                    <td><span class="relationship-score score-1" onclick="changeScore(this)">1</span></td>
+                    <td class="editable" contenteditable="true">${new Date().toLocaleDateString()}</td>
+                    <td>❌ No</td>
+                    <td class="editable" contenteditable="true">$0</td>
+                    <td class="editable" contenteditable="true">Initial outreach</td>
+                    <td><button class="action-btn" onclick="updateContact('${repId}')">Update</button></td>
+                `;
+                
+                tableBody.appendChild(newRow);
+                
+                // Add event listeners to new editable elements
+                const newEditables = newRow.querySelectorAll('.editable');
+                newEditables.forEach(element => {
+                    element.addEventListener('blur', function() {
+                        saveData();
+                        showNotification('Data updated automatically');
+                    });
+                });
+                
+                calculateMetrics();
+                saveData();
+                closeAddModal();
+                showNotification(`New contact ${formData.get('name')} added successfully`);
+                
+                // Reset form
+                form.reset();
+            };
+            
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('updateModal').style.display = 'none';
+        }
+
+        function closeAddModal() {
+            document.getElementById('addContactModal').style.display = 'none';
+        }
+
+        function showMetricDetail(metric) {
+            let message = '';
+            switch(metric) {
+                case 'engagement':
+                    message = 'Engagement rate shows percentage of AMs actively responding to outreach efforts';
+                    break;
+                case 'pipeline':
+                    message = 'Active pipeline value represents total potential revenue from all opportunities';
+                    break;
+                case 'opportunities':
+                    message = 'Active opportunities are qualified deals currently in progress';
+                    break;
+                case 'coverage':
+                    message = 'Pipeline coverage shows ratio of pipeline value to quota target';
+                    break;
+            }
+            showNotification(message, 5000);
+        }
+
+        function viewOpportunity(oppId) {
+            showNotification(`Opening detailed view for opportunity: ${oppId}`, 3000);
+            // Here you could open a detailed modal or navigate to a detailed page
+        }
+
+        function exportData(format) {
+            loadDataFromTable();
+            
+            if (format === 'csv') {
+                exportToCSV();
+            } else if (format === 'json') {
+                exportToJSON();
+            }
+        }
+
+        function exportToCSV() {
+            const allContacts = [...trackerData.teams.csc, ...trackerData.teams.isv];
+            
+            let csv = 'Name,Role,Geography,Tier,Relationship Score,Last Contact,Response,Pipeline,Next Steps\n';
+            
+            allContacts.forEach(contact => {
+                csv += `"${contact.name}","${contact.role}","${contact.geo}","${contact.tier}",${contact.relationshipScore},"${contact.lastContact}","${contact.response}","${contact.pipeline}","${contact.nextSteps}"\n`;
+            });
+            
+            downloadFile(csv, 'aws_partner_tracker.csv', 'text/csv');
+        }
+
+        function exportToJSON() {
+            const exportData = {
+                ...trackerData,
+                exportDate: new Date().toISOString()
+            };
+            
+            const jsonStr = JSON.stringify(exportData, null, 2);
+            downloadFile(jsonStr, 'aws_partner_tracker.json', 'application/json');
+        }
+
+        function downloadFile(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showNotification(`${filename} downloaded successfully`);
+        }
+
+        function saveData() {
+            // In a real application, this would save to a backend database
+            // For now, we'll save to session storage as a backup
+            try {
+                loadDataFromTable();
+                sessionStorage.setItem('awsPartnerTrackerData', JSON.stringify(trackerData));
+            } catch (error) {
+                console.error('Error saving data:', error);
+            }
+        }
+
+        function loadSavedData() {
+            try {
+                const saved = sessionStorage.getItem('awsPartnerTrackerData');
+                if (saved) {
+                    trackerData = JSON.parse(saved);
+                    // Restore UI state if needed
+                }
+            } catch (error) {
+                console.error('Error loading saved data:', error);
+            }
+        }
+
+        function showNotification(message, duration = 3000) {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notificationText');
+            
+            text.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, duration);
+        }
+
+        // Real-time updates simulation
+        function simulateRealTimeUpdates() {
+            setInterval(() => {
+                const metrics = document.querySelectorAll('.metric-value');
+                metrics.forEach(metric => {
+                    if (Math.random() > 0.98) {
+                        metric.style.transform = 'scale(1.1)';
+                        metric.style.color = '#FF9900';
+                        setTimeout(() => {
+                            metric.style.transform = 'scale(1)';
+                            metric.style.color = '';
+                        }, 500);
+                    }
+                });
+            }, 10000);
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const updateModal = document.getElementById('updateModal');
+            const addModal = document.getElementById('addContactModal');
+            
+            if (event.target === updateModal) {
+                closeModal();
+            }
+            if (event.target === addModal) {
+                closeAddModal();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + S to save
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveData();
+                showNotification('Data saved manually');
+            }
+            
+            // Escape to close modals
+            if (e.key === 'Escape') {
+                closeModal();
+                closeAddModal();
+            }
+        });
+
+        // Initialize the application when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedData();
+            initializeApp();
+            simulateRealTimeUpdates();
+            
+            console.log('AWS Partner Engagement Tracker loaded successfully');
+            showNotification('Tracker loaded - Data auto-saves every 30 seconds', 4000);
+        });
+
+        // Backup and restore functionality
+        function createBackup() {
+            const backupData = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                data: trackerData
+            };
+            
+            const backupStr = JSON.stringify(backupData, null, 2);
+            downloadFile(backupStr, `aws_tracker_backup_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+            showNotification('Backup created successfully');
+        }
+
+        function restoreFromBackup(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+                    if (backup.data && backup.version) {
+                        trackerData = backup.data;
+                        saveData();
+                        location.reload(); // Reload to reflect changes
+                    } else {
+                        showNotification('Invalid backup file format', 3000);
+                    }
+                } catch (error) {
+                    showNotification('Error reading backup file', 3000);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Performance tracking
+        function trackPerformance() {
+            const performanceData = {
+                loadTime: performance.now(),
+                userAgent: navigator.userAgent,
+                timestamp: new Date().toISOString(),
+                metrics: trackerData.metrics
+            };
+            
+            // In a real app, this would be sent to analytics
+            console.log('Performance data:', performanceData);
+        }
+
+        // Data validation
+        function validateData() {
+            const issues = [];
+            
+            // Check for missing relationship scores
+            const allContacts = [...trackerData.teams.csc, ...trackerData.teams.isv];
+            allContacts.forEach(contact => {
+                if (!contact.relationshipScore || contact.relationshipScore < 1 || contact.relationshipScore > 5) {
+                    issues.push(`Invalid relationship score for ${contact.name}`);
+                }
+                
+                if (!contact.lastContact || contact.lastContact === '') {
+                    issues.push(`Missing last contact date for ${contact.name}`);
+                }
+            });
+            
+            if (issues.length > 0) {
+                console.warn('Data validation issues:', issues);
+                showNotification(`${issues.length} data validation issues found`, 5000);
+            }
+            
+            return issues.length === 0;
+        }
+
+        // Auto-refresh for real deployments
+        function enableAutoRefresh(intervalMinutes = 30) {
+            setInterval(() => {
+                // In a real deployment, this would fetch fresh data from the server
+                calculateMetrics();
+                updateLastUpdated();
+                showNotification('Data refreshed automatically', 2000);
+            }, intervalMinutes * 60 * 1000);
+        }
+
+        // Search and filter functionality
+        function addSearchCapability() {
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.placeholder = 'Search contacts...';
+            searchInput.style.cssText = `
+                margin: 10px;
+                padding: 8px 12px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                font-size: 14px;
+                width: 250px;
+            `;
+            
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const rows = document.querySelectorAll('.rep-table tbody tr');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+            
+            // Add search input to the teams tab
+            const teamsTab = document.getElementById('teams');
+            teamsTab.insertBefore(searchInput, teamsTab.firstChild);
+        }
+
+        // Enhanced notifications with types
+        function showEnhancedNotification(message, type = 'success', duration = 3000) {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notificationText');
+            
+            // Reset classes
+            notification.className = 'notification';
+            
+            // Add type-specific styling
+            const colors = {
+                success: '#28a745',
+                warning: '#ffc107',
+                error: '#dc3545',
+                info: '#17a2b8'
+            };
+            
+            notification.style.background = colors[type] || colors.success;
+            text.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, duration);
+        }
+
+        // Initialize enhanced features
+        setTimeout(() => {
+            addSearchCapability();
+            enableAutoRefresh(30); // Auto-refresh every 30 minutes
+            trackPerformance();
+        }, 1000);
+    </script>
+</body>
+</html>
