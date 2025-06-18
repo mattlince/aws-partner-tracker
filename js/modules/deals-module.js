@@ -314,4 +314,262 @@ class DealsModule {
             document.getElementById('dealCloseDate').value = futureDate.toISOString().split('T')[0];
             
             // Auto-update probability when stage changes
-            doc
+            document.getElementById('dealStage').addEventListener('change', (e) => {
+                const stageId = e.target.value;
+                const stages = DataManager.config.dealStages;
+                if (stages[stageId]) {
+                    document.getElementById('dealProbability').value = stages[stageId].probability;
+                }
+            });
+        }, 100);
+
+        // Handle form submission
+        document.getElementById('dealForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const deal = Object.fromEntries(formData.entries());
+            deal.value = parseInt(deal.value) || 0;
+            deal.probability = parseInt(deal.probability) || 0;
+            
+            DataManager.addDeal(deal);
+            UIHelpers.closeModal('dealModal');
+            UIHelpers.showNotification('Deal added successfully');
+        });
+
+        UIHelpers.showModal('dealModal');
+    }
+
+    getContactOptions() {
+        const contacts = DataManager.getContacts();
+        const teams = DataManager.getTeams();
+        let options = '';
+        
+        Object.keys(contacts).forEach(teamId => {
+            const teamContacts = contacts[teamId] || [];
+            teamContacts.forEach(contact => {
+                options += `<option value="${contact.id}">${contact.name} (${teams[teamId]?.name || teamId})</option>`;
+            });
+        });
+        
+        return options;
+    }
+
+    renderDealsTable() {
+        const tbody = document.getElementById('dealsTableBody');
+        if (!tbody) return;
+        
+        const deals = this.getFilteredDeals();
+        
+        if (deals.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #666;">No deals found. Click "Add New Deal" to get started.</td></tr>';
+            this.renderPipelineSummary([]);
+            return;
+        }
+        
+        tbody.innerHTML = deals.map(deal => this.renderDealRow(deal)).join('');
+        this.renderPipelineSummary(deals);
+    }
+
+    renderDealRow(deal) {
+        const contactName = DataManager.getContactName(deal.contactId);
+        const weightedValue = (deal.value * (deal.probability / 100));
+        const daysToClose = this.calculateDaysToClose(deal.closeDate);
+        const daysClass = this.getDaysClass(daysToClose);
+        
+        return `
+            <tr>
+                <td><strong>${deal.name}</strong></td>
+                <td>${contactName}</td>
+                <td><strong>$${(deal.value / 1000).toFixed(0)}K</strong></td>
+                <td>
+                    <select class="stage-select stage-${deal.stage}" onchange="dealsModule.changeDealStage('${deal.id}', this.value)">
+                        ${Object.keys(DataManager.config.dealStages).map(stageId => `
+                            <option value="${stageId}" ${stageId === deal.stage ? 'selected' : ''}>
+                                ${DataManager.config.dealStages[stageId].name}
+                            </option>
+                        `).join('')}
+                    </select>
+                </td>
+                <td>
+                    <div class="progress-indicator">
+                        <span>${deal.probability}%</span>
+                        <div class="progress-bar-small">
+                            <div class="progress-fill-small" style="width: ${deal.probability}%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td><strong>$${(weightedValue / 1000).toFixed(0)}K</strong></td>
+                <td>${UIHelpers.formatDate(deal.closeDate)}</td>
+                <td>
+                    <span class="days-indicator ${daysClass}">
+                        ${daysToClose > 0 ? `${daysToClose} days` : daysToClose === 0 ? 'Today' : `${Math.abs(daysToClose)} days overdue`}
+                    </span>
+                </td>
+                <td>
+                    <button class="action-btn" onclick="dealsModule.editDeal('${deal.id}')">Edit</button>
+                    <button class="action-btn danger" onclick="dealsModule.deleteDeal('${deal.id}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    }
+
+    calculateDaysToClose(closeDate) {
+        const today = new Date();
+        const close = new Date(closeDate);
+        const diffTime = close - today;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    getDaysClass(days) {
+        if (days < 0) return 'days-overdue';
+        if (days <= 7) return 'days-urgent';
+        return 'days-normal';
+    }
+
+    renderPipelineSummary(deals) {
+        const container = document.getElementById('pipelineSummary');
+        if (!container) return;
+
+        const activeDeals = deals.filter(d => !['deal-won', 'deal-lost'].includes(d.stage));
+        const totalValue = activeDeals.reduce((sum, deal) => sum + deal.value, 0);
+        const weightedValue = activeDeals.reduce((sum, deal) => sum + (deal.value * (deal.probability / 100)), 0);
+        const avgProbability = activeDeals.length > 0 ? 
+            activeDeals.reduce((sum, deal) => sum + deal.probability, 0) / activeDeals.length : 0;
+
+        container.innerHTML = `
+            <div class="summary-card">
+                <div class="summary-value" style="color: #17a2b8;">$${(totalValue / 1000).toFixed(0)}K</div>
+                <div class="summary-label">Total Pipeline</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" style="color: #28a745;">$${(weightedValue / 1000).toFixed(0)}K</div>
+                <div class="summary-label">Weighted Pipeline</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" style="color: #ffc107;">${activeDeals.length}</div>
+                <div class="summary-label">Active Deals</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" style="color: #fd7e14;">${avgProbability.toFixed(0)}%</div>
+                <div class="summary-label">Avg Probability</div>
+            </div>
+        `;
+    }
+
+    getFilteredDeals() {
+        const deals = DataManager.getDeals();
+        const stageFilter = document.getElementById('filterByStage')?.value || '';
+        const contactFilter = document.getElementById('filterByContact')?.value || '';
+        
+        return deals.filter(deal => {
+            const matchesStage = !stageFilter || deal.stage === stageFilter;
+            const matchesContact = !contactFilter || deal.contactId === contactFilter;
+            return matchesStage && matchesContact;
+        });
+    }
+
+    filterDeals() {
+        this.renderDealsTable();
+    }
+
+    changeDealStage(dealId, newStage) {
+        const deal = DataManager.getDeals().find(d => d.id === dealId);
+        if (deal) {
+            deal.stage = newStage;
+            deal.probability = DataManager.config.dealStages[newStage].probability;
+            DataManager.emit('deal:updated', deal);
+            this.renderDealsTable();
+            UIHelpers.showNotification(`Deal moved to ${DataManager.config.dealStages[newStage].name}`);
+        }
+    }
+
+    editDeal(dealId) {
+        const deal = DataManager.getDeals().find(d => d.id === dealId);
+        if (!deal) return;
+
+        // Pre-populate the form with existing data
+        this.addNewDeal();
+        setTimeout(() => {
+            document.getElementById('dealId').value = deal.id;
+            document.getElementById('dealName').value = deal.name;
+            document.getElementById('dealValue').value = deal.value;
+            document.getElementById('dealContact').value = deal.contactId;
+            document.getElementById('dealStage').value = deal.stage;
+            document.getElementById('dealProbability').value = deal.probability;
+            document.getElementById('dealCloseDate').value = deal.closeDate;
+            document.getElementById('dealDescription').value = deal.description || '';
+        }, 100);
+    }
+
+    deleteDeal(dealId) {
+        if (confirm('Are you sure you want to delete this deal?')) {
+            const deals = DataManager.getDeals();
+            const index = deals.findIndex(d => d.id === dealId);
+            if (index >= 0) {
+                deals.splice(index, 1);
+                DataManager.emit('deal:deleted', dealId);
+                this.renderDealsTable();
+                UIHelpers.showNotification('Deal deleted successfully');
+            }
+        }
+    }
+
+    exportDeals() {
+        const deals = DataManager.getDeals();
+        if (deals.length === 0) {
+            UIHelpers.showNotification('No deals to export', 3000, 'warning');
+            return;
+        }
+        
+        let csv = 'Deal Name,Contact,Value,Stage,Probability,Weighted Value,Close Date,Description\n';
+        deals.forEach(deal => {
+            const contactName = DataManager.getContactName(deal.contactId);
+            const weightedValue = deal.value * (deal.probability / 100);
+            const stageName = DataManager.config.dealStages[deal.stage].name;
+            csv += `"${deal.name}","${contactName}",${deal.value},"${stageName}",${deal.probability},${weightedValue},"${deal.closeDate}","${deal.description || ''}"\n`;
+        });
+        
+        this.downloadFile(csv, 'aws_deals_export.csv', 'text/csv');
+    }
+
+    showPipelineReport() {
+        const deals = DataManager.getDeals();
+        const stages = DataManager.config.dealStages;
+        
+        let report = 'Pipeline Report\n\n';
+        
+        Object.keys(stages).forEach(stageId => {
+            const stageDeals = deals.filter(d => d.stage === stageId);
+            const stageValue = stageDeals.reduce((sum, deal) => sum + deal.value, 0);
+            report += `${stages[stageId].name}: ${stageDeals.length} deals, $${(stageValue/1000).toFixed(0)}K\n`;
+        });
+        
+        alert(report);
+    }
+
+    downloadFile(content, filename, contentType) {
+        const blob = new Blob([content], { type: contentType });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        UIHelpers.showNotification(`${filename} downloaded successfully`);
+    }
+
+    // Event handler for data changes from other modules
+    onEvent(eventType, data) {
+        switch(eventType) {
+            case 'deal:updated':
+            case 'deal:deleted':
+                this.renderIfActive();
+                break;
+        }
+    }
+}
+
+// Create global instance
+const dealsModule = new DealsModule();
