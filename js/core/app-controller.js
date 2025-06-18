@@ -46,6 +46,12 @@ const AppController = {
             touchpointsModule.init();
             console.log('Touchpoints module registered');
         }
+
+        if (typeof teamsModule !== 'undefined') {
+    this.modules.teams = teamsModule;
+    teamsModule.init();
+    console.log('Teams module registered');
+}
     },
 
     showTab(tabName) {
