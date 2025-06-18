@@ -58,6 +58,12 @@ const AppController = {
             touchpointsModule.init();
             console.log('Touchpoints module registered');
         }
+
+        if (typeof relationshipsModule !== 'undefined') {
+            this.modules.relationships = relationshipsModule;
+            relationshipsModule.init();
+            console.log('Relationships module registered');
+        }
     },
 
     showTab(tabName) {
