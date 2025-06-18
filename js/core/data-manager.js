@@ -211,7 +211,39 @@ const DataManager = {
             this.saveToStorage();
         }
     },
+// Add to DataManager object
+getRelationships() {
+    return this.data.relationships || [];
+},
 
+addRelationship(relationship) {
+    if (!this.data.relationships) this.data.relationships = [];
+    relationship.id = relationship.id || this.generateId();
+    relationship.createdAt = new Date().toISOString();
+    this.data.relationships.push(relationship);
+    this.emit('relationship:added', relationship);
+    this.saveToStorage();
+},
+
+updateRelationship(updatedRelationship) {
+    const relationships = this.getRelationships();
+    const index = relationships.findIndex(r => r.id === updatedRelationship.id);
+    if (index >= 0) {
+        relationships[index] = { ...relationships[index], ...updatedRelationship };
+        this.emit('relationship:updated', relationships[index]);
+        this.saveToStorage();
+    }
+},
+
+deleteRelationship(relationshipId) {
+    if (!this.data.relationships) return;
+    const index = this.data.relationships.findIndex(r => r.id === relationshipId);
+    if (index >= 0) {
+        this.data.relationships.splice(index, 1);
+        this.emit('relationship:deleted', relationshipId);
+        this.saveToStorage();
+    }
+},
     // Utility methods
     generateId() {
         return 'id_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
