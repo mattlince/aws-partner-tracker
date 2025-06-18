@@ -72,7 +72,51 @@ const DataManager = {
             this.saveToStorage();
         }, 30000);
     },
+// Add these methods to your DataManager object:
 
+// Team Members methods
+getTeamMembers() {
+    return this.data.teamMembers || {};
+},
+
+getTeamMember(teamId, memberId) {
+    const teamMembers = this.getTeamMembers();
+    const members = teamMembers[teamId] || [];
+    return members.find(member => member.id === memberId);
+},
+
+addTeamMember(teamId, member) {
+    if (!this.data.teamMembers) this.data.teamMembers = {};
+    if (!this.data.teamMembers[teamId]) this.data.teamMembers[teamId] = [];
+    
+    member.id = member.id || this.generateId();
+    member.addedAt = new Date().toISOString();
+    this.data.teamMembers[teamId].push(member);
+    this.emit('team-member:added', member);
+    this.saveToStorage();
+},
+
+updateTeamMember(teamId, updatedMember) {
+    const teamMembers = this.getTeamMembers();
+    const members = teamMembers[teamId] || [];
+    const index = members.findIndex(m => m.id === updatedMember.id);
+    if (index >= 0) {
+        members[index] = { ...members[index], ...updatedMember };
+        this.emit('team-member:updated', members[index]);
+        this.saveToStorage();
+    }
+},
+
+removeTeamMember(teamId, memberId) {
+    const teamMembers = this.getTeamMembers();
+    const members = teamMembers[teamId] || [];
+    const index = members.findIndex(m => m.id === memberId);
+    if (index >= 0) {
+        members.splice(index, 1);
+        this.emit('team-member:removed', memberId);
+        this.saveToStorage();
+    }
+},
     // Teams methods
     getTeams() {
         return this.data.teams;
