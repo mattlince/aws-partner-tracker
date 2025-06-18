@@ -23,30 +23,40 @@ const AppController = {
 
     initializeModules() {
         // Register modules as they become available
-        this.registerModule('dashboard', DashboardModule);
-        this.registerModule('contacts', ContactsModule);
-        this.registerModule('deals', DealsModule);
-        this.registerModule('touchpoints', TouchpointsModule);
-        // Add more modules as we create them
-    },
-
-    registerModule(name, moduleClass) {
-        if (typeof moduleClass !== 'undefined') {
-            this.modules[name] = new moduleClass();
-            this.modules[name].init();
-            console.log(`Module ${name} registered and initialized`);
+        if (typeof dashboardModule !== 'undefined') {
+            this.modules.dashboard = dashboardModule;
+            dashboardModule.init();
+            console.log('Dashboard module registered');
+        }
+        
+        if (typeof contactsModule !== 'undefined') {
+            this.modules.contacts = contactsModule;
+            contactsModule.init();
+            console.log('Contacts module registered');
+        }
+        
+        if (typeof dealsModule !== 'undefined') {
+            this.modules.deals = dealsModule;
+            dealsModule.init();
+            console.log('Deals module registered');
+        }
+        
+        if (typeof touchpointsModule !== 'undefined') {
+            this.modules.touchpoints = touchpointsModule;
+            touchpointsModule.init();
+            console.log('Touchpoints module registered');
         }
     },
 
     showTab(tabName) {
         // Update tab UI
-        document.querySelectorAll('.tab-content').forEach(content => 
-            content.classList.remove('active'));
         document.querySelectorAll('.tab').forEach(tab => 
             tab.classList.remove('active'));
         
         // Find and activate the clicked tab
-        event.target.classList.add('active');
+        if (event && event.target) {
+            event.target.classList.add('active');
+        }
         
         // Clear content area and show loading
         const contentArea = document.getElementById('content-area');
@@ -56,7 +66,10 @@ const AppController = {
         if (this.modules[tabName]) {
             this.modules[tabName].render(contentArea);
         } else {
-            contentArea.innerHTML = `<h3>${tabName.charAt(0).toUpperCase() + tabName.slice(1)} - Coming Soon</h3>`;
+            contentArea.innerHTML = `
+                <h3>${tabName.charAt(0).toUpperCase() + tabName.slice(1)} - Coming Soon</h3>
+                <p>This module will be available in the next update.</p>
+            `;
         }
         
         this.currentTab = tabName;
@@ -88,7 +101,7 @@ const AppController = {
         
         // Render dashboard
         if (this.modules.dashboard) {
-            this.modules.dashboard.updateMetrics();
+            this.modules.dashboard.render();
         }
         
         // Show default tab
@@ -102,5 +115,19 @@ const AppController = {
                 module.onEvent(event, data);
             }
         });
+    },
+
+    // Utility method to refresh all modules
+    refreshAll() {
+        Object.values(this.modules).forEach(module => {
+            if (module.refresh) {
+                module.refresh();
+            }
+        });
+    },
+
+    // Method to get a specific module
+    getModule(name) {
+        return this.modules[name];
     }
 };
