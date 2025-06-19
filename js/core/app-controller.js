@@ -21,50 +21,51 @@ const AppController = {
         UIHelpers.showNotification('Partner Management System loaded successfully!', 4000);
     },
 
-    initializeModules() {
-        // Register modules as they become available
-        if (typeof dashboardModule !== 'undefined') {
-            this.modules.dashboard = dashboardModule;
-            dashboardModule.init();
-            console.log('Dashboard module registered');
-        }
-        
-        if (typeof contactsModule !== 'undefined') {
-            this.modules.contacts = contactsModule;
-            contactsModule.init();
-            console.log('Contacts module registered');
-        }
-        
-        if (typeof touchpointsModule !== 'undefined') {
-            this.modules.touchpoints = touchpointsModule;
-            touchpointsModule.init();
-            console.log('Touchpoints module registered');
-        }
-
-        if (typeof teamsModule !== 'undefined') {
-            this.modules.teams = teamsModule;
-            teamsModule.init();
-            console.log('Teams module registered');
-        }
-
-        if (typeof touchpointsModule !== 'undefined') {
-            this.modules.touchpoints = touchpointsModule;
-            touchpointsModule.init();
-            console.log('Touchpoints module registered');
-        }
-
-        if (typeof relationshipsModule !== 'undefined') {
-            this.modules.relationships = relationshipsModule;
-            relationshipsModule.init();
-            console.log('Relationships module registered');
-        }
-
-        if (typeof pipelineModule !== 'undefined') {
-            this.modules.pipeline = pipelineModule;
-            pipelineModule.init();
-            console.log('Pipeline module registered');
-        }
-    },
+   initializeModules() {
+    console.log('Initializing modules...');
+    
+    // Register dashboard module
+    if (typeof dashboardModule !== 'undefined') {
+        this.modules.dashboard = dashboardModule;
+        dashboardModule.init();
+        console.log('Dashboard module registered');
+    }
+    
+    // Register contacts module
+    if (typeof contactsModule !== 'undefined') {
+        this.modules.contacts = contactsModule;
+        contactsModule.init();
+        console.log('Contacts module registered');
+    }
+    
+    // Register teams module
+    if (typeof teamsModule !== 'undefined') {
+        this.modules.teams = teamsModule;
+        teamsModule.init();
+        console.log('Teams module registered');
+    }
+    
+    // Register pipeline module (NOT deals)
+    if (typeof pipelineModule !== 'undefined') {
+        this.modules.pipeline = pipelineModule;
+        pipelineModule.init();
+        console.log('Pipeline module registered');
+    }
+    
+    // Register touchpoints module
+    if (typeof touchpointsModule !== 'undefined') {
+        this.modules.touchpoints = touchpointsModule;
+        touchpointsModule.init();
+        console.log('Touchpoints module registered');
+    }
+    
+    // Register relationships module
+    if (typeof relationshipsModule !== 'undefined') {
+        this.modules.relationships = relationshipsModule;
+        relationshipsModule.init();
+        console.log('Relationships module registered');
+    }
+}
 
     showTab(tabName) {
         // Update tab UI
