@@ -140,9 +140,9 @@ class DashboardModule {
                 </div>
 
                 <div class="dashboard-grid">
-                    <div class="dashboard-card">
+                    <div class="dashboard-card pipeline-card">
                         <h3>Pipeline by Stage</h3>
-                        <div id="pipelineChart" class="chart-container">
+                        <div id="pipelineChart" class="chart-container pipeline-chart">
                             ${this.renderPipelineChart()}
                         </div>
                     </div>
@@ -188,6 +188,7 @@ class DashboardModule {
             <style>
                 .dashboard-container {
                     max-width: 100%;
+                    padding: 0 10px;
                 }
                 .dashboard-header {
                     display: flex;
@@ -209,6 +210,7 @@ class DashboardModule {
                 .dashboard-actions {
                     display: flex;
                     gap: 10px;
+                    flex-wrap: wrap;
                 }
                 .action-btn {
                     background: #FF9900;
@@ -232,20 +234,21 @@ class DashboardModule {
                 }
                 .kpi-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 20px;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 15px;
                     margin-bottom: 30px;
                 }
                 .kpi-card {
                     background: white;
                     border-radius: 12px;
-                    padding: 20px;
+                    padding: 15px;
                     display: flex;
                     align-items: center;
-                    gap: 15px;
+                    gap: 12px;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
                     border-left: 4px solid #FF9900;
                     transition: all 0.3s ease;
+                    min-height: 80px;
                 }
                 .kpi-card:hover {
                     transform: translateY(-2px);
@@ -258,130 +261,171 @@ class DashboardModule {
                 .kpi-card.touchpoints { border-left-color: #6610f2; }
                 .kpi-card.forecast { border-left-color: #e83e8c; }
                 .kpi-icon {
-                    font-size: 2em;
+                    font-size: 1.5em;
                     opacity: 0.8;
+                    flex-shrink: 0;
                 }
                 .kpi-content {
                     flex: 1;
+                    min-width: 0;
                 }
                 .kpi-value {
-                    font-size: 1.8em;
+                    font-size: 1.4em;
                     font-weight: bold;
                     color: #232F3E;
-                    margin-bottom: 5px;
+                    margin-bottom: 2px;
                 }
                 .kpi-label {
-                    font-size: 0.9em;
+                    font-size: 0.8em;
                     color: #666;
-                    margin-bottom: 5px;
+                    margin-bottom: 2px;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                 }
                 .kpi-change {
-                    font-size: 0.8em;
+                    font-size: 0.75em;
                     color: #28a745;
                     font-weight: 500;
                 }
                 .dashboard-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
                     gap: 20px;
                 }
                 .dashboard-card {
                     background: white;
                     border-radius: 12px;
-                    padding: 25px;
+                    padding: 20px;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
                     transition: all 0.3s ease;
+                    min-height: 250px;
                 }
                 .dashboard-card:hover {
                     transform: translateY(-2px);
                     box-shadow: 0 8px 30px rgba(0,0,0,0.12);
                 }
                 .dashboard-card h3 {
-                    margin: 0 0 20px 0;
+                    margin: 0 0 15px 0;
                     color: #232F3E;
-                    font-size: 1.2em;
+                    font-size: 1.1em;
                 }
                 .chart-container {
-                    height: 200px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                    color: #666;
+                    height: 180px;
+                    overflow-y: auto;
+                }
+                .pipeline-chart {
+                    max-height: 180px;
+                    overflow-y: auto;
+                    padding-right: 8px;
+                }
+                .pipeline-chart::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .pipeline-chart::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 2px;
+                }
+                .pipeline-chart::-webkit-scrollbar-thumb {
+                    background: #c1c1c1;
+                    border-radius: 2px;
+                }
+                .pipeline-chart::-webkit-scrollbar-thumb:hover {
+                    background: #a8a8a8;
                 }
                 .activity-feed {
-                    max-height: 250px;
+                    max-height: 180px;
                     overflow-y: auto;
+                    padding-right: 8px;
+                }
+                .activity-feed::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .activity-feed::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 2px;
+                }
+                .activity-feed::-webkit-scrollbar-thumb {
+                    background: #c1c1c1;
+                    border-radius: 2px;
                 }
                 .activity-item {
                     display: flex;
                     align-items: center;
-                    gap: 12px;
-                    padding: 12px 0;
+                    gap: 10px;
+                    padding: 8px 0;
                     border-bottom: 1px solid #eee;
                 }
                 .activity-item:last-child {
                     border-bottom: none;
                 }
                 .activity-icon {
-                    font-size: 1.2em;
+                    font-size: 1em;
                     opacity: 0.7;
+                    flex-shrink: 0;
                 }
                 .activity-content {
                     flex: 1;
+                    min-width: 0;
                 }
                 .activity-text {
-                    font-size: 0.9em;
+                    font-size: 0.85em;
                     color: #333;
                     margin-bottom: 2px;
+                    line-height: 1.3;
                 }
                 .activity-time {
-                    font-size: 0.8em;
+                    font-size: 0.75em;
                     color: #666;
                 }
                 .quick-actions {
                     display: grid;
                     grid-template-columns: 1fr 1fr;
-                    gap: 10px;
+                    gap: 8px;
                 }
                 .quick-action-btn {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
-                    padding: 12px;
+                    gap: 8px;
+                    padding: 10px;
                     background: #f8f9fa;
                     border: 1px solid #dee2e6;
                     border-radius: 8px;
                     cursor: pointer;
                     transition: all 0.3s ease;
                     text-align: left;
+                    font-size: 0.85em;
                 }
                 .quick-action-btn:hover {
                     background: #e9ecef;
                     transform: translateY(-1px);
                 }
                 .quick-action-icon {
-                    font-size: 1.1em;
+                    font-size: 1em;
+                    flex-shrink: 0;
                 }
                 .pipeline-stage {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 8px 0;
+                    padding: 6px 0;
                     border-bottom: 1px solid #eee;
+                    min-height: 30px;
                 }
                 .pipeline-stage:last-child {
                     border-bottom: none;
+                }
+                .stage-name {
+                    min-width: 80px;
+                    font-size: 0.8em;
+                    color: #333;
+                    flex-shrink: 0;
                 }
                 .stage-bar {
                     flex: 1;
                     height: 6px;
                     background: #e9ecef;
                     border-radius: 3px;
-                    margin: 0 10px;
+                    margin: 0 8px;
                     overflow: hidden;
                 }
                 .stage-fill {
@@ -390,22 +434,63 @@ class DashboardModule {
                     border-radius: 3px;
                     transition: width 0.3s ease;
                 }
+                .stage-value {
+                    min-width: 50px;
+                    text-align: right;
+                    font-size: 0.8em;
+                    font-weight: bold;
+                    color: #333;
+                    flex-shrink: 0;
+                }
                 .team-item {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 10px;
+                    padding: 8px;
                     background: #f8f9fa;
                     border-radius: 6px;
-                    margin-bottom: 8px;
+                    margin-bottom: 6px;
                 }
                 .team-name {
                     font-weight: 500;
                     color: #232F3E;
+                    font-size: 0.9em;
                 }
                 .team-metric {
-                    font-size: 0.9em;
+                    font-size: 0.85em;
                     color: #666;
+                    font-weight: bold;
+                }
+                
+                @media (max-width: 768px) {
+                    .dashboard-container {
+                        padding: 0 5px;
+                    }
+                    .kpi-grid {
+                        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                        gap: 10px;
+                    }
+                    .kpi-card {
+                        padding: 12px;
+                        gap: 8px;
+                    }
+                    .kpi-icon {
+                        font-size: 1.2em;
+                    }
+                    .kpi-value {
+                        font-size: 1.2em;
+                    }
+                    .dashboard-grid {
+                        grid-template-columns: 1fr;
+                        gap: 15px;
+                    }
+                    .dashboard-card {
+                        padding: 15px;
+                        min-height: 200px;
+                    }
+                    .quick-actions {
+                        grid-template-columns: 1fr;
+                    }
                 }
             </style>
         `;
@@ -417,7 +502,7 @@ class DashboardModule {
             const stages = DataManager.config ? DataManager.config.dealStages : {};
             
             if (Object.keys(stages).length === 0) {
-                return '<div style="color: #666; font-style: italic;">No pipeline data available</div>';
+                return '<div style="color: #666; font-style: italic; text-align: center; padding: 20px;">No pipeline data available</div>';
             }
             
             const maxValue = Math.max(...Object.keys(stages).map(stageId => {
@@ -432,20 +517,18 @@ class DashboardModule {
                 
                 return `
                     <div class="pipeline-stage">
-                        <span style="min-width: 100px; font-size: 0.9em;">${stage.name}</span>
+                        <span class="stage-name">${stage.name}</span>
                         <div class="stage-bar">
                             <div class="stage-fill" style="width: ${percentage}%;"></div>
                         </div>
-                        <span style="min-width: 60px; text-align: right; font-size: 0.9em; font-weight: bold;">
-                            $${(stageValue / 1000).toFixed(0)}K
-                        </span>
+                        <span class="stage-value">$${(stageValue / 1000).toFixed(0)}K</span>
                     </div>
                 `;
             }).join('');
             
         } catch (error) {
             console.error('Error rendering pipeline chart:', error);
-            return '<div style="color: #dc3545;">Error loading pipeline data</div>';
+            return '<div style="color: #dc3545; text-align: center; padding: 20px;">Error loading pipeline data</div>';
         }
     }
 
@@ -456,10 +539,10 @@ class DashboardModule {
             const contacts = DataManager.getContacts ? DataManager.getContacts() : {};
             
             if (Object.keys(teams).length === 0) {
-                return '<div style="color: #666; font-style: italic;">No team data available</div>';
+                return '<div style="color: #666; font-style: italic; text-align: center; padding: 20px;">No team data available</div>';
             }
             
-            return Object.keys(teams).map(teamId => {
+            return Object.keys(teams).slice(0, 5).map(teamId => {
                 const team = teams[teamId];
                 const teamContacts = contacts[teamId] || [];
                 const teamDeals = deals.filter(deal => 
@@ -477,7 +560,7 @@ class DashboardModule {
             
         } catch (error) {
             console.error('Error rendering team performance:', error);
-            return '<div style="color: #dc3545;">Error loading team data</div>';
+            return '<div style="color: #dc3545; text-align: center; padding: 20px;">Error loading team data</div>';
         }
     }
 
@@ -486,7 +569,7 @@ class DashboardModule {
             const touchpoints = DataManager.getTouchpoints ? DataManager.getTouchpoints() : [];
             const recentTouchpoints = touchpoints
                 .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
-                .slice(0, 5);
+                .slice(0, 8);
             
             if (recentTouchpoints.length === 0) {
                 return `
@@ -525,7 +608,7 @@ class DashboardModule {
             
         } catch (error) {
             console.error('Error rendering recent activity:', error);
-            return '<div style="color: #dc3545;">Error loading activity data</div>';
+            return '<div style="color: #dc3545; text-align: center; padding: 20px;">Error loading activity data</div>';
         }
     }
 
