@@ -1,67 +1,42 @@
-// Dashboard Module - Main overview and KPIs
+// Enhanced Dashboard Module with Inline Quick Actions
 class DashboardModule {
     constructor() {
-        this.metrics = {
-            totalPipeline: 0,
-            totalDeals: 0,
-            avgDealSize: 0,
-            totalContacts: 0,
-            activeTeams: 0,
-            recentTouchpoints: 0
-        };
+        this.refreshInterval = null;
+        this.autoRefresh = true;
     }
 
     init() {
         console.log('Dashboard module initialized');
         
-        // Listen for data changes to update metrics
-        DataManager.on('deal:updated', () => this.refreshMetrics());
-        DataManager.on('deal:added', () => this.refreshMetrics());
-        DataManager.on('contact:updated', () => this.refreshMetrics());
-        DataManager.on('contact:added', () => this.refreshMetrics());
-        DataManager.on('data:loaded', () => this.refreshMetrics());
+        // Listen for data changes
+        DataManager.on('contact:added', () => this.renderIfActive());
+        DataManager.on('contact:updated', () => this.renderIfActive());
+        DataManager.on('pipeline:added', () => this.renderIfActive());
+        DataManager.on('pipeline:updated', () => this.renderIfActive());
+        DataManager.on('touchpoint:added', () => this.renderIfActive());
+        DataManager.on('task:added', () => this.renderIfActive());
+        DataManager.on('task:updated', () => this.renderIfActive());
+        DataManager.on('data:loaded', () => this.renderIfActive());
+        
+        // Start auto-refresh
+        this.startAutoRefresh();
     }
 
     render(container) {
-        this.calculateMetrics();
         container.innerHTML = this.getHTML();
         this.setupEventListeners();
-        this.renderCharts();
+        this.renderStats();
+        this.renderRecentActivity();
+        this.renderQuickActions();
+        this.renderUpcomingTasks();
     }
 
-    calculateMetrics() {
-        try {
-            // Get data safely
-            const deals = DataManager.getDeals ? DataManager.getDeals() : [];
-            const contacts = DataManager.getAllContacts ? DataManager.getAllContacts() : [];
-            const teams = DataManager.getTeams ? DataManager.getTeams() : {};
-            const touchpoints = DataManager.getTouchpoints ? DataManager.getTouchpoints() : [];
-            
-            // Calculate metrics
-            this.metrics.totalPipeline = deals.reduce((sum, deal) => sum + (deal.value || 0), 0);
-            this.metrics.totalDeals = deals.length;
-            this.metrics.avgDealSize = deals.length > 0 ? this.metrics.totalPipeline / deals.length : 0;
-            this.metrics.totalContacts = contacts.length;
-            this.metrics.activeTeams = Object.keys(teams).length;
-            
-            // Recent touchpoints (last 30 days)
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            this.metrics.recentTouchpoints = touchpoints.filter(tp => {
-                return new Date(tp.date || tp.createdAt) >= thirtyDaysAgo;
-            }).length;
-            
-        } catch (error) {
-            console.error('Error calculating metrics:', error);
-            // Set default values on error
-            this.metrics = {
-                totalPipeline: 0,
-                totalDeals: 0,
-                avgDealSize: 0,
-                totalContacts: 0,
-                activeTeams: 0,
-                recentTouchpoints: 0
-            };
+    renderIfActive() {
+        if (AppController.currentTab === 'dashboard') {
+            const container = document.getElementById('content-area');
+            if (container) {
+                this.render(container);
+            }
         }
     }
 
@@ -70,116 +45,97 @@ class DashboardModule {
             <div class="dashboard-container">
                 <div class="dashboard-header">
                     <div>
-                        <h2>📊 Dashboard Overview</h2>
-                        <p>Real-time insights and key performance indicators</p>
+                        <h2>🏠 Dashboard</h2>
+                        <p>Welcome back! Here's what's happening with your AWS partnerships.</p>
                     </div>
-                    <div class="dashboard-actions">
-                        <button class="action-btn" onclick="dashboardModule.refreshData()">
-                            🔄 Refresh Data
+                    <div class="dashboard-controls">
+                        <button class="action-btn secondary" onclick="backupManager.showBackupManager()">
+                            🔒 Backup Data
                         </button>
-                        <button class="action-btn secondary" onclick="dashboardModule.exportReport()">
-                            📊 Export Report
+                        <button class="action-btn" onclick="dashboardModule.refreshDashboard()">
+                            🔄 Refresh
                         </button>
                     </div>
                 </div>
 
-                <div class="kpi-grid">
-                    <div class="kpi-card pipeline">
-                        <div class="kpi-icon">💰</div>
-                        <div class="kpi-content">
-                            <div class="kpi-value">$${(this.metrics.totalPipeline / 1000000).toFixed(1)}M</div>
-                            <div class="kpi-label">Total Pipeline</div>
-                            <div class="kpi-change">+12% vs last month</div>
-                        </div>
-                    </div>
-
-                    <div class="kpi-card deals">
-                        <div class="kpi-icon">🚀</div>
-                        <div class="kpi-content">
-                            <div class="kpi-value">${this.metrics.totalDeals}</div>
-                            <div class="kpi-label">Active Deals</div>
-                            <div class="kpi-change">+${Math.max(0, this.metrics.totalDeals - 10)} new this month</div>
-                        </div>
-                    </div>
-
-                    <div class="kpi-card contacts">
-                        <div class="kpi-icon">👥</div>
-                        <div class="kpi-content">
-                            <div class="kpi-value">${this.metrics.totalContacts}</div>
-                            <div class="kpi-label">Total Contacts</div>
-                            <div class="kpi-change">${this.metrics.activeTeams} teams</div>
-                        </div>
-                    </div>
-
-                    <div class="kpi-card average">
-                        <div class="kpi-icon">📈</div>
-                        <div class="kpi-content">
-                            <div class="kpi-value">$${(this.metrics.avgDealSize / 1000).toFixed(0)}K</div>
-                            <div class="kpi-label">Avg Deal Size</div>
-                            <div class="kpi-change">+8% efficiency</div>
-                        </div>
-                    </div>
-
-                    <div class="kpi-card touchpoints">
-                        <div class="kpi-icon">📞</div>
-                        <div class="kpi-content">
-                            <div class="kpi-value">${this.metrics.recentTouchpoints}</div>
-                            <div class="kpi-label">Recent Touchpoints</div>
-                            <div class="kpi-change">Last 30 days</div>
-                        </div>
-                    </div>
-
-                    <div class="kpi-card forecast">
-                        <div class="kpi-icon">🎯</div>
-                        <div class="kpi-content">
-                            <div class="kpi-value">${this.calculateQuarterlyForecast()}%</div>
-                            <div class="kpi-label">Quarterly Forecast</div>
-                            <div class="kpi-change">On track</div>
-                        </div>
-                    </div>
+                <!-- Key Metrics -->
+                <div id="dashboardStats" class="stats-grid">
+                    <!-- Stats will be populated here -->
                 </div>
 
+                <!-- Main Dashboard Grid -->
                 <div class="dashboard-grid">
-                    <div class="dashboard-card pipeline-card">
-                        <h3>Pipeline by Stage</h3>
-                        <div id="pipelineChart" class="chart-container pipeline-chart">
-                            ${this.renderPipelineChart()}
+                    <!-- Quick Actions Panel -->
+                    <div class="dashboard-card quick-actions-card">
+                        <div class="card-header">
+                            <h3>⚡ Quick Actions</h3>
+                            <span class="card-subtitle">Common tasks and shortcuts</span>
+                        </div>
+                        <div id="quickActionsContent" class="quick-actions-content">
+                            <!-- Quick actions will be populated here -->
                         </div>
                     </div>
 
-                    <div class="dashboard-card">
-                        <h3>Team Performance</h3>
-                        <div id="teamChart" class="chart-container">
-                            ${this.renderTeamPerformance()}
+                    <!-- Recent Activity -->
+                    <div class="dashboard-card activity-card">
+                        <div class="card-header">
+                            <h3>📈 Recent Activity</h3>
+                            <span class="card-subtitle">Latest updates across all modules</span>
+                        </div>
+                        <div id="recentActivityContent" class="activity-content">
+                            <!-- Recent activity will be populated here -->
                         </div>
                     </div>
 
-                    <div class="dashboard-card">
-                        <h3>Recent Activity</h3>
-                        <div class="activity-feed">
-                            ${this.renderRecentActivity()}
+                    <!-- Upcoming Tasks -->
+                    <div class="dashboard-card tasks-card">
+                        <div class="card-header">
+                            <h3>✅ Task Center</h3>
+                            <span class="card-subtitle">Manage your action items</span>
+                        </div>
+                        <div id="upcomingTasksContent" class="tasks-content">
+                            <!-- Tasks will be populated here -->
                         </div>
                     </div>
 
-                    <div class="dashboard-card">
-                        <h3>Quick Actions</h3>
-                        <div class="quick-actions">
-                            <button class="quick-action-btn" onclick="AppController.switchTab('pipeline')">
-                                <span class="quick-action-icon">🚀</span>
-                                <span>Add New Deal</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="AppController.switchTab('teams')">
-                                <span class="quick-action-icon">👥</span>
-                                <span>Add Contact</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="AppController.switchTab('touchpoints')">
-                                <span class="quick-action-icon">📞</span>
-                                <span>Log Touchpoint</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="AppController.switchTab('relationships')">
-                                <span class="quick-action-icon">🕸️</span>
-                                <span>View Network</span>
-                            </button>
+                    <!-- Pipeline Health -->
+                    <div class="dashboard-card pipeline-health-card">
+                        <div class="card-header">
+                            <h3>💼 Pipeline Health</h3>
+                            <span class="card-subtitle">Deal flow and conversion metrics</span>
+                        </div>
+                        <div id="pipelineHealthContent" class="pipeline-health-content">
+                            <!-- Pipeline health will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inline Task Modal -->
+                <div id="inlineTaskModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <span class="close" onclick="UIHelpers.closeModal('inlineTaskModal')">&times;</span>
+                        <div id="inlineTaskContent">
+                            <!-- Task form will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inline Contact Modal -->
+                <div id="inlineContactModal" class="modal" style="display: none;">
+                    <div class="modal-content" style="max-width: 700px;">
+                        <span class="close" onclick="UIHelpers.closeModal('inlineContactModal')">&times;</span>
+                        <div id="inlineContactContent">
+                            <!-- Contact form will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inline Deal Modal -->
+                <div id="inlineDealModal" class="modal" style="display: none;">
+                    <div class="modal-content" style="max-width: 700px;">
+                        <span class="close" onclick="UIHelpers.closeModal('inlineDealModal')">&times;</span>
+                        <div id="inlineDealContent">
+                            <!-- Deal form will be populated here -->
                         </div>
                     </div>
                 </div>
@@ -188,30 +144,330 @@ class DashboardModule {
             <style>
                 .dashboard-container {
                     max-width: 100%;
-                    padding: 0 10px;
+                    animation: fadeIn 0.5s ease-in;
                 }
+
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+
                 .dashboard-header {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 30px;
+                    margin-bottom: 25px;
                     flex-wrap: wrap;
                     gap: 15px;
                 }
+
                 .dashboard-header h2 {
                     margin: 0;
                     color: #232F3E;
-                    font-size: 1.8em;
+                    font-size: 2em;
                 }
+
                 .dashboard-header p {
                     margin: 5px 0 0 0;
                     color: #666;
+                    font-size: 1.1em;
                 }
-                .dashboard-actions {
+
+                .dashboard-controls {
                     display: flex;
                     gap: 10px;
-                    flex-wrap: wrap;
+                    align-items: center;
                 }
+
+                .stats-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 20px;
+                    margin-bottom: 30px;
+                }
+
+                .stat-card {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 25px;
+                    border-radius: 15px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                .stat-card:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                }
+
+                .stat-card::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    width: 100px;
+                    height: 100px;
+                    background: rgba(255,255,255,0.1);
+                    border-radius: 50%;
+                    transform: translate(30px, -30px);
+                }
+
+                .stat-card.contacts { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+                .stat-card.pipeline { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+                .stat-card.touchpoints { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+                .stat-card.tasks { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+
+                .stat-value {
+                    font-size: 3em;
+                    font-weight: bold;
+                    margin-bottom: 5px;
+                    position: relative;
+                    z-index: 1;
+                }
+
+                .stat-label {
+                    font-size: 1.1em;
+                    opacity: 0.9;
+                    position: relative;
+                    z-index: 1;
+                }
+
+                .stat-trend {
+                    font-size: 0.9em;
+                    margin-top: 8px;
+                    opacity: 0.8;
+                    position: relative;
+                    z-index: 1;
+                }
+
+                .dashboard-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                    gap: 25px;
+                }
+
+                .dashboard-card {
+                    background: white;
+                    border-radius: 15px;
+                    padding: 25px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+                    border: 1px solid #f0f0f0;
+                    transition: all 0.3s ease;
+                    min-height: 300px;
+                }
+
+                .dashboard-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+                }
+
+                .card-header {
+                    margin-bottom: 20px;
+                    border-bottom: 2px solid #f8f9fa;
+                    padding-bottom: 15px;
+                }
+
+                .card-header h3 {
+                    margin: 0;
+                    color: #232F3E;
+                    font-size: 1.3em;
+                }
+
+                .card-subtitle {
+                    color: #666;
+                    font-size: 0.9em;
+                    display: block;
+                    margin-top: 5px;
+                }
+
+                .quick-actions-content {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                    gap: 15px;
+                }
+
+                .quick-action-btn {
+                    background: #f8f9fa;
+                    border: 2px solid #e9ecef;
+                    border-radius: 12px;
+                    padding: 20px 15px;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    text-decoration: none;
+                    color: #495057;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .quick-action-btn:hover {
+                    background: #FF9900;
+                    color: white;
+                    border-color: #FF9900;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 15px rgba(255, 153, 0, 0.3);
+                }
+
+                .quick-action-icon {
+                    font-size: 2em;
+                    margin-bottom: 5px;
+                }
+
+                .quick-action-label {
+                    font-weight: 600;
+                    font-size: 0.9em;
+                }
+
+                .activity-content {
+                    max-height: 400px;
+                    overflow-y: auto;
+                }
+
+                .activity-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    padding: 12px 0;
+                    border-bottom: 1px solid #f0f0f0;
+                    transition: background 0.3s ease;
+                }
+
+                .activity-item:hover {
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    padding-left: 10px;
+                    margin-left: -10px;
+                    margin-right: -10px;
+                }
+
+                .activity-item:last-child {
+                    border-bottom: none;
+                }
+
+                .activity-icon {
+                    width: 35px;
+                    height: 35px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.1em;
+                    flex-shrink: 0;
+                }
+
+                .activity-icon.contact { background: #e3f2fd; color: #1565c0; }
+                .activity-icon.pipeline { background: #fce4ec; color: #c2185b; }
+                .activity-icon.touchpoint { background: #e8f5e8; color: #2e7d32; }
+                .activity-icon.task { background: #fff3e0; color: #ef6c00; }
+
+                .activity-details {
+                    flex: 1;
+                }
+
+                .activity-title {
+                    font-weight: 600;
+                    color: #232F3E;
+                    margin-bottom: 3px;
+                }
+
+                .activity-meta {
+                    font-size: 0.85em;
+                    color: #666;
+                }
+
+                .tasks-content {
+                    max-height: 400px;
+                    overflow-y: auto;
+                }
+
+                .task-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px;
+                    margin: 8px 0;
+                    background: #f8f9fa;
+                    border-radius: 10px;
+                    border-left: 4px solid #FF9900;
+                    transition: all 0.3s ease;
+                }
+
+                .task-item:hover {
+                    background: #e9ecef;
+                    transform: translateX(5px);
+                }
+
+                .task-item.completed {
+                    opacity: 0.6;
+                    border-left-color: #28a745;
+                }
+
+                .task-checkbox {
+                    width: 18px;
+                    height: 18px;
+                    cursor: pointer;
+                }
+
+                .task-content {
+                    flex: 1;
+                }
+
+                .task-title {
+                    font-weight: 600;
+                    color: #232F3E;
+                    margin-bottom: 3px;
+                }
+
+                .task-meta {
+                    font-size: 0.85em;
+                    color: #666;
+                }
+
+                .task-actions {
+                    display: flex;
+                    gap: 5px;
+                }
+
+                .pipeline-health-content {
+                    display: grid;
+                    gap: 15px;
+                }
+
+                .health-metric {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px 15px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    border-left: 4px solid;
+                }
+
+                .health-metric.good { border-left-color: #28a745; }
+                .health-metric.warning { border-left-color: #ffc107; }
+                .health-metric.danger { border-left-color: #dc3545; }
+
+                .metric-label {
+                    font-weight: 600;
+                    color: #232F3E;
+                }
+
+                .metric-value {
+                    font-size: 1.2em;
+                    font-weight: bold;
+                }
+
+                .no-data {
+                    text-align: center;
+                    color: #666;
+                    font-style: italic;
+                    padding: 40px 20px;
+                }
+
                 .action-btn {
                     background: #FF9900;
                     color: white;
@@ -221,274 +477,132 @@ class DashboardModule {
                     cursor: pointer;
                     font-size: 0.9em;
                     transition: all 0.3s ease;
+                    text-decoration: none;
+                    display: inline-block;
                 }
+
                 .action-btn:hover {
                     background: #e68900;
                     transform: translateY(-1px);
                 }
+
                 .action-btn.secondary {
                     background: #6c757d;
                 }
+
                 .action-btn.secondary:hover {
                     background: #5a6268;
                 }
-                .kpi-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 15px;
-                    margin-bottom: 30px;
+
+                .action-btn.small {
+                    padding: 5px 10px;
+                    font-size: 0.8em;
                 }
-                .kpi-card {
-                    background: white;
-                    border-radius: 12px;
-                    padding: 15px;
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-                    border-left: 4px solid #FF9900;
-                    transition: all 0.3s ease;
-                    min-height: 80px;
+
+                .action-btn.danger {
+                    background: #dc3545;
                 }
-                .kpi-card:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+
+                .action-btn.danger:hover {
+                    background: #c82333;
                 }
-                .kpi-card.pipeline { border-left-color: #28a745; }
-                .kpi-card.deals { border-left-color: #007bff; }
-                .kpi-card.contacts { border-left-color: #17a2b8; }
-                .kpi-card.average { border-left-color: #ffc107; }
-                .kpi-card.touchpoints { border-left-color: #6610f2; }
-                .kpi-card.forecast { border-left-color: #e83e8c; }
-                .kpi-icon {
-                    font-size: 1.5em;
-                    opacity: 0.8;
-                    flex-shrink: 0;
+
+                /* Form Styles for Inline Modals */
+                .form-group {
+                    margin-bottom: 15px;
                 }
-                .kpi-content {
-                    flex: 1;
-                    min-width: 0;
-                }
-                .kpi-value {
-                    font-size: 1.4em;
+
+                .form-group label {
+                    display: block;
+                    margin-bottom: 5px;
                     font-weight: bold;
                     color: #232F3E;
-                    margin-bottom: 2px;
                 }
-                .kpi-label {
-                    font-size: 0.8em;
-                    color: #666;
-                    margin-bottom: 2px;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
+
+                .form-group input,
+                .form-group select,
+                .form-group textarea {
+                    width: 100%;
+                    padding: 8px 12px;
+                    border: 1px solid #ddd;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    box-sizing: border-box;
                 }
-                .kpi-change {
-                    font-size: 0.75em;
-                    color: #28a745;
-                    font-weight: 500;
+
+                .form-group textarea {
+                    resize: vertical;
+                    height: 80px;
                 }
-                .dashboard-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                    gap: 20px;
-                }
-                .dashboard-card {
-                    background: white;
-                    border-radius: 12px;
-                    padding: 20px;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-                    transition: all 0.3s ease;
-                    min-height: 250px;
-                }
-                .dashboard-card:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-                }
-                .dashboard-card h3 {
-                    margin: 0 0 15px 0;
-                    color: #232F3E;
-                    font-size: 1.1em;
-                }
-                .chart-container {
-                    height: 180px;
-                    overflow-y: auto;
-                }
-                .pipeline-chart {
-                    max-height: 180px;
-                    overflow-y: auto;
-                    padding-right: 8px;
-                }
-                .pipeline-chart::-webkit-scrollbar {
-                    width: 4px;
-                }
-                .pipeline-chart::-webkit-scrollbar-track {
-                    background: #f1f1f1;
-                    border-radius: 2px;
-                }
-                .pipeline-chart::-webkit-scrollbar-thumb {
-                    background: #c1c1c1;
-                    border-radius: 2px;
-                }
-                .pipeline-chart::-webkit-scrollbar-thumb:hover {
-                    background: #a8a8a8;
-                }
-                .activity-feed {
-                    max-height: 180px;
-                    overflow-y: auto;
-                    padding-right: 8px;
-                }
-                .activity-feed::-webkit-scrollbar {
-                    width: 4px;
-                }
-                .activity-feed::-webkit-scrollbar-track {
-                    background: #f1f1f1;
-                    border-radius: 2px;
-                }
-                .activity-feed::-webkit-scrollbar-thumb {
-                    background: #c1c1c1;
-                    border-radius: 2px;
-                }
-                .activity-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    padding: 8px 0;
-                    border-bottom: 1px solid #eee;
-                }
-                .activity-item:last-child {
-                    border-bottom: none;
-                }
-                .activity-icon {
-                    font-size: 1em;
-                    opacity: 0.7;
-                    flex-shrink: 0;
-                }
-                .activity-content {
-                    flex: 1;
-                    min-width: 0;
-                }
-                .activity-text {
-                    font-size: 0.85em;
-                    color: #333;
-                    margin-bottom: 2px;
-                    line-height: 1.3;
-                }
-                .activity-time {
-                    font-size: 0.75em;
-                    color: #666;
-                }
-                .quick-actions {
+
+                .form-row {
                     display: grid;
                     grid-template-columns: 1fr 1fr;
-                    gap: 8px;
+                    gap: 15px;
                 }
-                .quick-action-btn {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    padding: 10px;
-                    background: #f8f9fa;
-                    border: 1px solid #dee2e6;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    text-align: left;
-                    font-size: 0.85em;
+
+                .form-row-3 {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr 1fr;
+                    gap: 15px;
                 }
-                .quick-action-btn:hover {
-                    background: #e9ecef;
-                    transform: translateY(-1px);
-                }
-                .quick-action-icon {
-                    font-size: 1em;
-                    flex-shrink: 0;
-                }
-                .pipeline-stage {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 6px 0;
-                    border-bottom: 1px solid #eee;
-                    min-height: 30px;
-                }
-                .pipeline-stage:last-child {
-                    border-bottom: none;
-                }
-                .stage-name {
-                    min-width: 80px;
-                    font-size: 0.8em;
-                    color: #333;
-                    flex-shrink: 0;
-                }
-                .stage-bar {
-                    flex: 1;
-                    height: 6px;
-                    background: #e9ecef;
-                    border-radius: 3px;
-                    margin: 0 8px;
-                    overflow: hidden;
-                }
-                .stage-fill {
+
+                /* Modal Styles */
+                .modal {
+                    display: none;
+                    position: fixed;
+                    z-index: 1000;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
                     height: 100%;
-                    background: #FF9900;
-                    border-radius: 3px;
-                    transition: width 0.3s ease;
+                    background-color: rgba(0,0,0,0.5);
+                    backdrop-filter: blur(5px);
                 }
-                .stage-value {
-                    min-width: 50px;
-                    text-align: right;
-                    font-size: 0.8em;
+
+                .modal-content {
+                    background-color: white;
+                    margin: 2% auto;
+                    padding: 30px;
+                    border-radius: 15px;
+                    width: 90%;
+                    max-width: 600px;
+                    max-height: 90vh;
+                    overflow-y: auto;
+                    position: relative;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                }
+
+                .close {
+                    color: #aaa;
+                    float: right;
+                    font-size: 28px;
                     font-weight: bold;
-                    color: #333;
-                    flex-shrink: 0;
+                    cursor: pointer;
+                    position: absolute;
+                    right: 20px;
+                    top: 15px;
                 }
-                .team-item {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 8px;
-                    background: #f8f9fa;
-                    border-radius: 6px;
-                    margin-bottom: 6px;
+
+                .close:hover {
+                    color: #000;
                 }
-                .team-name {
-                    font-weight: 500;
-                    color: #232F3E;
-                    font-size: 0.9em;
-                }
-                .team-metric {
-                    font-size: 0.85em;
-                    color: #666;
-                    font-weight: bold;
-                }
-                
+
                 @media (max-width: 768px) {
-                    .dashboard-container {
-                        padding: 0 5px;
-                    }
-                    .kpi-grid {
-                        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                        gap: 10px;
-                    }
-                    .kpi-card {
-                        padding: 12px;
-                        gap: 8px;
-                    }
-                    .kpi-icon {
-                        font-size: 1.2em;
-                    }
-                    .kpi-value {
-                        font-size: 1.2em;
-                    }
                     .dashboard-grid {
                         grid-template-columns: 1fr;
-                        gap: 15px;
                     }
-                    .dashboard-card {
-                        padding: 15px;
-                        min-height: 200px;
+                    
+                    .stats-grid {
+                        grid-template-columns: repeat(2, 1fr);
                     }
-                    .quick-actions {
+                    
+                    .quick-actions-content {
+                        grid-template-columns: repeat(2, 1fr);
+                    }
+                    
+                    .form-row,
+                    .form-row-3 {
                         grid-template-columns: 1fr;
                     }
                 }
@@ -496,189 +610,519 @@ class DashboardModule {
         `;
     }
 
-    renderPipelineChart() {
-        try {
-            const deals = DataManager.getDeals ? DataManager.getDeals() : [];
-            const stages = DataManager.config ? DataManager.config.dealStages : {};
-            
-            if (Object.keys(stages).length === 0) {
-                return '<div style="color: #666; font-style: italic; text-align: center; padding: 20px;">No pipeline data available</div>';
-            }
-            
-            const maxValue = Math.max(...Object.keys(stages).map(stageId => {
-                return deals.filter(deal => deal.stage === stageId).reduce((sum, deal) => sum + (deal.value || 0), 0);
-            }), 1);
-            
-            return Object.keys(stages).map(stageId => {
-                const stage = stages[stageId];
-                const stageDeals = deals.filter(deal => deal.stage === stageId);
-                const stageValue = stageDeals.reduce((sum, deal) => sum + (deal.value || 0), 0);
-                const percentage = (stageValue / maxValue) * 100;
-                
-                return `
-                    <div class="pipeline-stage">
-                        <span class="stage-name">${stage.name}</span>
-                        <div class="stage-bar">
-                            <div class="stage-fill" style="width: ${percentage}%;"></div>
-                        </div>
-                        <span class="stage-value">$${(stageValue / 1000).toFixed(0)}K</span>
-                    </div>
-                `;
-            }).join('');
-            
-        } catch (error) {
-            console.error('Error rendering pipeline chart:', error);
-            return '<div style="color: #dc3545; text-align: center; padding: 20px;">Error loading pipeline data</div>';
+    setupEventListeners() {
+        // Auto-refresh toggle
+        const refreshBtn = document.querySelector('[onclick="dashboardModule.refreshDashboard()"]');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('mouseenter', () => {
+                refreshBtn.innerHTML = '🔄 Refreshing...';
+            });
+            refreshBtn.addEventListener('mouseleave', () => {
+                refreshBtn.innerHTML = '🔄 Refresh';
+            });
         }
     }
 
-    renderTeamPerformance() {
-        try {
-            const teams = DataManager.getTeams ? DataManager.getTeams() : {};
-            const deals = DataManager.getDeals ? DataManager.getDeals() : [];
-            const contacts = DataManager.getContacts ? DataManager.getContacts() : {};
-            
-            if (Object.keys(teams).length === 0) {
-                return '<div style="color: #666; font-style: italic; text-align: center; padding: 20px;">No team data available</div>';
-            }
-            
-            return Object.keys(teams).slice(0, 5).map(teamId => {
-                const team = teams[teamId];
-                const teamContacts = contacts[teamId] || [];
-                const teamDeals = deals.filter(deal => 
-                    teamContacts.some(contact => contact.id === deal.contactId)
-                );
-                const teamValue = teamDeals.reduce((sum, deal) => sum + (deal.value || 0), 0);
-                
-                return `
-                    <div class="team-item">
-                        <div class="team-name">${team.name}</div>
-                        <div class="team-metric">$${(teamValue / 1000).toFixed(0)}K</div>
-                    </div>
-                `;
-            }).join('');
-            
-        } catch (error) {
-            console.error('Error rendering team performance:', error);
-            return '<div style="color: #dc3545; text-align: center; padding: 20px;">Error loading team data</div>';
-        }
+    renderStats() {
+        const container = document.getElementById('dashboardStats');
+        if (!container) return;
+
+        const contacts = DataManager.getAllContacts();
+        const pipeline = DataManager.getPipeline();
+        const touchpoints = DataManager.getTouchpoints();
+        const tasks = DataManager.getTasks ? DataManager.getTasks() : [];
+
+        // Calculate trends (simple mock for now)
+        const contactsTrend = contacts.length > 10 ? '+12%' : '+5%';
+        const pipelineTrend = pipeline.length > 5 ? '+8%' : '+3%';
+        const touchpointsTrend = touchpoints.length > 20 ? '+15%' : '+7%';
+        const tasksTrend = tasks.filter(t => !t.completed).length > 0 ? `${tasks.filter(t => !t.completed).length} pending` : 'All done!';
+
+        container.innerHTML = `
+            <div class="stat-card contacts">
+                <div class="stat-value">${contacts.length}</div>
+                <div class="stat-label">Active Contacts</div>
+                <div class="stat-trend">📈 ${contactsTrend} this month</div>
+            </div>
+            <div class="stat-card pipeline">
+                <div class="stat-value">${pipeline.length}</div>
+                <div class="stat-label">Pipeline Deals</div>
+                <div class="stat-trend">💰 ${pipelineTrend} this month</div>
+            </div>
+            <div class="stat-card touchpoints">
+                <div class="stat-value">${touchpoints.length}</div>
+                <div class="stat-label">Total Touchpoints</div>
+                <div class="stat-trend">📞 ${touchpointsTrend} this month</div>
+            </div>
+            <div class="stat-card tasks">
+                <div class="stat-value">${tasks.length}</div>
+                <div class="stat-label">Active Tasks</div>
+                <div class="stat-trend">✅ ${tasksTrend}</div>
+            </div>
+        `;
+    }
+
+    renderQuickActions() {
+        const container = document.getElementById('quickActionsContent');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="quick-action-btn" onclick="dashboardModule.showInlineContactForm()">
+                <div class="quick-action-icon">👤</div>
+                <div class="quick-action-label">Add Contact</div>
+            </div>
+            <div class="quick-action-btn" onclick="dashboardModule.showInlineDealForm()">
+                <div class="quick-action-icon">💼</div>
+                <div class="quick-action-label">New Deal</div>
+            </div>
+            <div class="quick-action-btn" onclick="dashboardModule.showInlineTaskForm()">
+                <div class="quick-action-icon">✅</div>
+                <div class="quick-action-label">Add Task</div>
+            </div>
+            <div class="quick-action-btn" onclick="AppController.switchTab('touchpoints'); touchpointsModule.addTouchpoint();">
+                <div class="quick-action-icon">📞</div>
+                <div class="quick-action-label">Log Call</div>
+            </div>
+        `;
     }
 
     renderRecentActivity() {
-        try {
-            const touchpoints = DataManager.getTouchpoints ? DataManager.getTouchpoints() : [];
-            const recentTouchpoints = touchpoints
-                .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
-                .slice(0, 8);
-            
-            if (recentTouchpoints.length === 0) {
-                return `
-                    <div class="activity-item">
-                        <div class="activity-icon">📝</div>
-                        <div class="activity-content">
-                            <div class="activity-text">No recent activity</div>
-                            <div class="activity-time">Add touchpoints to see activity</div>
-                        </div>
+        const container = document.getElementById('recentActivityContent');
+        if (!container) return;
+
+        const contacts = DataManager.getAllContacts().slice(-3);
+        const pipeline = DataManager.getPipeline().slice(-3);
+        const touchpoints = DataManager.getTouchpoints().slice(-3);
+
+        let activities = [];
+
+        // Add recent contacts
+        contacts.forEach(contact => {
+            activities.push({
+                type: 'contact',
+                icon: '👤',
+                title: `New contact: ${contact.name}`,
+                meta: `${contact.company} • ${contact.role}`,
+                time: contact.dateAdded || 'Recently'
+            });
+        });
+
+        // Add recent pipeline deals
+        pipeline.forEach(deal => {
+            const contact = DataManager.getContactById(deal.contactId);
+            activities.push({
+                type: 'pipeline',
+                icon: '💼',
+                title: `Deal: ${deal.dealName}`,
+                meta: `${contact ? contact.name : 'Unknown'} • ${deal.value?.toLocaleString() || '0'}`,
+                time: deal.dateAdded || 'Recently'
+            });
+        });
+
+        // Add recent touchpoints
+        touchpoints.forEach(tp => {
+            const contact = DataManager.getContactById(tp.contactId);
+            activities.push({
+                type: 'touchpoint',
+                icon: this.getTouchpointIcon(tp.type),
+                title: tp.subject,
+                meta: `${contact ? contact.name : 'Unknown'} • ${tp.type}`,
+                time: UIHelpers.formatDate(tp.date)
+            });
+        });
+
+        // Sort by most recent and take top 6
+        activities = activities.slice(-6).reverse();
+
+        if (activities.length === 0) {
+            container.innerHTML = '<div class="no-data">No recent activity yet. Start by adding contacts or deals!</div>';
+            return;
+        }
+
+        const activityHTML = activities.map(activity => `
+            <div class="activity-item">
+                <div class="activity-icon ${activity.type}">
+                    ${activity.icon}
+                </div>
+                <div class="activity-details">
+                    <div class="activity-title">${activity.title}</div>
+                    <div class="activity-meta">${activity.meta} • ${activity.time}</div>
+                </div>
+            </div>
+        `).join('');
+
+        container.innerHTML = activityHTML;
+    }
+
+    renderUpcomingTasks() {
+        const container = document.getElementById('upcomingTasksContent');
+        if (!container) return;
+
+        const tasks = DataManager.getTasks ? DataManager.getTasks() : [];
+        const pendingTasks = tasks.filter(task => !task.completed).slice(0, 5);
+
+        if (pendingTasks.length === 0) {
+            container.innerHTML = `
+                <div class="no-data">
+                    🎉 No pending tasks! You're all caught up.
+                    <br><br>
+                    <button class="action-btn" onclick="dashboardModule.showInlineTaskForm()">
+                        Add New Task
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        const tasksHTML = pendingTasks.map(task => `
+            <div class="task-item ${task.completed ? 'completed' : ''}">
+                <input type="checkbox" class="task-checkbox" 
+                       ${task.completed ? 'checked' : ''} 
+                       onchange="dashboardModule.toggleTask('${task.id}')">
+                <div class="task-content">
+                    <div class="task-title">${task.title}</div>
+                    <div class="task-meta">
+                        ${task.dueDate ? `Due: ${UIHelpers.formatDate(task.dueDate)}` : 'No due date'} • 
+                        ${task.priority || 'Normal'} priority
                     </div>
-                `;
+                </div>
+                <div class="task-actions">
+                    <button class="action-btn small" onclick="dashboardModule.editInlineTask('${task.id}')">Edit</button>
+                </div>
+            </div>
+        `).join('');
+
+        container.innerHTML = `
+            ${tasksHTML}
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="action-btn secondary" onclick="dashboardModule.showInlineTaskForm()">
+                    + Add Task
+                </button>
+            </div>
+        `;
+    }
+
+    renderPipelineHealth() {
+        const container = document.getElementById('pipelineHealthContent');
+        if (!container) return;
+
+        const pipeline = DataManager.getPipeline();
+        const totalValue = pipeline.reduce((sum, deal) => sum + (deal.value || 0), 0);
+        const avgDealSize = pipeline.length > 0 ? totalValue / pipeline.length : 0;
+        const stageDistribution = {};
+        
+        pipeline.forEach(deal => {
+            stageDistribution[deal.stage] = (stageDistribution[deal.stage] || 0) + 1;
+        });
+
+        const closeRate = pipeline.length > 0 ? 
+            (pipeline.filter(d => d.stage === 'closed-won').length / pipeline.length * 100).toFixed(1) : 0;
+
+        container.innerHTML = `
+            <div class="health-metric ${totalValue > 100000 ? 'good' : totalValue > 50000 ? 'warning' : 'danger'}">
+                <span class="metric-label">Total Pipeline Value</span>
+                <span class="metric-value">${totalValue.toLocaleString()}</span>
+            </div>
+            <div class="health-metric ${avgDealSize > 20000 ? 'good' : avgDealSize > 10000 ? 'warning' : 'danger'}">
+                <span class="metric-label">Average Deal Size</span>
+                <span class="metric-value">${avgDealSize.toLocaleString()}</span>
+            </div>
+            <div class="health-metric ${closeRate > 20 ? 'good' : closeRate > 10 ? 'warning' : 'danger'}">
+                <span class="metric-label">Close Rate</span>
+                <span class="metric-value">${closeRate}%</span>
+            </div>
+            <div class="health-metric ${pipeline.length > 10 ? 'good' : pipeline.length > 5 ? 'warning' : 'danger'}">
+                <span class="metric-label">Active Deals</span>
+                <span class="metric-value">${pipeline.length}</span>
+            </div>
+        `;
+    }
+
+    // Inline Task Management
+    showInlineTaskForm(taskToEdit = null) {
+        const isEdit = !!taskToEdit;
+        const modalTitle = isEdit ? 'Edit Task' : 'Add New Task';
+
+        const taskContent = `
+            <h3>${modalTitle}</h3>
+            <form id="inlineTaskForm">
+                <input type="hidden" id="taskId" value="${isEdit ? taskToEdit.id : ''}">
+                
+                <div class="form-group">
+                    <label for="taskTitle">Task Title *</label>
+                    <input type="text" id="taskTitle" name="title" required 
+                           value="${isEdit ? taskToEdit.title : ''}"
+                           placeholder="e.g., Follow up with Amazon team">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskPriority">Priority</label>
+                        <select id="taskPriority" name="priority">
+                            <option value="Low" ${isEdit && taskToEdit.priority === 'Low' ? 'selected' : ''}>Low</option>
+                            <option value="Normal" ${isEdit && taskToEdit.priority === 'Normal' ? 'selected' : ''}>Normal</option>
+                            <option value="High" ${isEdit && taskToEdit.priority === 'High' ? 'selected' : ''}>High</option>
+                            <option value="Urgent" ${isEdit && taskToEdit.priority === 'Urgent' ? 'selected' : ''}>Urgent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDueDate">Due Date</label>
+                        <input type="date" id="taskDueDate" name="dueDate" 
+                               value="${isEdit && taskToEdit.dueDate ? taskToEdit.dueDate.split('T')[0] : ''}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="taskDescription">Description</label>
+                    <textarea id="taskDescription" name="description" 
+                              placeholder="Task details and notes...">${isEdit ? taskToEdit.description || '' : ''}</textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="action-btn">
+                        ${isEdit ? 'Update Task' : 'Add Task'}
+                    </button>
+                    <button type="button" class="action-btn secondary" onclick="UIHelpers.closeModal('inlineTaskModal')">
+                        Cancel
+                    </button>
+                    ${isEdit ? `
+                        <button type="button" class="action-btn danger" onclick="dashboardModule.deleteInlineTask('${taskToEdit.id}')">
+                            Delete Task
+                        </button>
+                    ` : ''}
+                </div>
+            </form>
+        `;
+
+        document.getElementById('inlineTaskContent').innerHTML = taskContent;
+
+        // Handle form submission
+        document.getElementById('inlineTaskForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const task = Object.fromEntries(formData.entries());
+            
+            if (isEdit) {
+                task.id = taskToEdit.id;
+                DataManager.updateTask(task);
+                UIHelpers.showNotification('Task updated successfully', 'success');
+            } else {
+                DataManager.addTask(task);
+                UIHelpers.showNotification('Task added successfully', 'success');
             }
             
-            return recentTouchpoints.map(touchpoint => {
-                const contact = DataManager.getContactById ? DataManager.getContactById(touchpoint.contactId) : null;
-                const contactName = contact ? contact.name : 'Unknown Contact';
-                
-                const icons = {
-                    'meeting': '🤝',
-                    'call': '📞',
-                    'email': '📧',
-                    'demo': '🖥️',
-                    'proposal': '📋'
-                };
-                
-                return `
-                    <div class="activity-item">
-                        <div class="activity-icon">${icons[touchpoint.type] || '📝'}</div>
-                        <div class="activity-content">
-                            <div class="activity-text">${touchpoint.subject} with ${contactName}</div>
-                            <div class="activity-time">${UIHelpers.formatDate(touchpoint.date || touchpoint.createdAt)}</div>
-                        </div>
+            UIHelpers.closeModal('inlineTaskModal');
+            this.renderUpcomingTasks();
+        });
+
+        UIHelpers.showModal('inlineTaskModal');
+    }
+
+    editInlineTask(taskId) {
+        const tasks = DataManager.getTasks ? DataManager.getTasks() : [];
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            this.showInlineTaskForm(task);
+        }
+    }
+
+    deleteInlineTask(taskId) {
+        if (confirm('Are you sure you want to delete this task?')) {
+            DataManager.deleteTask(taskId);
+            UIHelpers.showNotification('Task deleted successfully', 'success');
+            UIHelpers.closeModal('inlineTaskModal');
+            this.renderUpcomingTasks();
+        }
+    }
+
+    toggleTask(taskId) {
+        const tasks = DataManager.getTasks ? DataManager.getTasks() : [];
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            task.completed = !task.completed;
+            DataManager.updateTask(task);
+            this.renderUpcomingTasks();
+            UIHelpers.showNotification(
+                task.completed ? 'Task marked as completed! 🎉' : 'Task marked as pending',
+                'success'
+            );
+        }
+    }
+
+    // Inline Contact Form
+    showInlineContactForm() {
+        const contactContent = `
+            <h3>Add New Contact</h3>
+            <form id="inlineContactForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactName">Full Name *</label>
+                        <input type="text" id="contactName" name="name" required placeholder="e.g., John Smith">
                     </div>
-                `;
-            }).join('');
+                    <div class="form-group">
+                        <label for="contactEmail">Email</label>
+                        <input type="email" id="contactEmail" name="email" placeholder="john@company.com">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactCompany">Company *</label>
+                        <input type="text" id="contactCompany" name="company" required placeholder="e.g., Amazon Web Services">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactRole">Role</label>
+                        <input type="text" id="contactRole" name="role" placeholder="e.g., Senior Partner Manager">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="contactPhone">Phone</label>
+                    <input type="tel" id="contactPhone" name="phone" placeholder="+1 (555) 123-4567">
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="action-btn">Add Contact</button>
+                    <button type="button" class="action-btn secondary" onclick="UIHelpers.closeModal('inlineContactModal')">Cancel</button>
+                </div>
+            </form>
+        `;
+
+        document.getElementById('inlineContactContent').innerHTML = contactContent;
+
+        document.getElementById('inlineContactForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const contact = Object.fromEntries(formData.entries());
             
-        } catch (error) {
-            console.error('Error rendering recent activity:', error);
-            return '<div style="color: #dc3545; text-align: center; padding: 20px;">Error loading activity data</div>';
-        }
+            DataManager.addContact(contact);
+            UIHelpers.showNotification('Contact added successfully! 🎉', 'success');
+            UIHelpers.closeModal('inlineContactModal');
+            this.renderStats();
+            this.renderRecentActivity();
+        });
+
+        UIHelpers.showModal('inlineContactModal');
     }
 
-    calculateQuarterlyForecast() {
-        try {
-            const deals = DataManager.getDeals ? DataManager.getDeals() : [];
-            if (deals.length === 0) return 0;
+    // Inline Deal Form
+    showInlineDealForm() {
+        const dealContent = `
+            <h3>Add New Deal</h3>
+            <form id="inlineDealForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dealName">Deal Name *</label>
+                        <input type="text" id="dealName" name="dealName" required placeholder="e.g., Q4 Partnership Agreement">
+                    </div>
+                    <div class="form-group">
+                        <label for="dealValue">Deal Value</label>
+                        <input type="number" id="dealValue" name="value" placeholder="50000">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dealContact">Contact</label>
+                        <select id="dealContact" name="contactId">
+                            <option value="">Select Contact</option>
+                            ${this.getContactOptions()}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dealStage">Stage</label>
+                        <select id="dealStage" name="stage">
+                            <option value="qualification">Qualification</option>
+                            <option value="proposal">Proposal</option>
+                            <option value="negotiation">Negotiation</option>
+                            <option value="closed-won">Closed Won</option>
+                            <option value="closed-lost">Closed Lost</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="dealNotes">Notes</label>
+                    <textarea id="dealNotes" name="notes" placeholder="Deal details, next steps, etc."></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="action-btn">Add Deal</button>
+                    <button type="button" class="action-btn secondary" onclick="UIHelpers.closeModal('inlineDealModal')">Cancel</button>
+                </div>
+            </form>
+        `;
+
+        document.getElementById('inlineDealContent').innerHTML = dealContent;
+
+        document.getElementById('inlineDealForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const deal = Object.fromEntries(formData.entries());
+            deal.value = parseFloat(deal.value) || 0;
             
-            const totalValue = deals.reduce((sum, deal) => sum + (deal.value || 0), 0);
-            const weightedValue = deals.reduce((sum, deal) => sum + ((deal.value || 0) * ((deal.probability || 0) / 100)), 0);
-            const target = 1000000; // $1M target
-            
-            return Math.min(Math.round((weightedValue / target) * 100), 100);
-        } catch (error) {
-            return 0;
+            DataManager.addPipelineEntry(deal);
+            UIHelpers.showNotification('Deal added successfully! 💼', 'success');
+            UIHelpers.closeModal('inlineDealModal');
+            this.renderStats();
+            this.renderRecentActivity();
+            this.renderPipelineHealth();
+        });
+
+        UIHelpers.showModal('inlineDealModal');
+    }
+
+    getContactOptions() {
+        const contacts = DataManager.getAllContacts();
+        return contacts.map(contact => 
+            `<option value="${contact.id}">${contact.name} (${contact.company})</option>`
+        ).join('');
+    }
+
+    // Helper methods
+    getTouchpointIcon(type) {
+        const icons = {
+            meeting: '🤝',
+            call: '📞',
+            email: '📧',
+            demo: '🖥️',
+            proposal: '📋',
+            followup: '🔄',
+            social: '🎉',
+            other: '💼'
+        };
+        return icons[type] || '💼';
+    }
+
+    refreshDashboard() {
+        this.renderIfActive();
+        UIHelpers.showNotification('Dashboard refreshed! 🔄', 'success');
+    }
+
+    startAutoRefresh() {
+        if (this.autoRefresh) {
+            this.refreshInterval = setInterval(() => {
+                if (AppController.currentTab === 'dashboard') {
+                    this.renderStats();
+                    this.renderRecentActivity();
+                    this.renderUpcomingTasks();
+                }
+            }, 30000); // Refresh every 30 seconds
         }
     }
 
-    setupEventListeners() {
-        // Event listeners are set up through onclick handlers
-        console.log('Dashboard event listeners set up');
-    }
-
-    renderCharts() {
-        // Charts are rendered inline in the HTML
-        console.log('Dashboard charts rendered');
-    }
-
-    refreshData() {
-        this.calculateMetrics();
-        const container = document.getElementById('content-area');
-        if (container && AppController.currentTab === 'dashboard') {
-            this.render(container);
-        }
-        UIHelpers.showNotification('Dashboard data refreshed', 'success');
-    }
-
-    refreshMetrics() {
-        // Only refresh if dashboard is currently active
-        if (AppController.currentTab === 'dashboard') {
-            this.refreshData();
+    stopAutoRefresh() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
         }
     }
 
-    exportReport() {
-        const report = `AWS Partner Tracker Dashboard Report
-Generated: ${new Date().toLocaleString()}
-
-Key Metrics:
-- Total Pipeline: $${(this.metrics.totalPipeline / 1000000).toFixed(1)}M
-- Active Deals: ${this.metrics.totalDeals}
-- Average Deal Size: $${(this.metrics.avgDealSize / 1000).toFixed(0)}K
-- Total Contacts: ${this.metrics.totalContacts}
-- Active Teams: ${this.metrics.activeTeams}
-- Recent Touchpoints: ${this.metrics.recentTouchpoints}
-- Quarterly Forecast: ${this.calculateQuarterlyForecast()}%`;
-
-        // Create and download text file
-        const blob = new Blob([report], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `dashboard-report-${new Date().toISOString().split('T')[0]}.txt`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        UIHelpers.showNotification('Dashboard report exported', 'success');
+    destroy() {
+        this.stopAutoRefresh();
     }
 }
 
 // Create global instance
 const dashboardModule = new DashboardModule();
-console.log('✅ Dashboard module loaded successfully');
+console.log('✅ Enhanced Dashboard module loaded successfully');
