@@ -37,7 +37,7 @@ class TouchpointsModule {
             <div class="touchpoints-container">
                 <div class="touchpoints-header">
                     <div>
-                        <h2>Touchpoint Tracker</h2>
+                        <h2>📞 Touchpoint Tracker</h2>
                         <p>Track all interactions, meetings, calls, and communications</p>
                     </div>
                     <div class="touchpoints-controls">
@@ -96,6 +96,26 @@ class TouchpointsModule {
                 <!-- Quick Stats Bar -->
                 <div id="touchpointsStats" class="stats-bar">
                     <!-- Stats will be populated here -->
+                </div>
+
+                <!-- Touchpoint Form Modal -->
+                <div id="touchpointModal" class="modal" style="display: none;">
+                    <div class="modal-content" style="max-width: 700px;">
+                        <span class="close" onclick="UIHelpers.closeModal('touchpointModal')">&times;</span>
+                        <div id="touchpointModalContent">
+                            <!-- Touchpoint form will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day Touchpoints Modal -->
+                <div id="dayTouchpointsModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <span class="close" onclick="UIHelpers.closeModal('dayTouchpointsModal')">&times;</span>
+                        <div id="dayTouchpointsContent">
+                            <!-- Day touchpoints will be populated here -->
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -237,6 +257,7 @@ class TouchpointsModule {
                     color: #666;
                     font-size: 0.9em;
                     margin-bottom: 10px;
+                    flex-wrap: wrap;
                 }
                 .timeline-description {
                     color: #555;
@@ -354,11 +375,105 @@ class TouchpointsModule {
                     background: #f8f9fa;
                     border-radius: 8px;
                     display: flex;
+                    flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     color: #666;
-                    font-style: italic;
                     margin-top: 15px;
+                    padding: 10px;
+                    overflow-y: auto;
+                }
+
+                /* Modal Styles */
+                .modal {
+                    display: none;
+                    position: fixed;
+                    z-index: 1000;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0,0,0,0.5);
+                    backdrop-filter: blur(5px);
+                }
+                .modal-content {
+                    background-color: white;
+                    margin: 2% auto;
+                    padding: 30px;
+                    border-radius: 15px;
+                    width: 90%;
+                    max-width: 600px;
+                    max-height: 90vh;
+                    overflow-y: auto;
+                    position: relative;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                }
+                .close {
+                    color: #aaa;
+                    float: right;
+                    font-size: 28px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    position: absolute;
+                    right: 20px;
+                    top: 15px;
+                }
+                .close:hover { color: #000; }
+
+                /* Form Styles */
+                .form-group {
+                    margin-bottom: 15px;
+                }
+                .form-group label {
+                    display: block;
+                    margin-bottom: 5px;
+                    font-weight: bold;
+                    color: #232F3E;
+                }
+                .form-group input,
+                .form-group select,
+                .form-group textarea {
+                    width: 100%;
+                    padding: 8px 12px;
+                    border: 1px solid #ddd;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    box-sizing: border-box;
+                }
+                .form-group textarea {
+                    resize: vertical;
+                }
+                .form-group input:focus,
+                .form-group select:focus,
+                .form-group textarea:focus {
+                    outline: none;
+                    border-color: #FF9900;
+                    box-shadow: 0 0 0 2px rgba(255, 153, 0, 0.2);
+                }
+                .form-row {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 15px;
+                }
+                .form-row-3 {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr 1fr;
+                    gap: 15px;
+                }
+
+                @media (max-width: 768px) {
+                    .form-row,
+                    .form-row-3 {
+                        grid-template-columns: 1fr;
+                    }
+                    .timeline-meta {
+                        flex-direction: column;
+                        gap: 5px;
+                    }
+                    .touchpoints-controls {
+                        width: 100%;
+                        justify-content: center;
+                    }
                 }
             </style>
         `;
@@ -403,6 +518,7 @@ class TouchpointsModule {
                 <div style="text-align: center; padding: 60px; color: #666;">
                     <h3>No touchpoints found</h3>
                     <p>Click "Log Touchpoint" to start tracking interactions</p>
+                    <button class="action-btn" onclick="touchpointsModule.addTouchpoint()">+ Log First Touchpoint</button>
                 </div>
             `;
             return;
@@ -553,49 +669,58 @@ class TouchpointsModule {
                 <div class="analytics-card">
                     <h3>Touchpoint Types</h3>
                     <div class="analytics-chart">
-                        ${Object.entries(typeDistribution).map(([type, count]) => `
-                            <div style="margin: 5px 10px;">
-                                <span class="touchpoint-type type-${type}">${type}</span>
-                                <strong style="margin-left: 10px;">${count}</strong>
-                            </div>
-                        `).join('')}
+                        ${Object.entries(typeDistribution).length > 0 ? 
+                            Object.entries(typeDistribution).map(([type, count]) => `
+                                <div style="margin: 5px 10px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                    <span class="touchpoint-type type-${type}">${type}</span>
+                                    <strong style="margin-left: 10px;">${count}</strong>
+                                </div>
+                            `).join('') : 
+                            '<div style="font-style: italic; color: #999;">No data available</div>'
+                        }
                     </div>
                 </div>
                 
                 <div class="analytics-card">
                     <h3>Monthly Activity</h3>
                     <div class="analytics-chart">
-                        ${Object.entries(monthlyActivity)
-                            .sort(([a], [b]) => b.localeCompare(a))
-                            .slice(0, 6)
-                            .map(([month, count]) => `
-                                <div style="margin: 5px 0; display: flex; justify-content: space-between; width: 200px;">
-                                    <span>${month}</span>
-                                    <strong>${count} touchpoints</strong>
-                                </div>
-                            `).join('')}
+                        ${Object.entries(monthlyActivity).length > 0 ?
+                            Object.entries(monthlyActivity)
+                                .sort(([a], [b]) => b.localeCompare(a))
+                                .slice(0, 6)
+                                .map(([month, count]) => `
+                                    <div style="margin: 5px 0; display: flex; justify-content: space-between; width: 100%;">
+                                        <span>${month}</span>
+                                        <strong>${count} touchpoints</strong>
+                                    </div>
+                                `).join('') :
+                            '<div style="font-style: italic; color: #999;">No data available</div>'
+                        }
                     </div>
                 </div>
                 
                 <div class="analytics-card">
                     <h3>Most Active Contacts</h3>
                     <div class="analytics-chart">
-                        ${Object.entries(contactActivity)
-                            .sort(([,a], [,b]) => b - a)
-                            .slice(0, 5)
-                            .map(([contact, count]) => `
-                                <div style="margin: 5px 0; display: flex; justify-content: space-between; width: 200px;">
-                                    <span>${contact}</span>
-                                    <strong>${count} touchpoints</strong>
-                                </div>
-                            `).join('')}
+                        ${Object.entries(contactActivity).length > 0 ?
+                            Object.entries(contactActivity)
+                                .sort(([,a], [,b]) => b - a)
+                                .slice(0, 5)
+                                .map(([contact, count]) => `
+                                    <div style="margin: 5px 0; display: flex; justify-content: space-between; width: 100%;">
+                                        <span>${contact}</span>
+                                        <strong>${count} touchpoints</strong>
+                                    </div>
+                                `).join('') :
+                            '<div style="font-style: italic; color: #999;">No data available</div>'
+                        }
                     </div>
                 </div>
                 
                 <div class="analytics-card">
                     <h3>Engagement Trends</h3>
                     <div class="analytics-chart">
-                        <p>Average touchpoints per contact: <strong>${(touchpoints.length / contacts.length).toFixed(1)}</strong></p>
+                        <p>Average touchpoints per contact: <strong>${contacts.length > 0 ? (touchpoints.length / contacts.length).toFixed(1) : '0'}</strong></p>
                         <p>Most active day: <strong>${this.getMostActiveDay(touchpoints)}</strong></p>
                         <p>Response rate: <strong>${this.calculateResponseRate(touchpoints)}%</strong></p>
                     </div>
@@ -650,82 +775,96 @@ class TouchpointsModule {
         }
     }
 
-    addTouchpoint() {
+    addTouchpoint(touchpointToEdit = null) {
+        const isEdit = !!touchpointToEdit;
+        const modalTitle = isEdit ? 'Edit Touchpoint' : 'Log Touchpoint';
+        
         const modalContent = `
+            <h3>${modalTitle}</h3>
             <form id="touchpointForm">
-                <input type="hidden" id="touchpointId" name="id">
+                <input type="hidden" id="touchpointId" name="id" value="${isEdit ? touchpointToEdit.id : ''}">
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div>
-                        <label for="touchpointSubject">Subject:</label>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="touchpointSubject">Subject *</label>
                         <input type="text" id="touchpointSubject" name="subject" required 
-                               style="width: 100%; padding: 8px; margin-top: 5px;" 
+                               value="${isEdit ? touchpointToEdit.subject : ''}"
                                placeholder="e.g., Q4 Planning Call">
                     </div>
-                    <div>
-                        <label for="touchpointType">Type:</label>
-                        <select id="touchpointType" name="type" required style="width: 100%; padding: 8px; margin-top: 5px;">
-                            <option value="meeting">Meeting</option>
-                            <option value="call">Phone Call</option>
-                            <option value="email">Email</option>
-                            <option value="demo">Demo</option>
-                            <option value="proposal">Proposal</option>
-                            <option value="followup">Follow-up</option>
-                            <option value="social">Social Event</option>
-                            <option value="other">Other</option>
+                    <div class="form-group">
+                        <label for="touchpointType">Type *</label>
+                        <select id="touchpointType" name="type" required>
+                            <option value="meeting" ${isEdit && touchpointToEdit.type === 'meeting' ? 'selected' : ''}>Meeting</option>
+                            <option value="call" ${isEdit && touchpointToEdit.type === 'call' ? 'selected' : ''}>Phone Call</option>
+                            <option value="email" ${isEdit && touchpointToEdit.type === 'email' ? 'selected' : ''}>Email</option>
+                            <option value="demo" ${isEdit && touchpointToEdit.type === 'demo' ? 'selected' : ''}>Demo</option>
+                            <option value="proposal" ${isEdit && touchpointToEdit.type === 'proposal' ? 'selected' : ''}>Proposal</option>
+                            <option value="followup" ${isEdit && touchpointToEdit.type === 'followup' ? 'selected' : ''}>Follow-up</option>
+                            <option value="social" ${isEdit && touchpointToEdit.type === 'social' ? 'selected' : ''}>Social Event</option>
+                            <option value="other" ${isEdit && touchpointToEdit.type === 'other' ? 'selected' : ''}>Other</option>
                         </select>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div>
-                        <label for="touchpointContact">Contact:</label>
-                        <select id="touchpointContact" name="contactId" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label for="touchpointContact">Contact *</label>
+                        <select id="touchpointContact" name="contactId" required>
                             <option value="">Select Contact</option>
-                            ${this.getContactOptions()}
+                            ${this.getContactOptions(isEdit ? touchpointToEdit.contactId : null)}
                         </select>
                     </div>
-                    <div>
-                        <label for="touchpointDate">Date:</label>
+                    <div class="form-group">
+                        <label for="touchpointDate">Date & Time *</label>
                         <input type="datetime-local" id="touchpointDate" name="date" required 
-                               style="width: 100%; padding: 8px; margin-top: 5px;">
+                               value="${isEdit ? touchpointToEdit.date.slice(0, 16) : ''}">
                     </div>
-                    <div>
-                        <label for="touchpointDuration">Duration (minutes):</label>
+                    <div class="form-group">
+                        <label for="touchpointDuration">Duration (minutes)</label>
                         <input type="number" id="touchpointDuration" name="duration" 
-                               style="width: 100%; padding: 8px; margin-top: 5px;" 
+                               value="${isEdit ? touchpointToEdit.duration || '' : ''}"
                                placeholder="30">
                     </div>
                 </div>
 
-                <div style="margin-bottom: 15px;">
-                    <label for="touchpointNotes">Notes:</label>
-                    <textarea id="touchpointNotes" name="notes" 
-                              style="width: 100%; padding: 8px; margin-top: 5px; height: 100px;" 
-                              placeholder="Meeting notes, key discussion points, etc."></textarea>
+                <div class="form-group">
+                    <label for="touchpointNotes">Notes</label>
+                    <textarea id="touchpointNotes" name="notes" rows="4"
+                              placeholder="Meeting notes, key discussion points, etc.">${isEdit ? touchpointToEdit.notes || '' : ''}</textarea>
                 </div>
 
-                <div style="margin-bottom: 20px;">
-                    <label for="touchpointNextSteps">Next Steps:</label>
-                    <textarea id="touchpointNextSteps" name="nextSteps" 
-                              style="width: 100%; padding: 8px; margin-top: 5px; height: 60px;" 
-                              placeholder="Follow-up actions, scheduled meetings, etc."></textarea>
+                <div class="form-group">
+                    <label for="touchpointNextSteps">Next Steps</label>
+                    <textarea id="touchpointNextSteps" name="nextSteps" rows="3"
+                              placeholder="Follow-up actions, scheduled meetings, etc.">${isEdit ? touchpointToEdit.nextSteps || '' : ''}</textarea>
                 </div>
 
-                <button type="submit" class="action-btn" style="background: #FF9900; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
-                    Save Touchpoint
-                </button>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="action-btn">
+                        ${isEdit ? 'Update Touchpoint' : 'Save Touchpoint'}
+                    </button>
+                    <button type="button" class="action-btn secondary" onclick="UIHelpers.closeModal('touchpointModal')">
+                        Cancel
+                    </button>
+                    ${isEdit ? `
+                        <button type="button" class="action-btn danger" onclick="touchpointsModule.deleteTouchpoint('${touchpointToEdit.id}')">
+                            Delete Touchpoint
+                        </button>
+                    ` : ''}
+                </div>
             </form>
         `;
 
-        const modal = UIHelpers.createModal('touchpointModal', 'Log Touchpoint', modalContent);
+        document.getElementById('touchpointModalContent').innerHTML = modalContent;
         
-        // Set default date to now
-        setTimeout(() => {
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('touchpointDate').value = now.toISOString().slice(0, 16);
-        }, 100);
+        // Set default date to now if not editing
+        if (!isEdit) {
+            setTimeout(() => {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('touchpointDate').value = now.toISOString().slice(0, 16);
+            }, 100);
+        }
 
         // Handle form submission
         document.getElementById('touchpointForm').addEventListener('submit', (e) => {
@@ -734,12 +873,12 @@ class TouchpointsModule {
             const touchpoint = Object.fromEntries(formData.entries());
             touchpoint.duration = parseInt(touchpoint.duration) || null;
             
-            if (touchpoint.id) {
+            if (isEdit) {
                 DataManager.updateTouchpoint(touchpoint);
-                UIHelpers.showNotification('Touchpoint updated successfully');
+                UIHelpers.showNotification('Touchpoint updated successfully', 'success');
             } else {
                 DataManager.addTouchpoint(touchpoint);
-                UIHelpers.showNotification('Touchpoint logged successfully');
+                UIHelpers.showNotification('Touchpoint logged successfully', 'success');
             }
             
             UIHelpers.closeModal('touchpointModal');
@@ -748,10 +887,32 @@ class TouchpointsModule {
         UIHelpers.showModal('touchpointModal');
     }
 
-    getContactOptions() {
+    // Helper method for contact form - from another module
+    addTouchpointFor(contactId, subject = '') {
+        const contact = DataManager.getContactById(contactId);
+        if (!contact) return;
+
+        // Switch to touchpoints tab
+        AppController.switchTab('touchpoints');
+        
+        // Wait for tab to load then show form
+        setTimeout(() => {
+            this.addTouchpoint();
+            
+            // Pre-fill the form
+            setTimeout(() => {
+                document.getElementById('touchpointContact').value = contactId;
+                if (subject) {
+                    document.getElementById('touchpointSubject').value = subject;
+                }
+            }, 200);
+        }, 100);
+    }
+
+    getContactOptions(selectedContactId = null) {
         const contacts = DataManager.getAllContacts();
         return contacts.map(contact => 
-            `<option value="${contact.id}">${contact.name} (${contact.company})</option>`
+            `<option value="${contact.id}" ${selectedContactId === contact.id ? 'selected' : ''}>${contact.name} (${contact.company})</option>`
         ).join('');
     }
 
@@ -777,24 +938,14 @@ class TouchpointsModule {
         const touchpoint = DataManager.getTouchpoints().find(tp => tp.id === touchpointId);
         if (!touchpoint) return;
 
-        // Pre-populate the form with existing data
-        this.addTouchpoint();
-        setTimeout(() => {
-            document.getElementById('touchpointId').value = touchpoint.id;
-            document.getElementById('touchpointSubject').value = touchpoint.subject;
-            document.getElementById('touchpointType').value = touchpoint.type;
-            document.getElementById('touchpointContact').value = touchpoint.contactId;
-            document.getElementById('touchpointDate').value = touchpoint.date.slice(0, 16);
-            document.getElementById('touchpointDuration').value = touchpoint.duration || '';
-            document.getElementById('touchpointNotes').value = touchpoint.notes || '';
-            document.getElementById('touchpointNextSteps').value = touchpoint.nextSteps || '';
-        }, 100);
+        this.addTouchpoint(touchpoint);
     }
 
     deleteTouchpoint(touchpointId) {
         if (confirm('Are you sure you want to delete this touchpoint?')) {
             DataManager.deleteTouchpoint(touchpointId);
-            UIHelpers.showNotification('Touchpoint deleted successfully');
+            UIHelpers.showNotification('Touchpoint deleted successfully', 'success');
+            UIHelpers.closeModal('touchpointModal');
         }
     }
 
@@ -804,7 +955,7 @@ class TouchpointsModule {
         );
         
         if (touchpoints.length === 0) {
-            UIHelpers.showNotification('No touchpoints on this date');
+            UIHelpers.showNotification('No touchpoints on this date', 'info');
             return;
         }
 
@@ -815,7 +966,7 @@ class TouchpointsModule {
                     const contact = DataManager.getContactById(tp.contactId);
                     return `
                         <div style="border: 1px solid #eee; border-radius: 8px; padding: 15px; margin: 10px 0;">
-                            <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                 <strong>${tp.subject}</strong>
                                 <span class="touchpoint-type type-${tp.type}">${tp.type}</span>
                             </div>
@@ -832,14 +983,14 @@ class TouchpointsModule {
             </div>
         `;
 
-        const modal = UIHelpers.createModal('dayTouchpointsModal', 'Daily Touchpoints', dayContent);
+        document.getElementById('dayTouchpointsContent').innerHTML = dayContent;
         UIHelpers.showModal('dayTouchpointsModal');
     }
 
     exportTouchpoints() {
         const touchpoints = this.getFilteredTouchpoints();
         if (touchpoints.length === 0) {
-            UIHelpers.showNotification('No touchpoints to export', 3000, 'warning');
+            UIHelpers.showNotification('No touchpoints to export', 'warning');
             return;
         }
         
@@ -860,7 +1011,7 @@ class TouchpointsModule {
         let report = 'Touchpoint Activity Report\n\n';
         report += `Total Touchpoints: ${touchpoints.length}\n`;
         report += `Active Contacts: ${contacts.length}\n`;
-        report += `Average per Contact: ${(touchpoints.length / contacts.length).toFixed(1)}\n\n`;
+        report += `Average per Contact: ${contacts.length > 0 ? (touchpoints.length / contacts.length).toFixed(1) : '0'}\n\n`;
         
         report += 'Touchpoint Types:\n';
         const types = {};
@@ -885,7 +1036,7 @@ class TouchpointsModule {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        UIHelpers.showNotification(`${filename} downloaded successfully`);
+        UIHelpers.showNotification(`${filename} downloaded successfully`, 'success');
     }
 
     // Helper functions
@@ -953,6 +1104,8 @@ class TouchpointsModule {
     }
 
     getMostActiveDay(touchpoints) {
+        if (touchpoints.length === 0) return 'No data';
+        
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const dayCount = {};
         
@@ -969,6 +1122,8 @@ class TouchpointsModule {
     }
 
     calculateResponseRate(touchpoints) {
+        if (touchpoints.length === 0) return 0;
+        
         // Simple calculation - assume follow-ups indicate responses
         const followUps = touchpoints.filter(tp => tp.type === 'followup').length;
         const outreach = touchpoints.filter(tp => ['email', 'call'].includes(tp.type)).length;
@@ -989,3 +1144,4 @@ class TouchpointsModule {
 
 // Create global instance
 const touchpointsModule = new TouchpointsModule();
+console.log('✅ Touchpoints module loaded successfully');
