@@ -1,610 +1,4 @@
-// Deal Management Methods
-    showDealForm(dealId = null) {
-        const deal = dealId ? DataManager.getDeals().find(d => d.id === dealId) : null;
-        const contacts = DataManager.getAllContacts();
-        const stages = DataManager.config.dealStages;
-        const isEdit = !!deal;
-        
-        const modalContent = `
-            <h3>${isEdit ? 'Edit Deal' : 'Add New Deal'}</h3>
-            <form id="dealForm" class="deal-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="dealName">Deal Name *</label>
-                        <input type="text" id="dealName" name="name" required 
-                               value="${deal ? deal.name : ''}" 
-                               placeholder="Enter deal name">
-                    </div>
-                    <div class="form-group">
-                        <label for="dealContact">Contact *</label>
-                        <select id="dealContact" name="contactId" required>
-                            <option value="">Select Contact</option>
-                            ${contacts.map(contact => `
-                                <option value="${contact.id}" ${deal && deal.contactId === contact.id ? 'selected' : ''}>
-                                    ${contact.name} (${contact.company})
-                                </option>
-                            `).join('')}
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="dealValue">Deal Value ($) *</label>
-                        <input type="number" id="dealValue" name="value" required min="0" step="1000"
-                               value="${deal ? deal.value : ''}" 
-                               placeholder="Enter deal value">
-                    </div>
-                    <div class="form-group">
-                        <label for="dealStage">Stage *</label>
-                        <select id="dealStage" name="stage" required onchange="pipelineModule.updateProbabilityFromStage()">
-                            ${Object.keys(stages).map(stageId => `
-                                <option value="${stageId}" ${deal && deal.stage === stageId ? 'selected' : ''}>
-                                    ${stages[stageId].name}
-                                </option>
-                            `).join('')}
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="dealProbability">Probability (%) *</label>
-                        <input type="number" id="dealProbability" name="probability" required min="0" max="100"
-                               value="${deal ? deal.probability : ''}" 
-                               placeholder="Enter probability">
-                    </div>
-                    <div class="form-group">
-                        <label for="dealCloseDate">Expected Close Date *</label>
-                        <input type="date" id="dealCloseDate" name="closeDate" required
-                               value="${deal ? deal.closeDate : ''}">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="dealDescription">Description</label>
-                    <textarea id="dealDescription" name="description" 
-                              placeholder="Enter deal description, notes, or key details...">${deal ? deal.description || '' : ''}</textarea>
-                </div>
-                
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="submit" class="action-btn">
-                        ${isEdit ? 'Update Deal' : 'Create Deal'}
-                    </button>
-                    <button type="button" class="action-btn secondary" onclick="UIHelpers.closeModal('dealFormModal')">
-                        Cancel
-                    </button>
-                    ${isEdit ? `
-                        <button type="button" class="action-btn danger" onclick="pipelineModule.deleteDeal('${deal.id}')">
-                            Delete Deal
-                        </button>
-                    ` : ''}
-                </div>
-            </form>
-        `;
-        
-        document.getElementById('dealFormContent').innerHTML = modalContent;
-        
-        // Set default probability based on stage
-        if (!isEdit) {
-            this.updateProbabilityFromStage();
-        }
-        
-        // Handle form submission
-        document.getElementById('dealForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const dealData = Object.fromEntries(formData.entries());
-            
-            // Convert numeric fields
-            dealData.value = parseFloat(dealData.value);
-            dealData.probability = parseInt(dealData.probability);
-            
-            if (isEdit) {
-                DataManager.updateDeal({ ...deal, ...dealData });
-                UIHelpers.showNotification('Deal updated successfully', 'success');
-            } else {
-                DataManager.addDeal(dealData);
-                UIHelpers.showNotification('Deal created successfully', 'success');
-            }
-            
-            UIHelpers.closeModal('dealFormModal');
-        });
-        
-        UIHelpers.showModal('dealFormModal');
-    }
-
-    updateProbabilityFromStage() {
-        const stageSelect = document.getElementById('dealStage');
-        const probabilityInput = document.getElementById('dealProbability');
-        
-        if (stageSelect && probabilityInput) {
-            const selectedStage = stageSelect.value;
-            const stageConfig = DataManager.config.dealStages[selectedStage];
-            if (stageConfig) {
-                probabilityInput.value = stageConfig.probability;
-            }
-        }
-    }
-
-    quickEditDeal(dealId) {
-        const deal = DataManager.getDeals().find(d => d.id === dealId);
-        if (!deal) return;
-        
-        const stages = DataManager.config.dealStages;
-        
-        const modalContent = `
-            <h3>Quick Edit: ${deal.name}</h3>
-            <form id="quickEditForm">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Deal Value:</label>
-                        <input type="number" id="dealValue" value="${deal.value}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-                    </div>
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Probability:</label>
-                        <input type="number" id="dealProbability" value="${deal.probability}" min="0" max="100" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-                    </div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Stage:</label>
-                        <select id="dealStage" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-                            ${Object.keys(stages).map(stageId => `
-                                <option value="${stageId}" ${deal.stage === stageId ? 'selected' : ''}>
-                                    ${stages[stageId].name}
-                                </option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Close Date:</label>
-                        <input type="date" id="dealCloseDate" value="${deal.closeDate}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
-                    </div>
-                </div>
-                
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Notes:</label>
-                    <textarea id="dealNotes" style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 6px;" placeholder="Update notes...">${deal.description || ''}</textarea>
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button type="submit" class="action-btn">Save Changes</button>
-                    <button type="button" class="action-btn secondary" onclick="UIHelpers.closeModal('dealQuickEditModal')">Cancel</button>
-                </div>
-            </form>
-        `;
-        
-        document.getElementById('dealQuickEditContent').innerHTML = modalContent;
-        
-        // Handle form submission
-        document.getElementById('quickEditForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const updatedDeal = {
-                ...deal,
-                value: parseFloat(document.getElementById('dealValue').value),
-                probability: parseInt(document.getElementById('dealProbability').value),
-                stage: document.getElementById('dealStage').value,
-                closeDate: document.getElementById('dealCloseDate').value,
-                description: document.getElementById('dealNotes').value
-            };
-            
-            DataManager.updateDeal(updatedDeal);
-            UIHelpers.closeModal('dealQuickEditModal');
-            UIHelpers.showNotification('Deal updated successfully', 'success');
-        });
-        
-        UIHelpers.showModal('dealQuickEditModal');
-    }
-
-    editDeal(dealId) {
-        this.showDealForm(dealId);
-    }
-
-    cloneDeal(dealId) {
-        const deal = DataManager.getDeals().find(d => d.id === dealId);
-        if (!deal) return;
-        
-        const clonedDeal = {
-            ...deal,
-            name: deal.name + ' (Copy)',
-            stage: 'prequalified',
-            probability: 10,
-            closeDate: '',
-            createdAt: new Date().toISOString()
-        };
-        delete clonedDeal.id;
-        
-        DataManager.addDeal(clonedDeal);
-        UIHelpers.showNotification('Deal cloned successfully', 'success');
-    }
-
-    deleteDeal(dealId) {
-        const deal = DataManager.getDeals().find(d => d.id === dealId);
-        if (!deal) return;
-        
-        if (confirm(`Are you sure you want to delete "${deal.name}"? This action cannot be undone.`)) {
-            DataManager.deleteDeal(dealId);
-            UIHelpers.closeModal('dealFormModal');
-            UIHelpers.showNotification('Deal deleted successfully', 'success');
-        }
-    }
-
-    logActivity(dealId) {
-        const deal = DataManager.getDeals().find(d => d.id === dealId);
-        if (deal) {
-            const contact = DataManager.getContactById(deal.contactId);
-            if (contact && typeof touchpointsModule !== 'undefined') {
-                touchpointsModule.addTouchpointFor(deal.contactId, `Deal: ${deal.name}`);
-            } else {
-                UIHelpers.showNotification('Activity logging coming soon!', 'info');
-            }
-        }
-    }
-
-    // Table sorting and filtering
-    sortTable(column) {
-        if (this.sortBy === column) {
-            this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-        } else {
-            this.sortBy = column;
-            this.sortOrder = 'asc';
-        }
-        this.renderContent();
-    }
-
-    sortDeals(deals) {
-        return deals.sort((a, b) => {
-            let aValue, bValue;
-            
-            switch(this.sortBy) {
-                case 'name':
-                    aValue = a.name.toLowerCase();
-                    bValue = b.name.toLowerCase();
-                    break;
-                case 'contact':
-                    const contactA = DataManager.getContactById(a.contactId);
-                    const contactB = DataManager.getContactById(b.contactId);
-                    aValue = contactA ? contactA.name.toLowerCase() : '';
-                    bValue = contactB ? contactB.name.toLowerCase() : '';
-                    break;
-                case 'value':
-                    aValue = a.value;
-                    bValue = b.value;
-                    break;
-                case 'stage':
-                    const stages = Object.keys(DataManager.config.dealStages);
-                    aValue = stages.indexOf(a.stage);
-                    bValue = stages.indexOf(b.stage);
-                    break;
-                case 'probability':
-                    aValue = a.probability;
-                    bValue = b.probability;
-                    break;
-                case 'closeDate':
-                    aValue = new Date(a.closeDate);
-                    bValue = new Date(b.closeDate);
-                    break;
-                case 'createdAt':
-                    aValue = new Date(a.createdAt);
-                    bValue = new Date(b.createdAt);
-                    break;
-                default:
-                    return 0;
-            }
-            
-            if (aValue < bValue) return this.sortOrder === 'asc' ? -1 : 1;
-            if (aValue > bValue) return this.sortOrder === 'asc' ? 1 : -1;
-            return 0;
-        });
-    }
-
-    updateSortIndicators() {
-        // Remove all sort classes
-        document.querySelectorAll('.deals-table th').forEach(th => {
-            th.classList.remove('sorted-asc', 'sorted-desc');
-        });
-        
-        // Add sort class to current column
-        const sortableHeaders = document.querySelectorAll('.deals-table th.sortable');
-        sortableHeaders.forEach(th => {
-            const columnName = th.textContent.toLowerCase().replace(' ', '');
-            if (columnName.includes(this.sortBy.toLowerCase())) {
-                th.classList.add(this.sortOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
-            }
-        });
-    }
-
-    bulkEditDeals() {
-        UIHelpers.showNotification('Bulk edit feature coming soon!', 'info');
-    }
-
-    // Data processing methods
-    getFilteredDeals() {
-        let deals = DataManager.getDeals();
-        
-        // Apply timeframe filter
-        if (this.selectedTimeframe !== 'all') {
-            const now = new Date();
-            let startDate, endDate;
-            
-            switch(this.selectedTimeframe) {
-                case 'current-quarter':
-                    const currentQuarter = Math.floor(now.getMonth() / 3);
-                    startDate = new Date(now.getFullYear(), currentQuarter * 3, 1);
-                    endDate = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0);
-                    break;
-                case 'next-quarter':
-                    const nextQuarter = Math.floor(now.getMonth() / 3) + 1;
-                    startDate = new Date(now.getFullYear(), nextQuarter * 3, 1);
-                    endDate = new Date(now.getFullYear(), (nextQuarter + 1) * 3, 0);
-                    break;
-                case 'this-year':
-                    startDate = new Date(now.getFullYear(), 0, 1);
-                    endDate = new Date(now.getFullYear(), 11, 31);
-                    break;
-            }
-            
-            if (startDate && endDate) {
-                deals = deals.filter(deal => {
-                    const closeDate = new Date(deal.closeDate);
-                    return closeDate >= startDate && closeDate <= endDate;
-                });
-            }
-        }
-        
-        // Apply team filter
-        if (this.filters.team !== 'all') {
-            const teamContacts = DataManager.getContactsByTeam(this.filters.team);
-            const teamContactIds = teamContacts.map(c => c.id);
-            deals = deals.filter(deal => teamContactIds.includes(deal.contactId));
-        }
-        
-        // Apply value filter
-        if (this.filters.value !== 'all') {
-            deals = deals.filter(deal => {
-                switch(this.filters.value) {
-                    case 'enterprise': return deal.value >= 500000;
-                    case 'large': return deal.value >= 100000 && deal.value < 500000;
-                    case 'medium': return deal.value >= 25000 && deal.value < 100000;
-                    case 'small': return deal.value < 25000;
-                    default: return true;
-                }
-            });
-        }
-        
-        // Apply stage filter
-        if (this.filters.stage !== 'all') {
-            deals = deals.filter(deal => deal.stage === this.filters.stage);
-        }
-        
-        return deals;
-    }
-
-    getTeamOptions() {
-        const teams = DataManager.getTeams();
-        return Object.keys(teams).map(teamId => 
-            `<option value="${teamId}">${teams[teamId].name}</option>`
-        ).join('');
-    }
-
-    getStageOptions() {
-        const stages = DataManager.config.dealStages;
-        return Object.keys(stages).map(stageId => 
-            `<option value="${stageId}">${stages[stageId].name}</option>`
-        ).join('');
-    }
-
-    calculatePipelineStats(deals) {
-        const totalValue = deals.reduce((sum, deal) => sum + deal.value, 0);
-        const weightedValue = deals.reduce((sum, deal) => sum + (deal.value * (deal.probability / 100)), 0);
-        const avgDealSize = deals.length > 0 ? totalValue / deals.length : 0;
-        
-        // Calculate close rate
-        const closedDeals = deals.filter(deal => ['deal-won', 'deal-lost'].includes(deal.stage));
-        const wonDeals = deals.filter(deal => deal.stage === 'deal-won');
-        const closeRate = closedDeals.length > 0 ? Math.round((wonDeals.length / closedDeals.length) * 100) : 0;
-        
-        // Calculate quarterly forecast
-        const quarterlyDeals = deals.filter(deal => {
-            const closeDate = new Date(deal.closeDate);
-            const now = new Date();
-            const currentQuarter = Math.floor(now.getMonth() / 3);
-            const quarterStart = new Date(now.getFullYear(), currentQuarter * 3, 1);
-            const quarterEnd = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0);
-            return closeDate >= quarterStart && closeDate <= quarterEnd;
-        });
-        const quarterlyForecast = quarterlyDeals.reduce((sum, deal) => sum + (deal.value * (deal.probability / 100)), 0);
-        
-        return {
-            totalValue,
-            weightedValue,
-            avgDealSize,
-            closeRate,
-            quarterlyForecast,
-            totalDeals: deals.length
-        };
-    }
-
-    calculateForecastData(deals) {
-        const highProbDeals = deals.filter(deal => deal.probability >= 75);
-        const mediumProbDeals = deals.filter(deal => deal.probability >= 25 && deal.probability < 75);
-        
-        const bestCase = deals.reduce((sum, deal) => sum + deal.value, 0);
-        const mostLikely = deals.reduce((sum, deal) => sum + (deal.value * (deal.probability / 100)), 0);
-        const worstCase = highProbDeals.reduce((sum, deal) => sum + (deal.value * 0.5), 0);
-        
-        const dealsToClose = deals.filter(deal => deal.probability >= 50).length;
-        
-        const healthMetrics = [
-            { name: 'Pipeline Coverage', value: '2.3x', color: '#28a745' },
-            { name: 'Average Deal Age', value: '45 days', color: '#ffc107' },
-            { name: 'Stalled Deals', value: '12%', color: '#dc3545' },
-            { name: 'New Deals (30d)', value: '8', color: '#17a2b8' }
-        ];
-        
-        return {
-            bestCase,
-            mostLikely,
-            worstCase,
-            dealsToClose,
-            healthMetrics
-        };
-    }
-
-    calculateAnalytics(deals) {
-        const stages = DataManager.config.dealStages;
-        const stageNames = Object.keys(stages);
-        
-        // Conversion rates between stages
-        const conversionRates = stageNames.map((stage, index) => {
-            if (index === 0) return { stage: stages[stage].name, percentage: 100 };
-            
-            const currentStageDeals = deals.filter(d => d.stage === stage).length;
-            const previousStageDeals = deals.filter(d => d.stage === stageNames[index - 1]).length;
-            const percentage = previousStageDeals > 0 ? Math.round((currentStageDeals / previousStageDeals) * 100) : 0;
-            
-            return { stage: stages[stage].name, percentage };
-        });
-        
-        // Deal velocity
-        const avgDealCycle = 67;
-        const fastestDeal = 21;
-        const slowestDeal = 180;
-        
-        // Win/Loss rates
-        const closedDeals = deals.filter(deal => ['deal-won', 'deal-lost'].includes(deal.stage));
-        const wonDeals = deals.filter(deal => deal.stage === 'deal-won');
-        const winRate = closedDeals.length > 0 ? Math.round((wonDeals.length / closedDeals.length) * 100) : 0;
-        const lossRate = 100 - winRate;
-        
-        // Team performance
-        const teams = DataManager.getTeams();
-        const teamPerformance = Object.keys(teams).map(teamId => {
-            const team = teams[teamId];
-            const teamContacts = DataManager.getContactsByTeam(teamId);
-            const teamContactIds = teamContacts.map(c => c.id);
-            const teamDeals = deals.filter(deal => teamContactIds.includes(deal.contactId));
-            const teamValue = teamDeals.reduce((sum, deal) => sum + deal.value, 0);
-            const maxValue = Math.max(...Object.keys(teams).map(id => {
-                const contacts = DataManager.getContactsByTeam(id);
-                const contactIds = contacts.map(c => c.id);
-                const deals = DataManager.getDeals().filter(deal => contactIds.includes(deal.contactId));
-                return deals.reduce((sum, deal) => sum + deal.value, 0);
-            }), 1);
-            
-            return {
-                name: team.name,
-                value: teamValue,
-                deals: teamDeals.length,
-                percentage: Math.round((teamValue / maxValue) * 100),
-                color: team.color,
-                winRate: 75
-            };
-        });
-        
-        return {
-            conversionRates,
-            avgDealCycle,
-            fastestDeal,
-            slowestDeal,
-            winRate,
-            lossRate,
-            teamPerformance
-        };
-    }
-
-    organizeByMonth(deals) {
-        const months = {};
-        
-        deals.forEach(deal => {
-            const closeDate = new Date(deal.closeDate);
-            const monthKey = `${closeDate.getFullYear()}-${closeDate.getMonth()}`;
-            
-            if (!months[monthKey]) {
-                months[monthKey] = {
-                    monthName: closeDate.toLocaleDateString('en-US', { month: 'long' }),
-                    year: closeDate.getFullYear(),
-                    deals: [],
-                    totalValue: 0
-                };
-            }
-            
-            months[monthKey].deals.push(deal);
-            months[monthKey].totalValue += deal.value;
-        });
-        
-        return Object.values(months).sort((a, b) => new Date(`${a.monthName} ${a.year}`) - new Date(`${b.monthName} ${b.year}`));
-    }
-
-    calculateUrgency(deal) {
-        const closeDate = new Date(deal.closeDate);
-        const today = new Date();
-        const daysUntilClose = Math.ceil((closeDate - today) / (1000 * 60 * 60 * 24));
-        
-        if (daysUntilClose <= 7) return 'high';
-        if (daysUntilClose <= 30) return 'medium';
-        return 'low';
-    }
-
-    getUrgencyText(deal) {
-        const closeDate = new Date(deal.closeDate);
-        const today = new Date();
-        const daysUntilClose = Math.ceil((closeDate - today) / (1000 * 60 * 60 * 24));
-        
-        if (daysUntilClose < 0) return 'Overdue';
-        if (daysUntilClose === 0) return 'Due today';
-        if (daysUntilClose === 1) return 'Due tomorrow';
-        if (daysUntilClose <= 7) return `${daysUntilClose} days left`;
-        if (daysUntilClose <= 30) return `${daysUntilClose} days left`;
-        return `${Math.ceil(daysUntilClose / 7)} weeks left`;
-    }
-
-    updateInsights() {
-        const deals = this.getFilteredDeals();
-        const stats = this.calculatePipelineStats(deals);
-        
-        // Update the insights bar
-        const insightCards = document.querySelectorAll('.insight-card .insight-value');
-        if (insightCards.length >= 5) {
-            insightCards[0].textContent = `${(stats.totalValue / 1000000).toFixed(1)}M`;
-            insightCards[1].textContent = `${(stats.weightedValue / 1000000).toFixed(1)}M`;
-            insightCards[2].textContent = `${(stats.avgDealSize / 1000).toFixed(0)}K`;
-            insightCards[3].textContent = `${stats.closeRate}%`;
-            insightCards[4].textContent = `${(stats.quarterlyForecast / 1000000).toFixed(1)}M`;
-        }
-    }
-
-    exportPipeline() {
-        const deals = this.getFilteredDeals();
-        let csv = 'Deal Name,Contact,Company,Stage,Value,Probability,Close Date,Description\n';
-        
-        deals.forEach(deal => {
-            const contact = DataManager.getContactById(deal.contactId);
-            const contactName = contact ? contact.name : 'Unknown';
-            const company = contact ? contact.company : 'Unknown';
-            const stage = DataManager.config.dealStages[deal.stage]?.name || deal.stage;
-            
-            csv += `"${deal.name}","${contactName}","${company}","${stage}",${deal.value},${deal.probability},"${deal.closeDate}","${deal.description || ''}"\n`;
-        });
-        
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `pipeline-export-${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        UIHelpers.showNotification('Pipeline exported successfully', 'success');
-    }
-}
-
-// Create global instance
-const pipelineModule = new PipelineModule();
-console.log('✅ Pipeline module loaded successfully');// Complete Pipeline Management Module - Enterprise-Grade Features
+// Complete Pipeline Management Module - Enterprise-Grade Features
 class PipelineModule {
     constructor() {
         this.currentView = 'kanban';
@@ -1273,10 +667,6 @@ class PipelineModule {
                 .close:hover { color: #000; }
             </style>
         `;
-    }font-weight: bold;
-                }
-            </style>
-        `;
     }
 
     setupEventListeners() {
@@ -1725,6 +1115,609 @@ class PipelineModule {
             DataManager.updateDeal(deal);
             UIHelpers.showNotification(`Deal moved to ${stageConfig.name}`, 'success');
         }
+    }
+
+    // Deal Management Methods
+    showDealForm(dealId = null) {
+        const deal = dealId ? DataManager.getDeals().find(d => d.id === dealId) : null;
+        const contacts = DataManager.getAllContacts();
+        const stages = DataManager.config.dealStages;
+        const isEdit = !!deal;
+        
+        const modalContent = `
+            <h3>${isEdit ? 'Edit Deal' : 'Add New Deal'}</h3>
+            <form id="dealForm" class="deal-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dealName">Deal Name *</label>
+                        <input type="text" id="dealName" name="name" required 
+                               value="${deal ? deal.name : ''}" 
+                               placeholder="Enter deal name">
+                    </div>
+                    <div class="form-group">
+                        <label for="dealContact">Contact *</label>
+                        <select id="dealContact" name="contactId" required>
+                            <option value="">Select Contact</option>
+                            ${contacts.map(contact => `
+                                <option value="${contact.id}" ${deal && deal.contactId === contact.id ? 'selected' : ''}>
+                                    ${contact.name} (${contact.company})
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dealValue">Deal Value ($) *</label>
+                        <input type="number" id="dealValue" name="value" required min="0" step="1000"
+                               value="${deal ? deal.value : ''}" 
+                               placeholder="Enter deal value">
+                    </div>
+                    <div class="form-group">
+                        <label for="dealStage">Stage *</label>
+                        <select id="dealStage" name="stage" required onchange="pipelineModule.updateProbabilityFromStage()">
+                            ${Object.keys(stages).map(stageId => `
+                                <option value="${stageId}" ${deal && deal.stage === stageId ? 'selected' : ''}>
+                                    ${stages[stageId].name}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dealProbability">Probability (%) *</label>
+                        <input type="number" id="dealProbability" name="probability" required min="0" max="100"
+                               value="${deal ? deal.probability : ''}" 
+                               placeholder="Enter probability">
+                    </div>
+                    <div class="form-group">
+                        <label for="dealCloseDate">Expected Close Date *</label>
+                        <input type="date" id="dealCloseDate" name="closeDate" required
+                               value="${deal ? deal.closeDate : ''}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dealDescription">Description</label>
+                    <textarea id="dealDescription" name="description" 
+                              placeholder="Enter deal description, notes, or key details...">${deal ? deal.description || '' : ''}</textarea>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="action-btn">
+                        ${isEdit ? 'Update Deal' : 'Create Deal'}
+                    </button>
+                    <button type="button" class="action-btn secondary" onclick="UIHelpers.closeModal('dealFormModal')">
+                        Cancel
+                    </button>
+                    ${isEdit ? `
+                        <button type="button" class="action-btn danger" onclick="pipelineModule.deleteDeal('${deal.id}')">
+                            Delete Deal
+                        </button>
+                    ` : ''}
+                </div>
+            </form>
+        `;
+        
+        document.getElementById('dealFormContent').innerHTML = modalContent;
+        
+        // Set default probability based on stage
+        if (!isEdit) {
+            this.updateProbabilityFromStage();
+        }
+        
+        // Handle form submission
+        document.getElementById('dealForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const dealData = Object.fromEntries(formData.entries());
+            
+            // Convert numeric fields
+            dealData.value = parseFloat(dealData.value);
+            dealData.probability = parseInt(dealData.probability);
+            
+            if (isEdit) {
+                DataManager.updateDeal({ ...deal, ...dealData });
+                UIHelpers.showNotification('Deal updated successfully', 'success');
+            } else {
+                DataManager.addDeal(dealData);
+                UIHelpers.showNotification('Deal created successfully', 'success');
+            }
+            
+            UIHelpers.closeModal('dealFormModal');
+        });
+        
+        UIHelpers.showModal('dealFormModal');
+    }
+
+    updateProbabilityFromStage() {
+        const stageSelect = document.getElementById('dealStage');
+        const probabilityInput = document.getElementById('dealProbability');
+        
+        if (stageSelect && probabilityInput) {
+            const selectedStage = stageSelect.value;
+            const stageConfig = DataManager.config.dealStages[selectedStage];
+            if (stageConfig) {
+                probabilityInput.value = stageConfig.probability;
+            }
+        }
+    }
+
+    quickEditDeal(dealId) {
+        const deal = DataManager.getDeals().find(d => d.id === dealId);
+        if (!deal) return;
+        
+        const stages = DataManager.config.dealStages;
+        
+        const modalContent = `
+            <h3>Quick Edit: ${deal.name}</h3>
+            <form id="quickEditForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Deal Value:</label>
+                        <input type="number" id="dealValue" value="${deal.value}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Probability:</label>
+                        <input type="number" id="dealProbability" value="${deal.probability}" min="0" max="100" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Stage:</label>
+                        <select id="dealStage" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                            ${Object.keys(stages).map(stageId => `
+                                <option value="${stageId}" ${deal.stage === stageId ? 'selected' : ''}>
+                                    ${stages[stageId].name}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Close Date:</label>
+                        <input type="date" id="dealCloseDate" value="${deal.closeDate}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Notes:</label>
+                    <textarea id="dealNotes" style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 6px;" placeholder="Update notes...">${deal.description || ''}</textarea>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="action-btn">Save Changes</button>
+                    <button type="button" class="action-btn secondary" onclick="UIHelpers.closeModal('dealQuickEditModal')">Cancel</button>
+                </div>
+            </form>
+        `;
+        
+        document.getElementById('dealQuickEditContent').innerHTML = modalContent;
+        
+        // Handle form submission
+        document.getElementById('quickEditForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const updatedDeal = {
+                ...deal,
+                value: parseFloat(document.getElementById('dealValue').value),
+                probability: parseInt(document.getElementById('dealProbability').value),
+                stage: document.getElementById('dealStage').value,
+                closeDate: document.getElementById('dealCloseDate').value,
+                description: document.getElementById('dealNotes').value
+            };
+            
+            DataManager.updateDeal(updatedDeal);
+            UIHelpers.closeModal('dealQuickEditModal');
+            UIHelpers.showNotification('Deal updated successfully', 'success');
+        });
+        
+        UIHelpers.showModal('dealQuickEditModal');
+    }
+
+    editDeal(dealId) {
+        this.showDealForm(dealId);
+    }
+
+    cloneDeal(dealId) {
+        const deal = DataManager.getDeals().find(d => d.id === dealId);
+        if (!deal) return;
+        
+        const clonedDeal = {
+            ...deal,
+            name: deal.name + ' (Copy)',
+            stage: 'prequalified',
+            probability: 10,
+            closeDate: '',
+            createdAt: new Date().toISOString()
+        };
+        delete clonedDeal.id;
+        
+        DataManager.addDeal(clonedDeal);
+        UIHelpers.showNotification('Deal cloned successfully', 'success');
+    }
+
+    deleteDeal(dealId) {
+        const deal = DataManager.getDeals().find(d => d.id === dealId);
+        if (!deal) return;
+        
+        if (confirm(`Are you sure you want to delete "${deal.name}"? This action cannot be undone.`)) {
+            DataManager.deleteDeal(dealId);
+            UIHelpers.closeModal('dealFormModal');
+            UIHelpers.showNotification('Deal deleted successfully', 'success');
+        }
+    }
+
+    logActivity(dealId) {
+        const deal = DataManager.getDeals().find(d => d.id === dealId);
+        if (deal) {
+            const contact = DataManager.getContactById(deal.contactId);
+            if (contact && typeof touchpointsModule !== 'undefined') {
+                touchpointsModule.addTouchpointFor(deal.contactId, `Deal: ${deal.name}`);
+            } else {
+                UIHelpers.showNotification('Activity logging coming soon!', 'info');
+            }
+        }
+    }
+
+    // Table sorting and filtering
+    sortTable(column) {
+        if (this.sortBy === column) {
+            this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortBy = column;
+            this.sortOrder = 'asc';
+        }
+        this.renderContent();
+    }
+
+    sortDeals(deals) {
+        return deals.sort((a, b) => {
+            let aValue, bValue;
+            
+            switch(this.sortBy) {
+                case 'name':
+                    aValue = a.name.toLowerCase();
+                    bValue = b.name.toLowerCase();
+                    break;
+                case 'contact':
+                    const contactA = DataManager.getContactById(a.contactId);
+                    const contactB = DataManager.getContactById(b.contactId);
+                    aValue = contactA ? contactA.name.toLowerCase() : '';
+                    bValue = contactB ? contactB.name.toLowerCase() : '';
+                    break;
+                case 'value':
+                    aValue = a.value;
+                    bValue = b.value;
+                    break;
+                case 'stage':
+                    const stages = Object.keys(DataManager.config.dealStages);
+                    aValue = stages.indexOf(a.stage);
+                    bValue = stages.indexOf(b.stage);
+                    break;
+                case 'probability':
+                    aValue = a.probability;
+                    bValue = b.probability;
+                    break;
+                case 'closeDate':
+                    aValue = new Date(a.closeDate);
+                    bValue = new Date(b.closeDate);
+                    break;
+                case 'createdAt':
+                    aValue = new Date(a.createdAt);
+                    bValue = new Date(b.createdAt);
+                    break;
+                default:
+                    return 0;
+            }
+            
+            if (aValue < bValue) return this.sortOrder === 'asc' ? -1 : 1;
+            if (aValue > bValue) return this.sortOrder === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    updateSortIndicators() {
+        // Remove all sort classes
+        document.querySelectorAll('.deals-table th').forEach(th => {
+            th.classList.remove('sorted-asc', 'sorted-desc');
+        });
+        
+        // Add sort class to current column
+        const sortableHeaders = document.querySelectorAll('.deals-table th.sortable');
+        sortableHeaders.forEach(th => {
+            const columnName = th.textContent.toLowerCase().replace(' ', '');
+            if (columnName.includes(this.sortBy.toLowerCase())) {
+                th.classList.add(this.sortOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            }
+        });
+    }
+
+    bulkEditDeals() {
+        UIHelpers.showNotification('Bulk edit feature coming soon!', 'info');
+    }
+
+    // Data processing methods
+    getFilteredDeals() {
+        let deals = DataManager.getDeals();
+        
+        // Apply timeframe filter
+        if (this.selectedTimeframe !== 'all') {
+            const now = new Date();
+            let startDate, endDate;
+            
+            switch(this.selectedTimeframe) {
+                case 'current-quarter':
+                    const currentQuarter = Math.floor(now.getMonth() / 3);
+                    startDate = new Date(now.getFullYear(), currentQuarter * 3, 1);
+                    endDate = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0);
+                    break;
+                case 'next-quarter':
+                    const nextQuarter = Math.floor(now.getMonth() / 3) + 1;
+                    startDate = new Date(now.getFullYear(), nextQuarter * 3, 1);
+                    endDate = new Date(now.getFullYear(), (nextQuarter + 1) * 3, 0);
+                    break;
+                case 'this-year':
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                    endDate = new Date(now.getFullYear(), 11, 31);
+                    break;
+            }
+            
+            if (startDate && endDate) {
+                deals = deals.filter(deal => {
+                    const closeDate = new Date(deal.closeDate);
+                    return closeDate >= startDate && closeDate <= endDate;
+                });
+            }
+        }
+        
+        // Apply team filter
+        if (this.filters.team !== 'all') {
+            const teamContacts = DataManager.getContactsByTeam(this.filters.team);
+            const teamContactIds = teamContacts.map(c => c.id);
+            deals = deals.filter(deal => teamContactIds.includes(deal.contactId));
+        }
+        
+        // Apply value filter
+        if (this.filters.value !== 'all') {
+            deals = deals.filter(deal => {
+                switch(this.filters.value) {
+                    case 'enterprise': return deal.value >= 500000;
+                    case 'large': return deal.value >= 100000 && deal.value < 500000;
+                    case 'medium': return deal.value >= 25000 && deal.value < 100000;
+                    case 'small': return deal.value < 25000;
+                    default: return true;
+                }
+            });
+        }
+        
+        // Apply stage filter
+        if (this.filters.stage !== 'all') {
+            deals = deals.filter(deal => deal.stage === this.filters.stage);
+        }
+        
+        return deals;
+    }
+
+    getTeamOptions() {
+        const teams = DataManager.getTeams();
+        return Object.keys(teams).map(teamId => 
+            `<option value="${teamId}">${teams[teamId].name}</option>`
+        ).join('');
+    }
+
+    getStageOptions() {
+        const stages = DataManager.config.dealStages;
+        return Object.keys(stages).map(stageId => 
+            `<option value="${stageId}">${stages[stageId].name}</option>`
+        ).join('');
+    }
+
+    calculatePipelineStats(deals) {
+        const totalValue = deals.reduce((sum, deal) => sum + deal.value, 0);
+        const weightedValue = deals.reduce((sum, deal) => sum + (deal.value * (deal.probability / 100)), 0);
+        const avgDealSize = deals.length > 0 ? totalValue / deals.length : 0;
+        
+        // Calculate close rate
+        const closedDeals = deals.filter(deal => ['deal-won', 'deal-lost'].includes(deal.stage));
+        const wonDeals = deals.filter(deal => deal.stage === 'deal-won');
+        const closeRate = closedDeals.length > 0 ? Math.round((wonDeals.length / closedDeals.length) * 100) : 0;
+        
+        // Calculate quarterly forecast
+        const quarterlyDeals = deals.filter(deal => {
+            const closeDate = new Date(deal.closeDate);
+            const now = new Date();
+            const currentQuarter = Math.floor(now.getMonth() / 3);
+            const quarterStart = new Date(now.getFullYear(), currentQuarter * 3, 1);
+            const quarterEnd = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0);
+            return closeDate >= quarterStart && closeDate <= quarterEnd;
+        });
+        const quarterlyForecast = quarterlyDeals.reduce((sum, deal) => sum + (deal.value * (deal.probability / 100)), 0);
+        
+        return {
+            totalValue,
+            weightedValue,
+            avgDealSize,
+            closeRate,
+            quarterlyForecast,
+            totalDeals: deals.length
+        };
+    }
+
+    calculateForecastData(deals) {
+        const highProbDeals = deals.filter(deal => deal.probability >= 75);
+        const mediumProbDeals = deals.filter(deal => deal.probability >= 25 && deal.probability < 75);
+        
+        const bestCase = deals.reduce((sum, deal) => sum + deal.value, 0);
+        const mostLikely = deals.reduce((sum, deal) => sum + (deal.value * (deal.probability / 100)), 0);
+        const worstCase = highProbDeals.reduce((sum, deal) => sum + (deal.value * 0.5), 0);
+        
+        const dealsToClose = deals.filter(deal => deal.probability >= 50).length;
+        
+        const healthMetrics = [
+            { name: 'Pipeline Coverage', value: '2.3x', color: '#28a745' },
+            { name: 'Average Deal Age', value: '45 days', color: '#ffc107' },
+            { name: 'Stalled Deals', value: '12%', color: '#dc3545' },
+            { name: 'New Deals (30d)', value: '8', color: '#17a2b8' }
+        ];
+        
+        return {
+            bestCase,
+            mostLikely,
+            worstCase,
+            dealsToClose,
+            healthMetrics
+        };
+    }
+
+    calculateAnalytics(deals) {
+        const stages = DataManager.config.dealStages;
+        const stageNames = Object.keys(stages);
+        
+        // Conversion rates between stages
+        const conversionRates = stageNames.map((stage, index) => {
+            if (index === 0) return { stage: stages[stage].name, percentage: 100 };
+            
+            const currentStageDeals = deals.filter(d => d.stage === stage).length;
+            const previousStageDeals = deals.filter(d => d.stage === stageNames[index - 1]).length;
+            const percentage = previousStageDeals > 0 ? Math.round((currentStageDeals / previousStageDeals) * 100) : 0;
+            
+            return { stage: stages[stage].name, percentage };
+        });
+        
+        // Deal velocity
+        const avgDealCycle = 67;
+        const fastestDeal = 21;
+        const slowestDeal = 180;
+        
+        // Win/Loss rates
+        const closedDeals = deals.filter(deal => ['deal-won', 'deal-lost'].includes(deal.stage));
+        const wonDeals = deals.filter(deal => deal.stage === 'deal-won');
+        const winRate = closedDeals.length > 0 ? Math.round((wonDeals.length / closedDeals.length) * 100) : 0;
+        const lossRate = 100 - winRate;
+        
+        // Team performance
+        const teams = DataManager.getTeams();
+        const teamPerformance = Object.keys(teams).map(teamId => {
+            const team = teams[teamId];
+            const teamContacts = DataManager.getContactsByTeam(teamId);
+            const teamContactIds = teamContacts.map(c => c.id);
+            const teamDeals = deals.filter(deal => teamContactIds.includes(deal.contactId));
+            const teamValue = teamDeals.reduce((sum, deal) => sum + deal.value, 0);
+            const maxValue = Math.max(...Object.keys(teams).map(id => {
+                const contacts = DataManager.getContactsByTeam(id);
+                const contactIds = contacts.map(c => c.id);
+                const deals = DataManager.getDeals().filter(deal => contactIds.includes(deal.contactId));
+                return deals.reduce((sum, deal) => sum + deal.value, 0);
+            }), 1);
+            
+            return {
+                name: team.name,
+                value: teamValue,
+                deals: teamDeals.length,
+                percentage: Math.round((teamValue / maxValue) * 100),
+                color: team.color,
+                winRate: 75
+            };
+        });
+        
+        return {
+            conversionRates,
+            avgDealCycle,
+            fastestDeal,
+            slowestDeal,
+            winRate,
+            lossRate,
+            teamPerformance
+        };
+    }
+
+    organizeByMonth(deals) {
+        const months = {};
+        
+        deals.forEach(deal => {
+            const closeDate = new Date(deal.closeDate);
+            const monthKey = `${closeDate.getFullYear()}-${closeDate.getMonth()}`;
+            
+            if (!months[monthKey]) {
+                months[monthKey] = {
+                    monthName: closeDate.toLocaleDateString('en-US', { month: 'long' }),
+                    year: closeDate.getFullYear(),
+                    deals: [],
+                    totalValue: 0
+                };
+            }
+            
+            months[monthKey].deals.push(deal);
+            months[monthKey].totalValue += deal.value;
+        });
+        
+        return Object.values(months).sort((a, b) => new Date(`${a.monthName} ${a.year}`) - new Date(`${b.monthName} ${b.year}`));
+    }
+
+    calculateUrgency(deal) {
+        const closeDate = new Date(deal.closeDate);
+        const today = new Date();
+        const daysUntilClose = Math.ceil((closeDate - today) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntilClose <= 7) return 'high';
+        if (daysUntilClose <= 30) return 'medium';
+        return 'low';
+    }
+
+    getUrgencyText(deal) {
+        const closeDate = new Date(deal.closeDate);
+        const today = new Date();
+        const daysUntilClose = Math.ceil((closeDate - today) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntilClose < 0) return 'Overdue';
+        if (daysUntilClose === 0) return 'Due today';
+        if (daysUntilClose === 1) return 'Due tomorrow';
+        if (daysUntilClose <= 7) return `${daysUntilClose} days left`;
+        if (daysUntilClose <= 30) return `${daysUntilClose} days left`;
+        return `${Math.ceil(daysUntilClose / 7)} weeks left`;
+    }
+
+    updateInsights() {
+        const deals = this.getFilteredDeals();
+        const stats = this.calculatePipelineStats(deals);
+        
+        // Update the insights bar
+        const insightCards = document.querySelectorAll('.insight-card .insight-value');
+        if (insightCards.length >= 5) {
+            insightCards[0].textContent = `${(stats.totalValue / 1000000).toFixed(1)}M`;
+            insightCards[1].textContent = `${(stats.weightedValue / 1000000).toFixed(1)}M`;
+            insightCards[2].textContent = `${(stats.avgDealSize / 1000).toFixed(0)}K`;
+            insightCards[3].textContent = `${stats.closeRate}%`;
+            insightCards[4].textContent = `${(stats.quarterlyForecast / 1000000).toFixed(1)}M`;
+        }
+    }
+
+    exportPipeline() {
+        const deals = this.getFilteredDeals();
+        let csv = 'Deal Name,Contact,Company,Stage,Value,Probability,Close Date,Description\n';
+        
+        deals.forEach(deal => {
+            const contact = DataManager.getContactById(deal.contactId);
+            const contactName = contact ? contact.name : 'Unknown';
+            const company = contact ? contact.company : 'Unknown';
+            const stage = DataManager.config.dealStages[deal.stage]?.name || deal.stage;
+            
+            csv += `"${deal.name}","${contactName}","${company}","${stage}",${deal.value},${deal.probability},"${deal.closeDate}","${deal.description || ''}"\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pipeline-export-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        UIHelpers.showNotification('Pipeline exported successfully', 'success');
     }
 }
 
