@@ -64,6 +64,12 @@ const AppController = {
             relationshipsModule.init();
             console.log('Relationships module registered');
         }
+
+        if (typeof pipelineModule !== 'undefined') {
+            this.modules.pipeline = pipelineModule;
+            pipelineModule.init();
+            console.log('Pipeline module registered');
+        }
     },
 
     showTab(tabName) {
