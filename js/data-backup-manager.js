@@ -13,14 +13,14 @@ class DataBackupManager {
                 appName: 'AWS Partner Tracker',
                 data: {
                     contacts: DataManager.getAllContacts(),
-                    pipeline: DataManager.getPipeline(),
+                    pipeline: DataManager.getPipelineEntries ? DataManager.getPipelineEntries() : [],
                     touchpoints: DataManager.getTouchpoints(),
                     tasks: DataManager.getTasks ? DataManager.getTasks() : [],
                     settings: this.getAppSettings()
                 },
                 stats: {
                     totalContacts: DataManager.getAllContacts().length,
-                    totalPipeline: DataManager.getPipeline().length,
+                    totalPipeline: DataManager.getPipelineEntries ? DataManager.getPipelineEntries().length : 0,
                     totalTouchpoints: DataManager.getTouchpoints().length,
                     totalTasks: DataManager.getTasks ? DataManager.getTasks().length : 0
                 }
@@ -123,7 +123,7 @@ class DataBackupManager {
                         <h4>📊 Current Data:</h4>
                         <ul style="margin: 10px 0; padding-left: 20px;">
                             <li>Contacts: ${DataManager.getAllContacts().length}</li>
-                            <li>Pipeline: ${DataManager.getPipeline().length}</li>
+                            <li>Pipeline: ${DataManager.getPipelineEntries ? DataManager.getPipelineEntries().length : 0}</li>
                             <li>Touchpoints: ${DataManager.getTouchpoints().length}</li>
                             <li>Tasks: ${DataManager.getTasks ? DataManager.getTasks().length : 0}</li>
                         </ul>
@@ -195,7 +195,7 @@ class DataBackupManager {
     createEmergencyBackup() {
         return {
             contacts: DataManager.getAllContacts(),
-            pipeline: DataManager.getPipeline(),
+            pipeline: DataManager.getPipelineEntries ? DataManager.getPipelineEntries() : [],
             touchpoints: DataManager.getTouchpoints(),
             tasks: DataManager.getTasks ? DataManager.getTasks() : []
         };
@@ -291,7 +291,7 @@ class DataBackupManager {
                         <div style="font-size: 0.9em; color: #666;">Contacts</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="font-size: 1.5em; font-weight: bold; color: #4CAF50;">${DataManager.getPipeline().length}</div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #4CAF50;">${DataManager.getPipelineEntries ? DataManager.getPipelineEntries().length : 0}</div>
                         <div style="font-size: 0.9em; color: #666;">Pipeline</div>
                     </div>
                     <div style="text-align: center;">
