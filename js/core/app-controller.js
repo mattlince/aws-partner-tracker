@@ -35,12 +35,6 @@ const AppController = {
             console.log('Contacts module registered');
         }
         
-        if (typeof dealsModule !== 'undefined') {
-            this.modules.deals = dealsModule;
-            dealsModule.init();
-            console.log('Deals module registered');
-        }
-        
         if (typeof touchpointsModule !== 'undefined') {
             this.modules.touchpoints = touchpointsModule;
             touchpointsModule.init();
