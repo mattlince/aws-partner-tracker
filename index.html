@@ -3,141 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AWS Partner Engagement Tracker - Modular</title>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>AWS Partner Engagement Tracker</h1>
-            <p>Master Dashboard for 9 Teams • 51 AMs • $2.9M Annual Target</p>
-        </div>
-
-        <div id="dashboard" class="dashboard">
-            <!-- Dashboard metrics will be populated by dashboard module -->
-        </div>
-
-        <div class="tabs">
-            <button class="tab active" onclick="AppController.showTab('teams')">Team Overview</button>
-            <button class="tab" onclick="AppController.showTab('deals')">Active Deals</button>
-            <button class="tab" onclick="AppController.showTab('touchpoints')">Touchpoint Tracker</button>
-            <button class="tab" onclick="AppController.showTab('pipeline')">Pipeline Tracker</button>
-            <button class="tab" onclick="AppController.showTab('relationships')">Relationship Matrix</button>
-            <button class="tab" onclick="AppController.showTab('analytics')">Performance Analytics</button>
-        </div>
-
-        <div id="content-area">
-            <!-- Tab content will be populated by modules -->
-        </div>
-    </div>
-
-    <!-- Modals container -->
-    <div id="modals-container">
-        <!-- Modals will be created by modules as needed -->
-    </div>
-
-    <!-- Notification system -->
-    <div id="notification" class="notification">
-        <span id="notificationText"></span>
-    </div>
-
-    <!-- Core Scripts -->
-    <script src="js/core/app-controller.js"></script>
-    <script src="js/core/data-manager.js"></script>
-    <script src="js/core/ui-helpers.js"></script>
-    
-    <!-- Module Scripts (we'll add these next) -->
-    <script src="js/modules/dashboard-module.js"></script>
-    <script src="js/modules/contacts-module.js"></script>
-    <script src="js/modules/deals-module.js"></script>
-    <script src="js/modules/teams-module.js"></script>
-    <script src="js/modules/touchpoints-module.js"></script>
-    <script src="js/modules/relationships-module.js"></script>
-    <script src="js/modules/pipeline-module.js"></script>
-    
-    <!-- Initialize App -->
-    <script>
-        // Initialize application
-        document.addEventListener('DOMContentLoaded', function() {
-            AppController.init();
-        });
-    </script>
-
+    <title>AWS Partner Tracker</title>
     <style>
-        /* Core styles */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            color: #333;
         }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-            overflow: hidden;
+            padding: 20px;
         }
+
         .header {
-            background: linear-gradient(45deg, #232F3E, #FF9900);
-            color: white;
-            padding: 30px;
-            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .header p { font-size: 1.2em; opacity: 0.9; }
-        .dashboard {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 20px;
-            padding: 30px;
-            background: #f8f9fa;
-        }
-        .tabs {
-            display: flex;
-            background: #e9ecef;
-            border-bottom: 1px solid #ddd;
-        }
-        .tab {
-            flex: 1;
-            padding: 15px 20px;
-            text-align: center;
-            cursor: pointer;
-            background: transparent;
-            border: none;
-            font-size: 1em;
-            transition: all 0.3s ease;
-        }
-        .tab.active {
-            background: white;
-            border-bottom: 3px solid #FF9900;
-            font-weight: bold;
+
+        .header h1 {
             color: #232F3E;
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            font-weight: 700;
         }
-        .tab:hover:not(.active) { background: #f8f9fa; }
-        #content-area { min-height: 600px; padding: 30px; }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+            margin: 0;
+        }
+
+        .main-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #232F3E;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .nav-btn.active {
+            background: #FF9900;
+            color: white;
+            box-shadow: 0 6px 20px rgba(255, 153, 0, 0.3);
+        }
+
+        .content-area {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-height: 600px;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .loading::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ddd;
+            border-top: 2px solid #FF9900;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 15px 20px;
             background: #28a745;
             color: white;
-            border-radius: 6px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            z-index: 1001;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
             transform: translateX(400px);
             transition: transform 0.3s ease;
         }
-        .notification.show { transform: translateX(0); }
-        .loading { 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 200px; 
-            color: #666; 
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        .notification.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .notification.info {
+            background: #17a2b8;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header {
+                padding: 15px 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .nav-btn {
+                padding: 10px 16px;
+                font-size: 0.9em;
+            }
+
+            .content-area {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-nav {
+                flex-direction: column;
+            }
+
+            .nav-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 1.6em;
+            }
+
+            .header p {
+                font-size: 1em;
+            }
         }
     </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🚀 AWS Partner Tracker</h1>
+            <p>Comprehensive partner relationship and pipeline management platform</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="main-nav">
+            <button class="nav-btn active" data-tab="dashboard" onclick="AppController.switchTab('dashboard')">
+                📊 Dashboard
+            </button>
+            <button class="nav-btn" data-tab="teams" onclick="AppController.switchTab('teams')">
+                👥 Team Overview
+            </button>
+            <button class="nav-btn" data-tab="pipeline" onclick="AppController.switchTab('pipeline')">
+                🚀 Pipeline Management
+            </button>
+            <button class="nav-btn" data-tab="touchpoints" onclick="AppController.switchTab('touchpoints')">
+                📞 Touchpoint Tracker
+            </button>
+            <button class="nav-btn" data-tab="relationships" onclick="AppController.switchTab('relationships')">
+                🕸️ Relationship Matrix
+            </button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="content-area" id="content-area">
+            <div class="loading">Loading AWS Partner Tracker...</div>
+        </main>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Core JavaScript Files -->
+    <script src="js/utils/ui-helpers.js"></script>
+    <script src="js/core/data-manager.js"></script>
+    <script src="js/core/app-controller.js"></script>
+    
+    <!-- Module JavaScript Files -->
+    <script src="js/modules/dashboard-module.js"></script>
+    <script src="js/modules/contacts-module.js"></script>
+    <script src="js/modules/teams-module.js"></script>
+    <script src="js/modules/touchpoints-module.js"></script>
+    <script src="js/modules/relationships-module.js"></script>
+    <script src="js/modules/pipeline-module.js"></script>
+
+    <!-- Initialize Application -->
+    <script>
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                console.log('🚀 Initializing AWS Partner Tracker...');
+                
+                // Initialize core systems
+                DataManager.init();
+                AppController.init();
+                
+                // Load sample data if needed (only in development)
+                if (localStorage.getItem('aws-partner-tracker-data') === null) {
+                    console.log('📝 Loading sample data for demo...');
+                    DataManager.loadSampleData();
+                }
+                
+                console.log('✅ AWS Partner Tracker initialized successfully!');
+                
+            } catch (error) {
+                console.error('❌ Failed to initialize AWS Partner Tracker:', error);
+                document.getElementById('content-area').innerHTML = `
+                    <div class="error">
+                        <h3>Initialization Error</h3>
+                        <p>Failed to start the AWS Partner Tracker. Please refresh the page and try again.</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Global error handler
+        window.addEventListener('error', function(event) {
+            console.error('Global error:', event.error);
+            UIHelpers.showNotification('An unexpected error occurred. Please try again.', 'error');
+        });
+
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled promise rejection:', event.reason);
+            UIHelpers.showNotification('A system error occurred. Please try again.', 'error');
+        });
+    </script>
 </body>
 </html>
