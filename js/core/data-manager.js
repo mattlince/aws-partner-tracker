@@ -187,7 +187,66 @@ removeTeamMember(teamId, memberId) {
             this.saveToStorage();
         }
     },
+// Add these methods to your DataManager object:
 
+// Enhanced Team methods
+updateTeam(updatedTeam) {
+    if (this.data.teams[updatedTeam.id]) {
+        this.data.teams[updatedTeam.id] = { ...this.data.teams[updatedTeam.id], ...updatedTeam };
+        this.emit('team:updated', updatedTeam);
+        this.saveToStorage();
+    }
+},
+
+deleteTeam(teamId) {
+    if (this.data.teams[teamId]) {
+        delete this.data.teams[teamId];
+        this.emit('team:deleted', teamId);
+        this.saveToStorage();
+    }
+},
+
+transferTeamData(fromTeamId, toTeamId) {
+    // Transfer team members
+    const fromMembers = this.data.teamMembers[fromTeamId] || [];
+    if (!this.data.teamMembers[toTeamId]) this.data.teamMembers[toTeamId] = [];
+    this.data.teamMembers[toTeamId].push(...fromMembers);
+    delete this.data.teamMembers[fromTeamId];
+    
+    // Transfer contacts
+    const fromContacts = this.data.contacts[fromTeamId] || [];
+    if (!this.data.contacts[toTeamId]) this.data.contacts[toTeamId] = [];
+    this.data.contacts[toTeamId].push(...fromContacts);
+    delete this.data.contacts[fromTeamId];
+    
+    this.emit('team:data-transferred', { fromTeamId, toTeamId });
+    this.saveToStorage();
+},
+
+transferTeamMembers(fromTeamId, toTeamId, memberIds, includeContacts = false) {
+    const fromMembers = this.data.teamMembers[fromTeamId] || [];
+    const toTransfer = fromMembers.filter(member => memberIds.includes(member.id));
+    
+    // Add members to destination team
+    if (!this.data.teamMembers[toTeamId]) this.data.teamMembers[toTeamId] = [];
+    this.data.teamMembers[toTeamId].push(...toTransfer);
+    
+    // Remove members from source team
+    this.data.teamMembers[fromTeamId] = fromMembers.filter(member => !memberIds.includes(member.id));
+    
+    // If transferring contacts, move related contacts too
+    if (includeContacts) {
+        // This is a simplified transfer - in reality you might want more sophisticated contact assignment logic
+        const fromContacts = this.data.contacts[fromTeamId] || [];
+        const contactsToTransfer = fromContacts.splice(0, Math.ceil(fromContacts.length * (toTransfer.length / (fromMembers.length + toTransfer.length))));
+        
+        if (!this.data.contacts[toTeamId]) this.data.contacts[toTeamId] = [];
+        this.data.contacts[toTeamId].push(...contactsToTransfer);
+    }
+    
+    this.emit('team:members-transferred', { fromTeamId, toTeamId, memberIds });
+    this.saveToStorage();
+},
     // Deals methods
     getDeals() {
         return this.data.deals || [];
