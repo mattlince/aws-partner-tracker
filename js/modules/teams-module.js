@@ -495,7 +495,8 @@ class TeamsModule {
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.dropdown')) {
-                document.getElementById('addDropdown').style.display = 'none';
+                const dropdown = document.getElementById('addDropdown');
+        if (dropdown) dropdown.style.display = 'none';
             }
         });
     }
