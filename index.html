@@ -254,43 +254,75 @@
     <script>
         // Initialize the application when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            try {
-                console.log('🚀 Initializing AWS Partner Tracker...');
-                
-                // Initialize core systems
-                DataManager.init();
-                AppController.init();
-                
-                // Load sample data if needed (only in development)
-                if (localStorage.getItem('aws-partner-tracker-data') === null) {
-                    console.log('📝 Loading sample data for demo...');
-                    DataManager.loadSampleData();
+            // Wait a bit to ensure all scripts are loaded
+            setTimeout(() => {
+                try {
+                    console.log('🚀 Initializing AWS Partner Tracker...');
+                    
+                    // Check if all required objects exist
+                    if (typeof DataManager === 'undefined') {
+                        throw new Error('DataManager not loaded - check js/core/data-manager.js');
+                    }
+                    if (typeof AppController === 'undefined') {
+                        throw new Error('AppController not loaded - check js/core/app-controller.js');
+                    }
+                    if (typeof UIHelpers === 'undefined') {
+                        throw new Error('UIHelpers not loaded - check js/utils/ui-helpers.js');
+                    }
+                    
+                    // Initialize core systems
+                    DataManager.init();
+                    AppController.init();
+                    
+                    // Load sample data if needed (only in development)
+                    if (localStorage.getItem('aws-partner-tracker-data') === null) {
+                        console.log('📝 Loading sample data for demo...');
+                        DataManager.loadSampleData();
+                    }
+                    
+                    console.log('✅ AWS Partner Tracker initialized successfully!');
+                    
+                } catch (error) {
+                    console.error('❌ Failed to initialize AWS Partner Tracker:', error);
+                    document.getElementById('content-area').innerHTML = `
+                        <div class="error">
+                            <h3>🚫 Initialization Error</h3>
+                            <p>Failed to start the AWS Partner Tracker. Please check the following:</p>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>All JavaScript files are properly uploaded</li>
+                                <li>File paths match the directory structure</li>
+                                <li>No syntax errors in the JavaScript files</li>
+                            </ul>
+                            <p><strong>Error Details:</strong> ${error.message}</p>
+                            <p style="margin-top: 15px;">
+                                <button onclick="location.reload()" style="background: #FF9900; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                                    🔄 Refresh Page
+                                </button>
+                            </p>
+                        </div>
+                    `;
                 }
-                
-                console.log('✅ AWS Partner Tracker initialized successfully!');
-                
-            } catch (error) {
-                console.error('❌ Failed to initialize AWS Partner Tracker:', error);
-                document.getElementById('content-area').innerHTML = `
-                    <div class="error">
-                        <h3>Initialization Error</h3>
-                        <p>Failed to start the AWS Partner Tracker. Please refresh the page and try again.</p>
-                        <p><strong>Error:</strong> ${error.message}</p>
-                    </div>
-                `;
-            }
+            }, 100); // Small delay to ensure script loading
         });
 
         // Global error handler
         window.addEventListener('error', function(event) {
             console.error('Global error:', event.error);
-            UIHelpers.showNotification('An unexpected error occurred. Please try again.', 'error');
+            if (typeof UIHelpers !== 'undefined' && UIHelpers.showNotification) {
+                UIHelpers.showNotification('An unexpected error occurred. Please try again.', 'error');
+            } else {
+                console.warn('UIHelpers not available for error notification');
+            }
         });
 
         // Handle unhandled promise rejections
         window.addEventListener('unhandledrejection', function(event) {
             console.error('Unhandled promise rejection:', event.reason);
-            UIHelpers.showNotification('A system error occurred. Please try again.', 'error');
+            if (typeof UIHelpers !== 'undefined' && UIHelpers.showNotification) {
+                UIHelpers.showNotification('A system error occurred. Please try again.', 'error');
+            } else {
+                console.warn('UIHelpers not available for promise rejection notification');
+            }
         });
     </script>
 </body>
