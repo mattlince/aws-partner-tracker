@@ -628,7 +628,7 @@ class DashboardModule {
         if (!container) return;
 
         const contacts = DataManager.getAllContacts();
-        const pipeline = DataManager.getPipeline();
+        const pipeline = DataManager.getPipelineEntries ? DataManager.getPipelineEntries() : [];
         const touchpoints = DataManager.getTouchpoints();
         const tasks = DataManager.getTasks ? DataManager.getTasks() : [];
 
@@ -691,7 +691,7 @@ class DashboardModule {
         if (!container) return;
 
         const contacts = DataManager.getAllContacts().slice(-3);
-        const pipeline = DataManager.getPipeline().slice(-3);
+        const pipeline = DataManager.getPipelineEntries ? DataManager.getPipelineEntries().slice(-3) : [];
         const touchpoints = DataManager.getTouchpoints().slice(-3);
 
         let activities = [];
@@ -806,7 +806,7 @@ class DashboardModule {
         const container = document.getElementById('pipelineHealthContent');
         if (!container) return;
 
-        const pipeline = DataManager.getPipeline();
+        const pipeline = DataManager.getPipelineEntries ? DataManager.getPipelineEntries() : [];
         const totalValue = pipeline.reduce((sum, deal) => sum + (deal.value || 0), 0);
         const avgDealSize = pipeline.length > 0 ? totalValue / pipeline.length : 0;
         const stageDistribution = {};
