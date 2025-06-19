@@ -79,6 +79,8 @@ const AppController = {
     switchTab(tabName) {
         console.log(`Switching to tab: ${tabName}`);
         
+        let container; // Declare container at the top to avoid scope issues
+        
         try {
             // Update active button
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -96,7 +98,7 @@ const AppController = {
             this.currentTab = tabName;
             
             // Get content container
-            const container = document.getElementById('content-area');
+            container = document.getElementById('content-area');
             if (!container) {
                 console.error('Content area not found');
                 return;
@@ -164,17 +166,25 @@ const AppController = {
             
         } catch (error) {
             console.error('Error switching tabs:', error);
-            container.innerHTML = `
-                <div class="error">
-                    <h3>🚫 Navigation Error</h3>
-                    <p>An error occurred while switching to "${tabName}".</p>
-                    <p><strong>Error:</strong> ${error.message}</p>
-                    <button onclick="location.reload()" 
-                            style="background: #FF9900; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
-                        🔄 Refresh Page
-                    </button>
-                </div>
-            `;
+            
+            // Make sure container is available for error display
+            if (!container) {
+                container = document.getElementById('content-area');
+            }
+            
+            if (container) {
+                container.innerHTML = `
+                    <div class="error">
+                        <h3>🚫 Navigation Error</h3>
+                        <p>An error occurred while switching to "${tabName}".</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <button onclick="location.reload()" 
+                                style="background: #FF9900; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+                            🔄 Refresh Page
+                        </button>
+                    </div>
+                `;
+            }
         }
     },
 
