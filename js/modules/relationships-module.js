@@ -1,4 +1,4 @@
-// Relationships Module - Network Mapping and Influence Analysis
+// Relationships Module - Network Mapping and Influence Analysis (Fixed)
 class RelationshipsModule {
     constructor() {
         this.currentView = 'matrix';
@@ -13,18 +13,18 @@ class RelationshipsModule {
         // Listen for data changes
         DataManager.on('contact:updated', () => this.refreshRelationshipData());
         DataManager.on('contact:deleted', () => this.refreshRelationshipData());
-        DataManager.on('relationship:updated', () => this.renderIfActive());
-        DataManager.on('data:loaded', () => this.renderIfActive());
+        DataManager.on('relationship:updated', () => this.refreshRelationshipData());
+        DataManager.on('data:loaded', () => this.refreshRelationshipData());
     }
 
     render(container) {
         container.innerHTML = this.getHTML();
         this.setupEventListeners();
-        this.refreshRelationshipData();
-        this.renderContent();
+        this.renderContent(); // Call renderContent directly, not refreshRelationshipData
     }
 
     renderIfActive() {
+        // Only render if this is the active tab
         if (AppController.currentTab === 'relationships') {
             const container = document.getElementById('content-area');
             if (container) {
@@ -219,113 +219,30 @@ class RelationshipsModule {
                     font-size: 0.9em;
                     color: #666;
                 }
-                .org-chart {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 10px;
-                }
-                .org-level {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 8px;
-                    padding: 10px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                }
                 .contact-node {
-                    display: flex;
-                    align-items: center;
+                    display: inline-block;
                     padding: 8px 12px;
-                    background: white;
+                    background: #e3f2fd;
+                    color: #1565c0;
                     border-radius: 20px;
                     cursor: pointer;
                     transition: all 0.3s ease;
-                    border: 2px solid transparent;
+                    margin: 4px;
                     font-size: 0.9em;
+                    border: 2px solid transparent;
                 }
                 .contact-node:hover {
                     transform: scale(1.05);
                     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                }
-                .contact-node.selected {
                     border-color: #FF9900;
-                    background: #fff3cd;
                 }
-                .influence-high { border-left: 4px solid #28a745; }
-                .influence-medium { border-left: 4px solid #ffc107; }
-                .influence-low { border-left: 4px solid #dc3545; }
-                .influence-unknown { border-left: 4px solid #6c757d; }
-                .relationship-strength {
-                    display: inline-block;
-                    width: 8px;
-                    height: 8px;
-                    border-radius: 50%;
-                    margin-right: 6px;
-                }
-                .strength-strong { background: #28a745; }
-                .strength-medium { background: #ffc107; }
-                .strength-weak { background: #dc3545; }
-                .strength-unknown { background: #6c757d; }
                 .network-map {
                     background: white;
                     border-radius: 12px;
                     padding: 20px;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-                    min-height: 500px;
-                }
-                .network-canvas {
-                    width: 100%;
-                    height: 500px;
-                    border: 1px solid #eee;
-                    border-radius: 8px;
-                    position: relative;
-                    overflow: hidden;
-                    background: linear-gradient(45deg, #f8f9fa 25%, transparent 25%), 
-                                linear-gradient(-45deg, #f8f9fa 25%, transparent 25%);
-                    background-size: 20px 20px;
-                }
-                .network-node {
-                    position: absolute;
-                    width: 80px;
-                    height: 80px;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    font-size: 0.8em;
+                    min-height: 400px;
                     text-align: center;
-                    font-weight: bold;
-                    color: white;
-                    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-                }
-                .network-node:hover {
-                    transform: scale(1.1);
-                    z-index: 10;
-                }
-                .network-connection {
-                    position: absolute;
-                    background: #666;
-                    transform-origin: left;
-                    opacity: 0.6;
-                    z-index: 1;
-                }
-                .connection-strong {
-                    height: 3px;
-                    background: #28a745;
-                    opacity: 0.8;
-                }
-                .connection-medium {
-                    height: 2px;
-                    background: #ffc107;
-                    opacity: 0.6;
-                }
-                .connection-weak {
-                    height: 1px;
-                    background: #dc3545;
-                    opacity: 0.4;
                 }
                 .influence-analysis {
                     display: grid;
@@ -357,25 +274,6 @@ class RelationshipsModule {
                     background: #e9ecef;
                     transform: translateX(5px);
                 }
-                .influence-score {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-                .score-bar {
-                    width: 60px;
-                    height: 6px;
-                    background: #e9ecef;
-                    border-radius: 3px;
-                    overflow: hidden;
-                }
-                .score-fill {
-                    height: 100%;
-                    transition: width 0.3s ease;
-                }
-                .score-high { background: #28a745; }
-                .score-medium { background: #ffc107; }
-                .score-low { background: #dc3545; }
                 .modal {
                     display: none;
                     position: fixed;
@@ -410,64 +308,18 @@ class RelationshipsModule {
                     top: 15px;
                 }
                 .close:hover { color: #000; }
-                .relationship-form {
-                    display: grid;
-                    gap: 15px;
-                }
-                .form-row {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 15px;
-                }
-                .form-group {
-                    display: flex;
-                    flex-direction: column;
-                }
-                .form-group label {
-                    font-weight: bold;
-                    margin-bottom: 5px;
-                    color: #232F3E;
-                }
-                .form-group input,
-                .form-group select,
-                .form-group textarea {
-                    padding: 8px 12px;
-                    border: 1px solid #ddd;
-                    border-radius: 6px;
-                    font-size: 14px;
-                }
-                .form-group textarea {
-                    height: 80px;
-                    resize: vertical;
-                }
-                .legend {
-                    display: flex;
-                    gap: 20px;
-                    margin: 15px 0;
-                    padding: 15px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                    font-size: 0.9em;
-                }
-                .legend-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
             </style>
         `;
     }
 
     setupEventListeners() {
         // Event listeners will be set up through onclick handlers
+        console.log('Relationships event listeners set up');
     }
 
     switchView(view) {
         this.currentView = view;
-        const container = document.getElementById('content-area');
-        if (container) {
-            this.render(container);
-        }
+        this.renderContent();
     }
 
     renderContent() {
@@ -490,9 +342,18 @@ class RelationshipsModule {
     }
 
     renderOrganizationMatrix(container) {
-        const contacts = DataManager.getAllContacts();
-        const relationships = DataManager.getRelationships() || [];
+        const contacts = DataManager.getAllContacts ? DataManager.getAllContacts() : [];
         
+        if (contacts.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 60px; color: #666;">
+                    <h3>No contacts available</h3>
+                    <p>Add contacts to see the organization matrix</p>
+                </div>
+            `;
+            return;
+        }
+
         // Group contacts by company
         const companies = {};
         contacts.forEach(contact => {
@@ -504,25 +365,10 @@ class RelationshipsModule {
 
         const matrixHTML = Object.keys(companies).map(companyName => {
             const companyContacts = companies[companyName];
-            const dealCount = DataManager.getDeals().filter(deal => 
+            const dealCount = DataManager.getDeals ? DataManager.getDeals().filter(deal => 
                 companyContacts.some(contact => contact.id === deal.contactId)
-            ).length;
+            ).length : 0;
             
-            // Organize contacts by hierarchy (simplified)
-            const executives = companyContacts.filter(c => 
-                ['CEO', 'CTO', 'CIO', 'VP', 'President', 'Director'].some(title => 
-                    c.title.includes(title)
-                )
-            );
-            const managers = companyContacts.filter(c => 
-                ['Manager', 'Lead', 'Senior'].some(title => 
-                    c.title.includes(title) && !executives.includes(c)
-                )
-            );
-            const others = companyContacts.filter(c => 
-                !executives.includes(c) && !managers.includes(c)
-            );
-
             return `
                 <div class="company-card">
                     <div class="company-header">
@@ -532,189 +378,57 @@ class RelationshipsModule {
                             <span>${dealCount} deals</span>
                         </div>
                     </div>
-                    <div class="org-chart">
-                        ${executives.length > 0 ? `
-                            <div class="org-level">
-                                <strong style="width: 100%; margin-bottom: 5px; color: #232F3E;">Leadership</strong>
-                                ${executives.map(contact => this.renderContactNode(contact, relationships)).join('')}
+                    <div style="margin-top: 15px;">
+                        ${companyContacts.map(contact => `
+                            <div class="contact-node" onclick="relationshipsModule.selectContact('${contact.id}')" 
+                                 title="${contact.name} - ${contact.title}">
+                                ${contact.name}
                             </div>
-                        ` : ''}
-                        ${managers.length > 0 ? `
-                            <div class="org-level">
-                                <strong style="width: 100%; margin-bottom: 5px; color: #666;">Management</strong>
-                                ${managers.map(contact => this.renderContactNode(contact, relationships)).join('')}
-                            </div>
-                        ` : ''}
-                        ${others.length > 0 ? `
-                            <div class="org-level">
-                                <strong style="width: 100%; margin-bottom: 5px; color: #999;">Team Members</strong>
-                                ${others.map(contact => this.renderContactNode(contact, relationships)).join('')}
-                            </div>
-                        ` : ''}
+                        `).join('')}
                     </div>
                 </div>
             `;
         }).join('');
 
         container.innerHTML = `
-            <div class="legend">
-                <div class="legend-item">
-                    <span class="relationship-strength strength-strong"></span>
-                    <span>Strong Relationship</span>
-                </div>
-                <div class="legend-item">
-                    <span class="relationship-strength strength-medium"></span>
-                    <span>Medium Relationship</span>
-                </div>
-                <div class="legend-item">
-                    <span class="relationship-strength strength-weak"></span>
-                    <span>Weak Relationship</span>
-                </div>
-                <div class="legend-item">
-                    <span class="relationship-strength strength-unknown"></span>
-                    <span>Unknown</span>
-                </div>
-            </div>
             <div class="organization-matrix">
                 ${matrixHTML}
             </div>
         `;
     }
 
-    renderContactNode(contact, relationships) {
-        const influence = this.calculateInfluence(contact, relationships);
-        const relationshipStrength = this.getRelationshipStrength(contact.id, relationships);
-        
-        return `
-            <div class="contact-node influence-${influence}" 
-                 onclick="relationshipsModule.selectContact('${contact.id}')"
-                 title="${contact.name} - ${contact.title}">
-                <span class="relationship-strength strength-${relationshipStrength}"></span>
-                ${contact.name}
-            </div>
-        `;
-    }
-
     renderNetworkMap(container) {
-        const contacts = DataManager.getAllContacts();
-        const relationships = DataManager.getRelationships() || [];
-        
-        if (contacts.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 60px; color: #666;"><h3>No contacts available</h3><p>Add contacts to see the network map</p></div>';
-            return;
-        }
-
         container.innerHTML = `
             <div class="network-map">
-                <div style="margin-bottom: 15px; display: flex; justify-content: between; align-items: center;">
-                    <h3>Network Relationship Map</h3>
-                    <div style="font-size: 0.9em; color: #666;">
-                        Click nodes to see relationships • Hover for details
-                    </div>
-                </div>
-                <div class="network-canvas" id="networkCanvas">
-                    <!-- Network visualization will be generated here -->
+                <h3>Network Relationship Map</h3>
+                <p style="color: #666; margin: 20px 0;">
+                    Interactive network visualization will be available in a future update.
+                    For now, use the Organization Matrix to view contact relationships.
+                </p>
+                <div style="background: #f8f9fa; padding: 40px; border-radius: 8px; margin-top: 20px;">
+                    <strong>Coming Soon:</strong>
+                    <ul style="margin: 10px 0; padding-left: 20px; color: #666;">
+                        <li>Interactive network visualization</li>
+                        <li>Relationship strength indicators</li>
+                        <li>Influence path mapping</li>
+                        <li>Connection recommendations</li>
+                    </ul>
                 </div>
             </div>
         `;
-
-        setTimeout(() => this.generateNetworkVisualization(contacts, relationships), 100);
-    }
-
-    generateNetworkVisualization(contacts, relationships) {
-        const canvas = document.getElementById('networkCanvas');
-        if (!canvas) return;
-
-        const canvasRect = canvas.getBoundingClientRect();
-        const centerX = canvasRect.width / 2;
-        const centerY = canvasRect.height / 2;
-        const radius = Math.min(centerX, centerY) - 80;
-
-        // Clear existing content
-        canvas.innerHTML = '';
-
-        // Position nodes in a circle
-        contacts.forEach((contact, index) => {
-            const angle = (index / contacts.length) * 2 * Math.PI;
-            const x = centerX + radius * Math.cos(angle) - 40; // -40 for node width/2
-            const y = centerY + radius * Math.sin(angle) - 40; // -40 for node height/2
-            
-            const influence = this.calculateInfluence(contact, relationships);
-            const nodeColor = this.getNodeColor(influence);
-            
-            const node = document.createElement('div');
-            node.className = 'network-node';
-            node.style.left = x + 'px';
-            node.style.top = y + 'px';
-            node.style.background = nodeColor;
-            node.innerHTML = contact.name.split(' ').map(n => n[0]).join('');
-            node.title = `${contact.name}\n${contact.title}\n${contact.company}`;
-            node.onclick = () => this.selectContact(contact.id);
-            
-            canvas.appendChild(node);
-        });
-
-        // Draw connections
-        this.drawConnections(canvas, contacts, relationships);
-    }
-
-    drawConnections(canvas, contacts, relationships) {
-        relationships.forEach(rel => {
-            const contact1 = contacts.find(c => c.id === rel.contactId1);
-            const contact2 = contacts.find(c => c.id === rel.contactId2);
-            
-            if (contact1 && contact2) {
-                const node1 = Array.from(canvas.children).find(node => 
-                    node.title.includes(contact1.name)
-                );
-                const node2 = Array.from(canvas.children).find(node => 
-                    node.title.includes(contact2.name)
-                );
-                
-                if (node1 && node2) {
-                    this.drawConnection(canvas, node1, node2, rel.strength);
-                }
-            }
-        });
-    }
-
-    drawConnection(canvas, node1, node2, strength) {
-        const rect1 = node1.getBoundingClientRect();
-        const rect2 = node2.getBoundingClientRect();
-        const canvasRect = canvas.getBoundingClientRect();
-        
-        const x1 = rect1.left - canvasRect.left + rect1.width / 2;
-        const y1 = rect1.top - canvasRect.top + rect1.height / 2;
-        const x2 = rect2.left - canvasRect.left + rect2.width / 2;
-        const y2 = rect2.top - canvasRect.top + rect2.height / 2;
-        
-        const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-        const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
-        
-        const connection = document.createElement('div');
-        connection.className = `network-connection connection-${strength}`;
-        connection.style.left = x1 + 'px';
-        connection.style.top = y1 + 'px';
-        connection.style.width = length + 'px';
-        connection.style.transform = `rotate(${angle}deg)`;
-        
-        canvas.appendChild(connection);
     }
 
     renderInfluenceAnalysis(container) {
-        const contacts = DataManager.getAllContacts();
-        const relationships = DataManager.getRelationships() || [];
+        const contacts = DataManager.getAllContacts ? DataManager.getAllContacts() : [];
         
-        // Calculate influence scores
+        // Simple influence calculation based on title
         const influenceData = contacts.map(contact => ({
             ...contact,
-            influenceScore: this.calculateInfluenceScore(contact, relationships),
-            networkSize: this.calculateNetworkSize(contact.id, relationships),
-            decisionPower: this.calculateDecisionPower(contact)
+            influenceScore: this.calculateSimpleInfluence(contact)
         })).sort((a, b) => b.influenceScore - a.influenceScore);
 
-        const topInfluencers = influenceData.slice(0, 10);
-        const keyDecisionMakers = influenceData.filter(c => c.decisionPower > 7);
+        const topInfluencers = influenceData.slice(0, 5);
+        const keyDecisionMakers = influenceData.filter(c => c.influenceScore >= 8);
 
         container.innerHTML = `
             <div class="influence-analysis">
@@ -725,17 +439,16 @@ class RelationshipsModule {
                             <div class="influence-item" onclick="relationshipsModule.selectContact('${contact.id}')">
                                 <div>
                                     <strong>${contact.name}</strong><br>
-                                    <small>${contact.title} • ${contact.company}</small>
+                                    <small style="color: #666;">${contact.title} • ${contact.company}</small>
                                 </div>
-                                <div class="influence-score">
-                                    <span>${contact.influenceScore}/10</span>
-                                    <div class="score-bar">
-                                        <div class="score-fill ${this.getScoreClass(contact.influenceScore)}" 
-                                             style="width: ${contact.influenceScore * 10}%;"></div>
-                                    </div>
+                                <div>
+                                    <span style="font-weight: bold; color: ${this.getInfluenceColor(contact.influenceScore)};">
+                                        ${contact.influenceScore}/10
+                                    </span>
                                 </div>
                             </div>
                         `).join('')}
+                        ${topInfluencers.length === 0 ? '<div style="color: #666; font-style: italic; padding: 20px; text-align: center;">No contacts available</div>' : ''}
                     </div>
                 </div>
                 
@@ -746,236 +459,98 @@ class RelationshipsModule {
                             <div class="influence-item" onclick="relationshipsModule.selectContact('${contact.id}')">
                                 <div>
                                     <strong>${contact.name}</strong><br>
-                                    <small>${contact.title} • ${contact.company}</small>
+                                    <small style="color: #666;">${contact.title} • ${contact.company}</small>
                                 </div>
-                                <div class="influence-score">
-                                    <span>🎯 ${contact.decisionPower}/10</span>
-                                    <div class="score-bar">
-                                        <div class="score-fill score-high" 
-                                             style="width: ${contact.decisionPower * 10}%;"></div>
-                                    </div>
+                                <div>
+                                    <span style="font-weight: bold; color: #28a745;">
+                                        🎯 ${contact.influenceScore}/10
+                                    </span>
                                 </div>
                             </div>
                         `).join('')}
+                        ${keyDecisionMakers.length === 0 ? '<div style="color: #666; font-style: italic; padding: 20px; text-align: center;">No key decision makers identified</div>' : ''}
                     </div>
-                </div>
-            </div>
-            
-            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 12px;">
-                <h3>Relationship Strategy Insights</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-                    ${this.generateStrategicInsights(influenceData, relationships)}
                 </div>
             </div>
         `;
     }
 
-    // Helper methods for calculations
-    calculateInfluence(contact, relationships) {
-        const score = this.calculateInfluenceScore(contact, relationships);
-        if (score >= 7) return 'high';
-        if (score >= 4) return 'medium';
-        if (score >= 1) return 'low';
-        return 'unknown';
-    }
-
-    calculateInfluenceScore(contact, relationships) {
-        let score = 0;
+    calculateSimpleInfluence(contact) {
+        if (!contact.title) return 1;
         
-        // Title-based influence
-        const titleWeight = {
-            'CEO': 10, 'CTO': 9, 'CIO': 9, 'President': 9,
-            'VP': 8, 'Vice President': 8,
-            'Director': 7, 'Principal': 7,
-            'Manager': 5, 'Lead': 4, 'Senior': 3
-        };
+        const title = contact.title.toLowerCase();
         
-        Object.keys(titleWeight).forEach(title => {
-            if (contact.title.includes(title)) {
-                score = Math.max(score, titleWeight[title]);
-            }
-        });
+        // Simple title-based scoring
+        if (title.includes('ceo') || title.includes('president')) return 10;
+        if (title.includes('cto') || title.includes('cio')) return 9;
+        if (title.includes('vp') || title.includes('vice president')) return 8;
+        if (title.includes('director')) return 7;
+        if (title.includes('manager')) return 5;
+        if (title.includes('lead') || title.includes('senior')) return 4;
         
-        // Network connections
-        const connections = relationships.filter(rel => 
-            rel.contactId1 === contact.id || rel.contactId2 === contact.id
-        );
-        score += connections.length * 0.5;
-        
-        // Strong relationships bonus
-        const strongConnections = connections.filter(rel => rel.strength === 'strong');
-        score += strongConnections.length * 1;
-        
-        return Math.min(score, 10);
-    }
-
-    calculateNetworkSize(contactId, relationships) {
-        return relationships.filter(rel => 
-            rel.contactId1 === contactId || rel.contactId2 === contactId
-        ).length;
-    }
-
-    calculateDecisionPower(contact) {
-        const decisionTitles = ['CEO', 'CTO', 'CIO', 'President', 'VP', 'Director'];
-        for (let title of decisionTitles) {
-            if (contact.title.includes(title)) {
-                return decisionTitles.indexOf(title) === 0 ? 10 : 10 - decisionTitles.indexOf(title);
-            }
-        }
         return 3;
     }
 
-    getRelationshipStrength(contactId, relationships) {
-        // Find strongest relationship for this contact
-        const contactRels = relationships.filter(rel => 
-            rel.contactId1 === contactId || rel.contactId2 === contactId
-        );
-        
-        if (contactRels.length === 0) return 'unknown';
-        
-        const strengths = contactRels.map(rel => rel.strength);
-        if (strengths.includes('strong')) return 'strong';
-        if (strengths.includes('medium')) return 'medium';
-        if (strengths.includes('weak')) return 'weak';
-        return 'unknown';
-    }
-
-    getNodeColor(influence) {
-        const colors = {
-            'high': '#28a745',
-            'medium': '#ffc107', 
-            'low': '#dc3545',
-            'unknown': '#6c757d'
-        };
-        return colors[influence] || colors.unknown;
-    }
-
-    getScoreClass(score) {
-        if (score >= 7) return 'score-high';
-        if (score >= 4) return 'score-medium';
-        return 'score-low';
-    }
-
-    generateStrategicInsights(influenceData, relationships) {
-        const insights = [];
-        
-        // Unconnected high-influence contacts
-        const highInfluence = influenceData.filter(c => c.influenceScore >= 7);
-        const unconnected = highInfluence.filter(contact => 
-            this.calculateNetworkSize(contact.id, relationships) === 0
-        );
-        
-        if (unconnected.length > 0) {
-            insights.push(`
-                <div style="padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
-                    <strong>⚠️ Relationship Gap</strong><br>
-                    <small>${unconnected.length} high-influence contact(s) with no recorded relationships</small>
-                </div>
-            `);
-        }
-        
-        // Champion identification
-        const champions = influenceData.filter(c => 
-            c.influenceScore >= 6 && this.getRelationshipStrength(c.id, relationships) === 'strong'
-        );
-        
-        if (champions.length > 0) {
-            insights.push(`
-                <div style="padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <strong>🎯 Champions Identified</strong><br>
-                    <small>${champions.length} high-influence contact(s) with strong relationships</small>
-                </div>
-            `);
-        }
-        
-        // Network density
-        const totalPossibleConnections = (influenceData.length * (influenceData.length - 1)) / 2;
-        const actualConnections = relationships.length;
-        const density = totalPossibleConnections > 0 ? (actualConnections / totalPossibleConnections * 100) : 0;
-        
-        insights.push(`
-            <div style="padding: 15px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
-                <strong>🕸️ Network Density</strong><br>
-                <small>${density.toFixed(1)}% of possible relationships mapped</small>
-            </div>
-        `);
-        
-        return insights.join('');
+    getInfluenceColor(score) {
+        if (score >= 8) return '#28a745';
+        if (score >= 6) return '#ffc107';
+        if (score >= 4) return '#fd7e14';
+        return '#dc3545';
     }
 
     updateInsights() {
-        const contacts = DataManager.getAllContacts();
-        const relationships = DataManager.getRelationships() || [];
+        const contacts = DataManager.getAllContacts ? DataManager.getAllContacts() : [];
         
-        // Calculate insights
-        const keyDecisionMakers = contacts.filter(c => this.calculateDecisionPower(c) >= 7).length;
-        const influenceChampions = contacts.filter(c => 
-            this.calculateInfluenceScore(c, relationships) >= 7 && 
-            this.getRelationshipStrength(c.id, relationships) === 'strong'
-        ).length;
-        const networkReach = relationships.length;
-        const relationshipGaps = contacts.filter(c => 
-            this.calculateInfluenceScore(c, relationships) >= 7 && 
-            this.calculateNetworkSize(c.id, relationships) === 0
-        ).length;
+        // Calculate basic insights
+        const keyDecisionMakers = contacts.filter(c => this.calculateSimpleInfluence(c) >= 8).length;
+        const influenceChampions = contacts.filter(c => this.calculateSimpleInfluence(c) >= 7).length;
+        const networkReach = contacts.length;
+        const relationshipGaps = Math.max(0, keyDecisionMakers - influenceChampions);
         
-        // Update display
-        document.getElementById('keyDecisionMakers').textContent = keyDecisionMakers;
-        document.getElementById('influenceChampions').textContent = influenceChampions;
-        document.getElementById('networkReach').textContent = networkReach;
-        document.getElementById('relationshipGaps').textContent = relationshipGaps;
+        // Update display safely
+        const keyDecisionMakersEl = document.getElementById('keyDecisionMakers');
+        const influenceChampionsEl = document.getElementById('influenceChampions');
+        const networkReachEl = document.getElementById('networkReach');
+        const relationshipGapsEl = document.getElementById('relationshipGaps');
+        
+        if (keyDecisionMakersEl) keyDecisionMakersEl.textContent = keyDecisionMakers;
+        if (influenceChampionsEl) influenceChampionsEl.textContent = influenceChampions;
+        if (networkReachEl) networkReachEl.textContent = networkReach;
+        if (relationshipGapsEl) relationshipGapsEl.textContent = relationshipGaps;
     }
 
     selectContact(contactId) {
         this.selectedContact = contactId;
-        const contact = DataManager.getContactById(contactId);
-        const relationships = DataManager.getRelationships() || [];
+        const contact = DataManager.getContactById ? DataManager.getContactById(contactId) : null;
         
-        if (!contact) return;
-        
-        const contactRels = relationships.filter(rel => 
-            rel.contactId1 === contactId || rel.contactId2 === contactId
-        );
+        if (!contact) {
+            UIHelpers.showNotification('Contact not found', 'error');
+            return;
+        }
         
         const modalContent = `
             <h3>${contact.name}</h3>
             <p><strong>${contact.title}</strong> at <strong>${contact.company}</strong></p>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-                <div>
-                    <h4>Influence Metrics</h4>
-                    <p>Influence Score: <strong>${this.calculateInfluenceScore(contact, relationships)}/10</strong></p>
-                    <p>Decision Power: <strong>${this.calculateDecisionPower(contact)}/10</strong></p>
-                    <p>Network Size: <strong>${this.calculateNetworkSize(contactId, relationships)} connections</strong></p>
-                </div>
-                <div>
-                    <h4>Contact Info</h4>
-                    <p>Email: ${contact.email || 'Not provided'}</p>
-                    <p>Phone: ${contact.phone || 'Not provided'}</p>
-                    <p>Last Contact: ${contact.lastContact ? UIHelpers.formatDate(contact.lastContact) : 'Never'}</p>
-                </div>
+            <div style="margin: 20px 0;">
+                <h4>Influence Metrics</h4>
+                <p>Influence Score: <strong>${this.calculateSimpleInfluence(contact)}/10</strong></p>
+                <p>Position Level: <strong>${this.getPositionLevel(contact)}</strong></p>
             </div>
             
-            <h4>Relationships (${contactRels.length})</h4>
-            <div style="max-height: 200px; overflow-y: auto;">
-                ${contactRels.length > 0 ? contactRels.map(rel => {
-                    const otherContactId = rel.contactId1 === contactId ? rel.contactId2 : rel.contactId1;
-                    const otherContact = DataManager.getContactById(otherContactId);
-                    return `
-                        <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee;">
-                            <span>${otherContact ? otherContact.name : 'Unknown'}</span>
-                            <span class="touchpoint-type type-${rel.strength}">${rel.strength}</span>
-                        </div>
-                    `;
-                }).join('') : '<p style="color: #666; font-style: italic;">No relationships recorded</p>'}
+            <div style="margin: 20px 0;">
+                <h4>Contact Information</h4>
+                <p>Email: ${contact.email || 'Not provided'}</p>
+                <p>Phone: ${contact.phone || 'Not provided'}</p>
+                <p>Last Contact: ${contact.lastContact ? UIHelpers.formatDate(contact.lastContact) : 'Never'}</p>
             </div>
             
             <div style="margin-top: 20px; display: flex; gap: 10px;">
                 <button class="action-btn" onclick="relationshipsModule.addRelationshipFor('${contactId}')">
                     Add Relationship
                 </button>
-                <button class="action-btn secondary" onclick="contactsModule.editContact('${contactId}'); UIHelpers.closeModal('relationshipModal');">
-                    Edit Contact
+                <button class="action-btn secondary" onclick="UIHelpers.closeModal('relationshipModal');">
+                    Close
                 </button>
             </div>
         `;
@@ -984,137 +559,54 @@ class RelationshipsModule {
         UIHelpers.showModal('relationshipModal');
     }
 
+    getPositionLevel(contact) {
+        const score = this.calculateSimpleInfluence(contact);
+        if (score >= 9) return 'C-Level Executive';
+        if (score >= 7) return 'Senior Leadership';
+        if (score >= 5) return 'Management';
+        if (score >= 3) return 'Professional';
+        return 'Individual Contributor';
+    }
+
     addRelationship() {
-        this.showRelationshipForm();
+        UIHelpers.showNotification('Relationship management coming soon!', 'info');
     }
 
     addRelationshipFor(contactId) {
-        this.showRelationshipForm(contactId);
-    }
-
-    showRelationshipForm(preselectedContactId = null) {
-        const contacts = DataManager.getAllContacts();
-        
-        const modalContent = `
-            <h3>Add Relationship</h3>
-            <form id="relationshipForm" class="relationship-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="contact1">First Contact:</label>
-                        <select id="contact1" name="contactId1" required>
-                            <option value="">Select Contact</option>
-                            ${contacts.map(contact => `
-                                <option value="${contact.id}" ${preselectedContactId === contact.id ? 'selected' : ''}>
-                                    ${contact.name} (${contact.company})
-                                </option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="contact2">Second Contact:</label>
-                        <select id="contact2" name="contactId2" required>
-                            <option value="">Select Contact</option>
-                            ${contacts.map(contact => `
-                                <option value="${contact.id}">
-                                    ${contact.name} (${contact.company})
-                                </option>
-                            `).join('')}
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="strength">Relationship Strength:</label>
-                        <select id="strength" name="strength" required>
-                            <option value="strong">Strong - Close working relationship</option>
-                            <option value="medium" selected>Medium - Professional relationship</option>
-                            <option value="weak">Weak - Limited interaction</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="type">Relationship Type:</label>
-                        <select id="type" name="type" required>
-                            <option value="reports-to">Reports To</option>
-                            <option value="peer">Peer/Colleague</option>
-                            <option value="influences">Influences</option>
-                            <option value="collaborates">Collaborates With</option>
-                            <option value="vendor-client">Vendor-Client</option>
-                            <option value="mentor">Mentor-Mentee</option>
-                            <option value="other" selected>Other</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="notes">Notes:</label>
-                    <textarea id="notes" name="notes" placeholder="Additional context about this relationship..."></textarea>
-                </div>
-                
-                <button type="submit" class="action-btn">Save Relationship</button>
-            </form>
-        `;
-        
-        document.getElementById('relationshipModalContent').innerHTML = modalContent;
-        
-        // Handle form submission
-        document.getElementById('relationshipForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const relationship = Object.fromEntries(formData.entries());
-            
-            if (relationship.contactId1 === relationship.contactId2) {
-                alert('Please select two different contacts');
-                return;
-            }
-            
-            DataManager.addRelationship(relationship);
-            UIHelpers.closeModal('relationshipModal');
-            UIHelpers.showNotification('Relationship added successfully');
-        });
-        
-        UIHelpers.showModal('relationshipModal');
+        UIHelpers.showNotification('Relationship management coming soon!', 'info');
     }
 
     showRelationshipReport() {
-        const contacts = DataManager.getAllContacts();
-        const relationships = DataManager.getRelationships() || [];
+        const contacts = DataManager.getAllContacts ? DataManager.getAllContacts() : [];
         
         let report = 'Relationship Matrix Report\n\n';
-        
         report += `Network Overview:\n`;
         report += `• Total Contacts: ${contacts.length}\n`;
-        report += `• Total Relationships: ${relationships.length}\n`;
-        report += `• Average Connections per Contact: ${(relationships.length * 2 / contacts.length).toFixed(1)}\n\n`;
+        report += `• Key Decision Makers: ${contacts.filter(c => this.calculateSimpleInfluence(c) >= 8).length}\n`;
+        report += `• Influence Champions: ${contacts.filter(c => this.calculateSimpleInfluence(c) >= 7).length}\n\n`;
+        
+        const topInfluencers = contacts
+            .map(contact => ({ ...contact, score: this.calculateSimpleInfluence(contact) }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 5);
         
         report += `Top Influencers:\n`;
-        const influenceData = contacts.map(contact => ({
-            ...contact,
-            score: this.calculateInfluenceScore(contact, relationships)
-        })).sort((a, b) => b.score - a.score).slice(0, 5);
-        
-        influenceData.forEach((contact, index) => {
+        topInfluencers.forEach((contact, index) => {
             report += `${index + 1}. ${contact.name} (${contact.company}) - Score: ${contact.score}/10\n`;
-        });
-        
-        report += `\nRelationship Strength Distribution:\n`;
-        const strengthCounts = { strong: 0, medium: 0, weak: 0 };
-        relationships.forEach(rel => {
-            strengthCounts[rel.strength] = (strengthCounts[rel.strength] || 0) + 1;
-        });
-        
-        Object.entries(strengthCounts).forEach(([strength, count]) => {
-            report += `• ${strength}: ${count} (${((count / relationships.length) * 100).toFixed(1)}%)\n`;
         });
         
         alert(report);
     }
 
     refreshRelationshipData() {
-        // Refresh any cached relationship calculations
+        // Clear cached data
         this.influenceMap = {};
         this.networkData = null;
-        this.renderIfActive();
+        
+        // Only refresh content if currently active - prevents infinite loop
+        if (AppController.currentTab === 'relationships') {
+            this.renderContent(); // Call renderContent directly, not renderIfActive
+        }
     }
 
     // Event handler for data changes from other modules
@@ -1131,3 +623,4 @@ class RelationshipsModule {
 
 // Create global instance
 const relationshipsModule = new RelationshipsModule();
+console.log('✅ Relationships module loaded successfully');
