@@ -1,4 +1,4 @@
-// Enhanced Teams Module - Complete with Role Editing and Email Copy Features
+// Enhanced Teams Module - Complete with GEO, Tier, Relationship Score, and Touchpoint Tracking
 class TeamsModule {
     constructor() {
         this.currentView = 'overview';
@@ -83,21 +83,25 @@ class TeamsModule {
                     <!-- Team content will be populated here -->
                 </div>
 
+                <!-- Modals -->
                 <div id="teamDetailsModal" class="modal" style="display: none;">
                     <div class="modal-content" style="max-width: 1000px;">
                         <span class="close" onclick="UIHelpers.closeModal('teamDetailsModal')">&times;</span>
-                        <div id="teamDetailsContent">
-                            <!-- Team details will be populated here -->
-                        </div>
+                        <div id="teamDetailsContent"></div>
                     </div>
                 </div>
 
                 <div id="teamMemberModal" class="modal" style="display: none;">
                     <div class="modal-content">
                         <span class="close" onclick="UIHelpers.closeModal('teamMemberModal')">&times;</span>
-                        <div id="teamMemberModalContent">
-                            <!-- Team member form will be populated here -->
-                        </div>
+                        <div id="teamMemberModalContent"></div>
+                    </div>
+                </div>
+
+                <div id="touchpointModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <span class="close" onclick="UIHelpers.closeModal('touchpointModal')">&times;</span>
+                        <div id="touchpointModalContent"></div>
                     </div>
                 </div>
             </div>
@@ -105,7 +109,9 @@ class TeamsModule {
             <style>
                 .teams-container {
                     max-width: 100%;
+                    padding: 20px;
                 }
+
                 .teams-header {
                     display: flex;
                     justify-content: space-between;
@@ -114,22 +120,26 @@ class TeamsModule {
                     flex-wrap: wrap;
                     gap: 15px;
                 }
+
                 .teams-header h2 {
                     margin: 0;
                     color: #232F3E;
                     font-size: 1.8em;
                 }
+
                 .teams-header p {
                     margin: 5px 0 0 0;
                     color: #666;
                     font-size: 1em;
                 }
+
                 .teams-controls {
                     display: flex;
                     gap: 10px;
                     align-items: center;
                     flex-wrap: wrap;
                 }
+
                 .view-btn {
                     background: #f8f9fa;
                     border: 1px solid #dee2e6;
@@ -139,14 +149,17 @@ class TeamsModule {
                     font-size: 0.9em;
                     transition: all 0.3s ease;
                 }
+
                 .view-btn.active {
                     background: #232F3E;
                     color: white;
                     border-color: #232F3E;
                 }
+
                 .view-btn:hover:not(.active) {
                     background: #e9ecef;
                 }
+
                 .action-btn {
                     background: #FF9900;
                     color: white;
@@ -157,26 +170,33 @@ class TeamsModule {
                     font-size: 0.9em;
                     transition: all 0.3s ease;
                 }
+
                 .action-btn:hover {
                     background: #e68900;
                     transform: translateY(-1px);
                 }
+
                 .action-btn.secondary {
                     background: #6c757d;
                 }
+
                 .action-btn.secondary:hover {
                     background: #5a6268;
                 }
+
                 .action-btn.danger {
                     background: #dc3545;
                 }
+
                 .action-btn.danger:hover {
                     background: #c82333;
                 }
+
                 .dropdown {
                     position: relative;
                     display: inline-block;
                 }
+
                 .dropdown-menu {
                     position: absolute;
                     top: 100%;
@@ -189,6 +209,7 @@ class TeamsModule {
                     border: 1px solid #ddd;
                     overflow: hidden;
                 }
+
                 .dropdown-menu a {
                     display: block;
                     padding: 12px 16px;
@@ -196,15 +217,19 @@ class TeamsModule {
                     color: #232F3E;
                     transition: background 0.3s ease;
                 }
+
                 .dropdown-menu a:hover {
                     background: #f8f9fa;
                 }
+
+                /* Team Cards for Overview */
                 .teams-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
                     gap: 20px;
                     margin-bottom: 30px;
                 }
+
                 .team-card {
                     background: white;
                     border-radius: 12px;
@@ -214,59 +239,70 @@ class TeamsModule {
                     cursor: pointer;
                     border: 2px solid transparent;
                 }
+
                 .team-card:hover {
                     transform: translateY(-2px);
                     box-shadow: 0 8px 30px rgba(0,0,0,0.12);
                     border-color: #FF9900;
                 }
+
                 .team-header {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                     margin-bottom: 20px;
                 }
+
                 .team-name {
                     font-size: 1.3em;
                     font-weight: bold;
                     color: #232F3E;
                     margin: 0;
                 }
+
                 .team-metrics {
                     display: grid;
                     grid-template-columns: 1fr 1fr;
                     gap: 15px;
                     margin-bottom: 20px;
                 }
+
                 .metric {
                     text-align: center;
                     padding: 12px;
                     background: #f8f9fa;
                     border-radius: 8px;
                 }
+
                 .metric-value {
                     font-size: 1.4em;
                     font-weight: bold;
                     margin-bottom: 2px;
                 }
+
                 .metric-label {
                     font-size: 0.8em;
                     color: #666;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                 }
+
                 .team-members-preview {
                     margin-top: 15px;
                 }
+
                 .team-members-preview h4 {
                     margin: 0 0 10px 0;
                     color: #232F3E;
                     font-size: 0.9em;
                 }
+
                 .member-list {
                     display: flex;
                     flex-wrap: wrap;
                     gap: 8px;
                 }
+
                 .member-chip {
                     background: #e3f2fd;
                     color: #1565c0;
@@ -278,6 +314,7 @@ class TeamsModule {
                     align-items: center;
                     gap: 4px;
                 }
+
                 .role-badge {
                     background: #FF9900;
                     color: white;
@@ -286,6 +323,39 @@ class TeamsModule {
                     font-size: 0.7em;
                     font-weight: bold;
                 }
+
+                .geo-badge {
+                    background: #28a745;
+                    color: white;
+                    padding: 2px 6px;
+                    border-radius: 8px;
+                    font-size: 0.7em;
+                    font-weight: bold;
+                    cursor: pointer;
+                    margin-left: 4px;
+                }
+
+                .geo-badge:hover {
+                    background: #218838;
+                }
+
+                /* Team Members Table */
+                .team-section {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin-bottom: 20px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                }
+
+                .team-section h3 {
+                    margin: 0 0 15px 0;
+                    color: #232F3E;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
                 .members-table {
                     width: 100%;
                     border-collapse: collapse;
@@ -295,34 +365,131 @@ class TeamsModule {
                     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
                     margin-bottom: 20px;
                 }
+
                 .members-table th {
                     background: #232F3E;
                     color: white;
-                    padding: 12px;
+                    padding: 12px 8px;
                     text-align: left;
-                    font-size: 0.9em;
+                    font-size: 0.85em;
+                    font-weight: 600;
                 }
+
                 .members-table td {
-                    padding: 12px;
+                    padding: 12px 8px;
                     border-bottom: 1px solid #eee;
+                    vertical-align: middle;
                 }
+
                 .members-table tbody tr:hover {
                     background: #f8f9fa;
                 }
-                .team-section {
-                    background: white;
-                    border-radius: 12px;
-                    padding: 20px;
-                    margin-bottom: 20px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+
+                .name-email-cell {
+                    min-width: 160px;
                 }
-                .team-section h3 {
-                    margin: 0 0 15px 0;
+
+                .name-email-cell .name {
+                    font-weight: 600;
                     color: #232F3E;
+                    margin-bottom: 2px;
+                }
+
+                .name-email-cell .email {
+                    font-size: 0.8em;
+                    color: #666;
                     display: flex;
-                    justify-content: space-between;
+                    align-items: center;
+                    gap: 4px;
+                }
+
+                .role-selector {
+                    padding: 4px 6px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    background: white;
+                    font-size: 0.8em;
+                    width: 100%;
+                    max-width: 80px;
+                }
+
+                .tier-indicator {
+                    display: inline-block;
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    color: white;
+                    font-size: 0.8em;
+                    font-weight: bold;
+                    text-align: center;
+                    line-height: 24px;
+                    margin-right: 8px;
+                }
+
+                .tier-1 { background: #dc3545; }
+                .tier-2 { background: #ffc107; color: #000; }
+                .tier-3 { background: #28a745; }
+
+                .relationship-score {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .score-bar {
+                    flex: 1;
+                    height: 8px;
+                    background: #e9ecef;
+                    border-radius: 4px;
+                    overflow: hidden;
+                }
+
+                .score-fill {
+                    height: 100%;
+                    transition: width 0.3s ease;
+                }
+
+                .score-excellent { background: #28a745; }
+                .score-good { background: #20c997; }
+                .score-fair { background: #ffc107; }
+                .score-poor { background: #fd7e14; }
+                .score-critical { background: #dc3545; }
+
+                .touchpoint-indicator {
+                    font-size: 0.85em;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-weight: 500;
+                }
+
+                .touchpoint-recent { background: #d4edda; color: #155724; }
+                .touchpoint-moderate { background: #fff3cd; color: #856404; }
+                .touchpoint-overdue { background: #f8d7da; color: #721c24; }
+
+                .action-icons {
+                    display: flex;
+                    gap: 4px;
                     align-items: center;
                 }
+
+                .icon-btn {
+                    background: none;
+                    border: none;
+                    font-size: 1.1em;
+                    cursor: pointer;
+                    padding: 4px;
+                    border-radius: 4px;
+                    transition: background 0.3s ease;
+                }
+
+                .icon-btn:hover {
+                    background: #f8f9fa;
+                }
+
+                .icon-btn.touchpoint { color: #28a745; }
+                .icon-btn.edit { color: #17a2b8; }
+                .icon-btn.delete { color: #dc3545; }
+
                 .copy-btn {
                     background: #6c757d;
                     color: white;
@@ -334,106 +501,16 @@ class TeamsModule {
                     margin-left: 8px;
                     transition: all 0.3s ease;
                 }
+
                 .copy-btn:hover {
                     background: #5a6268;
                 }
+
                 .copy-btn.success {
                     background: #28a745;
                 }
-                .role-selector {
-                    padding: 4px 8px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    background: white;
-                    font-size: 0.85em;
-                    margin-bottom: 5px;
-                    width: 100%;
-                }
-                /* Additional styles from the original module... */
-                .contacts-preview {
-                    margin-top: 15px;
-                }
-                .contacts-preview h4 {
-                    margin: 0 0 10px 0;
-                    color: #232F3E;
-                    font-size: 0.9em;
-                }
-                .contact-list {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 8px;
-                }
-                .contact-chip {
-                    background: #e3f2fd;
-                    color: #1565c0;
-                    padding: 4px 8px;
-                    border-radius: 12px;
-                    font-size: 0.8em;
-                    font-weight: 500;
-                }
-                .contact-chip.active {
-                    background: #4caf50;
-                    color: white;
-                }
-                .performance-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                    gap: 20px;
-                }
-                .performance-card {
-                    background: white;
-                    border-radius: 12px;
-                    padding: 20px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-                }
-                .performance-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 15px;
-                }
-                .performance-chart {
-                    height: 200px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: #666;
-                    font-style: italic;
-                }
-                .contacts-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    background: white;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-                }
-                .contacts-table th {
-                    background: #232F3E;
-                    color: white;
-                    padding: 12px;
-                    text-align: left;
-                    font-size: 0.9em;
-                }
-                .contacts-table td {
-                    padding: 12px;
-                    border-bottom: 1px solid #eee;
-                }
-                .contacts-table tbody tr:hover {
-                    background: #f8f9fa;
-                }
-                .status-indicator {
-                    display: inline-block;
-                    width: 8px;
-                    height: 8px;
-                    border-radius: 50%;
-                    margin-right: 6px;
-                }
-                .status-active { background: #4caf50; }
-                .status-inactive { background: #f44336; }
-                .status-pending { background: #ff9800; }
+
+                /* Modals */
                 .modal {
                     display: none;
                     position: fixed;
@@ -445,18 +522,20 @@ class TeamsModule {
                     background-color: rgba(0,0,0,0.5);
                     backdrop-filter: blur(5px);
                 }
+
                 .modal-content {
                     background-color: white;
                     margin: 2% auto;
                     padding: 30px;
                     border-radius: 15px;
                     width: 90%;
-                    max-width: 800px;
+                    max-width: 600px;
                     max-height: 90vh;
                     overflow-y: auto;
                     position: relative;
                     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
                 }
+
                 .close {
                     color: #aaa;
                     float: right;
@@ -467,22 +546,27 @@ class TeamsModule {
                     right: 20px;
                     top: 15px;
                 }
+
                 .close:hover { color: #000; }
+
                 .form-grid {
                     display: grid;
                     grid-template-columns: 1fr 1fr;
                     gap: 15px;
                     margin-bottom: 15px;
                 }
+
                 .form-group {
                     display: flex;
                     flex-direction: column;
                 }
+
                 .form-group label {
                     font-weight: bold;
                     margin-bottom: 5px;
                     color: #232F3E;
                 }
+
                 .form-group input,
                 .form-group select,
                 .form-group textarea {
@@ -491,30 +575,30 @@ class TeamsModule {
                     border-radius: 6px;
                     font-size: 14px;
                 }
-                .bulk-add-section {
-                    background: #f8f9fa;
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin-top: 20px;
-                }
-                .bulk-member-row {
-                    display: grid;
-                    grid-template-columns: 2fr 2fr 1.5fr 1fr auto;
-                    gap: 10px;
-                    align-items: end;
-                    margin-bottom: 10px;
-                    padding: 10px;
-                    background: white;
-                    border-radius: 6px;
-                }
-                .remove-member {
-                    background: #dc3545;
-                    color: white;
-                    border: none;
-                    padding: 8px 12px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 0.8em;
+
+                /* Responsive Design */
+                @media (max-width: 768px) {
+                    .teams-header {
+                        flex-direction: column;
+                        align-items: stretch;
+                    }
+
+                    .teams-controls {
+                        justify-content: center;
+                    }
+
+                    .members-table {
+                        font-size: 0.9em;
+                    }
+
+                    .members-table th,
+                    .members-table td {
+                        padding: 8px 6px;
+                    }
+
+                    .form-grid {
+                        grid-template-columns: 1fr;
+                    }
                 }
             </style>
         `;
@@ -578,9 +662,6 @@ class TeamsModule {
             );
 
             const totalPipeline = teamDeals.reduce((sum, deal) => sum + deal.value, 0);
-            const activeContacts = teamContacts.filter(contact => 
-                contact.lastContact && this.daysSince(contact.lastContact) <= 30
-            ).length;
 
             return `
                 <div class="team-card" onclick="teamsModule.showTeamDetails('${teamId}')">
@@ -617,21 +698,10 @@ class TeamsModule {
                                 <span class="member-chip">
                                     <span class="role-badge">${member.role}</span>
                                     ${member.name}
+                                    ${member.geo ? `<span class="geo-badge">${member.geo}</span>` : ''}
                                 </span>
                             `).join('')}
                             ${members.length > 4 ? `<span class="member-chip">+${members.length - 4} more</span>` : ''}
-                        </div>
-                    </div>
-
-                    <div class="contacts-preview">
-                        <h4>Recent Contacts (${teamContacts.length} total)</h4>
-                        <div class="contact-list">
-                            ${teamContacts.slice(0, 4).map(contact => `
-                                <span class="contact-chip ${this.isRecentContact(contact) ? 'active' : ''}">
-                                    ${contact.name}
-                                </span>
-                            `).join('')}
-                            ${teamContacts.length > 4 ? `<span class="contact-chip">+${teamContacts.length - 4} more</span>` : ''}
                         </div>
                     </div>
                 </div>
@@ -645,7 +715,6 @@ class TeamsModule {
         `;
     }
 
-    // ENHANCED renderTeamMembers method with role editing and email copy
     renderTeamMembers(container) {
         const teams = DataManager.getTeams();
         const teamMembers = DataManager.getTeamMembers() || {};
@@ -653,14 +722,6 @@ class TeamsModule {
         const teamSections = Object.keys(teams).map(teamId => {
             const team = teams[teamId];
             const members = teamMembers[teamId] || [];
-            
-            const membersByRole = {
-                'LoL': members.filter(m => m.role === 'LoL'),
-                'DM': members.filter(m => m.role === 'DM'),
-                'PSM': members.filter(m => m.role === 'PSM'),
-                'AM': members.filter(m => m.role === 'AM'),
-                'SA': members.filter(m => m.role === 'SA')
-            };
 
             return `
                 <div class="team-section">
@@ -673,50 +734,80 @@ class TeamsModule {
                             <button class="action-btn secondary" onclick="teamsModule.editTeam('${teamId}')">
                                 ✏️ Edit Team
                             </button>
-                            <button class="action-btn danger" onclick="teamsModule.deleteTeam('${teamId}')">
-                                🗑️ Delete Team
-                            </button>
                         </div>
                     </h3>
                     
                     <table class="members-table">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Role</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Start Date</th>
-                                <th>Actions</th>
+                                <th style="width: 200px;">Name & Email</th>
+                                <th style="width: 80px;">Role</th>
+                                <th style="width: 80px;">GEO</th>
+                                <th style="width: 60px;">Tier</th>
+                                <th style="width: 120px;">Relationship Score</th>
+                                <th style="width: 120px;">Days Since Touchpoint</th>
+                                <th style="width: 120px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${members.length > 0 ? members.map(member => `
+                            ${members.length > 0 ? members.map(member => {
+                                const relationshipScore = this.calculateRelationshipScore(member);
+                                const daysSinceContact = this.daysSinceLastTouchpoint(member);
+                                const touchpointStatus = this.getTouchpointStatus(daysSinceContact);
+                                
+                                return `
+                                    <tr>
+                                        <td class="name-email-cell">
+                                            <div class="name">${member.name}</div>
+                                            <div class="email">
+                                                ${member.email || 'No email'}
+                                                ${member.email ? `<button class="copy-btn" onclick="teamsModule.copyToClipboard('${member.email}', this)" title="Copy email">📋</button>` : ''}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <select class="role-selector" onchange="teamsModule.updateMemberRole('${teamId}', '${member.id}', this.value)">
+                                                <option value="LoL" ${member.role === 'LoL' ? 'selected' : ''}>LoL</option>
+                                                <option value="DM" ${member.role === 'DM' ? 'selected' : ''}>DM</option>
+                                                <option value="PSM" ${member.role === 'PSM' ? 'selected' : ''}>PSM</option>
+                                                <option value="AM" ${member.role === 'AM' ? 'selected' : ''}>AM</option>
+                                                <option value="SA" ${member.role === 'SA' ? 'selected' : ''}>SA</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <span class="geo-badge" onclick="teamsModule.editGeo('${teamId}', '${member.id}')" title="Click to edit GEO">
+                                                ${member.geo || 'Set GEO'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="tier-indicator tier-${member.tier || 3}" title="Tier ${member.tier || 3}">
+                                                T${member.tier || 3}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="relationship-score">
+                                                <span style="font-weight: bold; font-size: 0.9em;">${relationshipScore}/10</span>
+                                                <div class="score-bar">
+                                                    <div class="score-fill ${this.getScoreClass(relationshipScore)}" style="width: ${relationshipScore * 10}%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="touchpoint-indicator ${touchpointStatus.class}">
+                                                ${touchpointStatus.text}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="action-icons">
+                                                <button class="icon-btn touchpoint" onclick="teamsModule.logTouchpoint('${teamId}', '${member.id}')" title="Log Touchpoint">📞</button>
+                                                <button class="icon-btn edit" onclick="teamsModule.editTeamMember('${teamId}', '${member.id}')" title="Edit">✏️</button>
+                                                <button class="icon-btn delete" onclick="teamsModule.removeTeamMember('${teamId}', '${member.id}')" title="Remove">🗑️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('') : `
                                 <tr>
-                                    <td><strong>${member.name}</strong></td>
-                                    <td>
-                                        <select class="role-selector" onchange="teamsModule.updateMemberRole('${teamId}', '${member.id}', this.value)">
-                                            <option value="LoL" ${member.role === 'LoL' ? 'selected' : ''}>LoL - Leader of Leaders</option>
-                                            <option value="DM" ${member.role === 'DM' ? 'selected' : ''}>DM - District Manager</option>
-                                            <option value="PSM" ${member.role === 'PSM' ? 'selected' : ''}>PSM - Partner Sales Manager</option>
-                                            <option value="AM" ${member.role === 'AM' ? 'selected' : ''}>AM - Account Manager</option>
-                                            <option value="SA" ${member.role === 'SA' ? 'selected' : ''}>SA - Solution Architect</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        ${member.email || '-'}
-                                        ${member.email ? `<button class="copy-btn" onclick="teamsModule.copyToClipboard('${member.email}', this)" title="Copy email">📋</button>` : ''}
-                                    </td>
-                                    <td>${member.phone || '-'}</td>
-                                    <td>${member.startDate ? UIHelpers.formatDate(member.startDate) : '-'}</td>
-                                    <td>
-                                        <button class="action-btn" onclick="teamsModule.editTeamMember('${teamId}', '${member.id}')">Edit</button>
-                                        <button class="action-btn danger" onclick="teamsModule.removeTeamMember('${teamId}', '${member.id}')">Remove</button>
-                                    </td>
-                                </tr>
-                            `).join('') : `
-                                <tr>
-                                    <td colspan="6" style="text-align: center; color: #666; font-style: italic; padding: 40px;">
+                                    <td colspan="7" style="text-align: center; color: #666; font-style: italic; padding: 40px;">
                                         No team members added yet. Click "Add Member" to get started.
                                     </td>
                                 </tr>
@@ -726,11 +817,7 @@ class TeamsModule {
                     
                     <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                         <strong>Team Composition:</strong>
-                        LoL: ${membersByRole.LoL.length} • 
-                        DM: ${membersByRole.DM.length} • 
-                        PSM: ${membersByRole.PSM.length} • 
-                        AM: ${membersByRole.AM.length} • 
-                        SA: ${membersByRole.SA.length}
+                        ${this.getTeamComposition(members)}
                         <span style="margin-left: 20px; color: #666;">
                             Total: ${members.length} members
                         </span>
@@ -742,7 +829,81 @@ class TeamsModule {
         container.innerHTML = teamSections;
     }
 
-    // Enhanced Role Update Method
+    renderPerformance(container) {
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: #666;">Performance view implementation needed</div>';
+    }
+
+    renderAllContacts(container) {
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: #666;">All contacts view implementation needed</div>';
+    }
+
+    // Helper methods for relationship scoring and touchpoint tracking
+    calculateRelationshipScore(member) {
+        let score = 5; // Base score
+        
+        // Tier weight (higher tier = higher importance, needs more attention)
+        const tierMultiplier = {1: 1.2, 2: 1.1, 3: 1.0};
+        const tier = member.tier || 3;
+        
+        // Touchpoint recency scoring
+        const daysSince = this.daysSinceLastTouchpoint(member);
+        if (daysSince <= 7) score += 3;
+        else if (daysSince <= 14) score += 2;
+        else if (daysSince <= 30) score += 1;
+        else if (daysSince <= 60) score -= 1;
+        else if (daysSince <= 90) score -= 2;
+        else score -= 3;
+        
+        // Touchpoint frequency (if available)
+        const touchpointCount = member.touchpointCount || 0;
+        if (touchpointCount >= 10) score += 2;
+        else if (touchpointCount >= 5) score += 1;
+        
+        // Apply tier multiplier and clamp between 1-10
+        score = Math.round(score * tierMultiplier[tier]);
+        return Math.max(1, Math.min(10, score));
+    }
+
+    daysSinceLastTouchpoint(member) {
+        if (!member.lastTouchpoint) return 999; // No touchpoint recorded
+        const today = new Date();
+        const touchpointDate = new Date(member.lastTouchpoint);
+        const diffTime = today - touchpointDate;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    getTouchpointStatus(daysSince) {
+        if (daysSince <= 7) {
+            return { class: 'touchpoint-recent', text: `${daysSince}d ago` };
+        } else if (daysSince <= 30) {
+            return { class: 'touchpoint-moderate', text: `${daysSince}d ago` };
+        } else if (daysSince <= 999) {
+            return { class: 'touchpoint-overdue', text: `${daysSince}d ago` };
+        } else {
+            return { class: 'touchpoint-overdue', text: 'Never' };
+        }
+    }
+
+    getScoreClass(score) {
+        if (score >= 9) return 'score-excellent';
+        if (score >= 7) return 'score-good';
+        if (score >= 5) return 'score-fair';
+        if (score >= 3) return 'score-poor';
+        return 'score-critical';
+    }
+
+    getTeamComposition(members) {
+        const composition = { LoL: 0, DM: 0, PSM: 0, AM: 0, SA: 0 };
+        members.forEach(member => {
+            composition[member.role] = (composition[member.role] || 0) + 1;
+        });
+        return Object.entries(composition)
+            .filter(([role, count]) => count > 0)
+            .map(([role, count]) => `${role}: ${count}`)
+            .join(' • ');
+    }
+
+    // Team member management methods
     updateMemberRole(teamId, memberId, newRole) {
         const member = DataManager.getTeamMember(teamId, memberId);
         if (member) {
@@ -750,26 +911,106 @@ class TeamsModule {
             member.role = newRole;
             DataManager.updateTeamMember(teamId, member);
             
-            // Show success notification with role change details
             UIHelpers.showNotification(`Role updated from ${oldRole} to ${newRole}`, 'success');
-            
-            // Auto-refresh the current view to update team composition counts
             this.renderTeamMembers(document.getElementById('teamsContent'));
         }
     }
 
-    // Enhanced Email Copy Method with Visual Feedback
+    editGeo(teamId, memberId) {
+        const member = DataManager.getTeamMember(teamId, memberId);
+        if (!member) return;
+
+        const newGeo = prompt(`Enter GEO for ${member.name}:`, member.geo || '');
+        if (newGeo !== null) {
+            member.geo = newGeo.trim();
+            DataManager.updateTeamMember(teamId, member);
+            UIHelpers.showNotification(`GEO updated to: ${newGeo}`, 'success');
+            this.renderTeamMembers(document.getElementById('teamsContent'));
+        }
+    }
+
+    logTouchpoint(teamId, memberId) {
+        const member = DataManager.getTeamMember(teamId, memberId);
+        if (!member) return;
+
+        const modalContent = `
+            <h3>Log Touchpoint - ${member.name}</h3>
+            <form id="touchpointForm">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="touchpointDate">Date:</label>
+                    <input type="date" id="touchpointDate" name="date" value="${new Date().toISOString().split('T')[0]}" required>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="touchpointType">Type:</label>
+                    <select id="touchpointType" name="type" required>
+                        <option value="call">📞 Phone Call</option>
+                        <option value="email">📧 Email</option>
+                        <option value="meeting">🤝 Meeting</option>
+                        <option value="text">💬 Text/Slack</option>
+                        <option value="event">🎉 Event/Social</option>
+                        <option value="other">📝 Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="touchpointOutcome">Outcome:</label>
+                    <select id="touchpointOutcome" name="outcome" required>
+                        <option value="positive">✅ Positive</option>
+                        <option value="neutral">➖ Neutral</option>
+                        <option value="needs-follow-up">⚠️ Needs Follow-up</option>
+                        <option value="negative">❌ Negative</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="touchpointNotes">Notes:</label>
+                    <textarea id="touchpointNotes" name="notes" placeholder="What was discussed? Next steps?" rows="4"></textarea>
+                </div>
+                
+                <button type="submit" class="action-btn">Log Touchpoint</button>
+            </form>
+        `;
+
+        document.getElementById('touchpointModalContent').innerHTML = modalContent;
+        
+        document.getElementById('touchpointForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const touchpoint = Object.fromEntries(formData.entries());
+            
+            // Update member's last touchpoint
+            member.lastTouchpoint = touchpoint.date;
+            member.touchpointCount = (member.touchpointCount || 0) + 1;
+            
+            // Store the touchpoint record
+            if (!member.touchpoints) member.touchpoints = [];
+            member.touchpoints.push({
+                id: Date.now().toString(),
+                date: touchpoint.date,
+                type: touchpoint.type,
+                outcome: touchpoint.outcome,
+                notes: touchpoint.notes,
+                timestamp: new Date().toISOString()
+            });
+            
+            DataManager.updateTeamMember(teamId, member);
+            UIHelpers.closeModal('touchpointModal');
+            UIHelpers.showNotification(`Touchpoint logged for ${member.name}`, 'success');
+            this.renderTeamMembers(document.getElementById('teamsContent'));
+        });
+        
+        UIHelpers.showModal('touchpointModal');
+    }
+
     async copyToClipboard(text, buttonElement) {
         try {
-            // Try modern clipboard API first
             if (navigator.clipboard && window.isSecureContext) {
                 await navigator.clipboard.writeText(text);
             } else {
-                // Fallback for older browsers
                 this.fallbackCopyToClipboard(text);
             }
             
-            // Visual feedback - temporarily change button
             this.showCopySuccess(buttonElement, text);
             
         } catch (err) {
@@ -778,7 +1019,6 @@ class TeamsModule {
         }
     }
 
-    // Fallback copy method for older browsers
     fallbackCopyToClipboard(text) {
         const textArea = document.createElement('textarea');
         textArea.value = text;
@@ -799,189 +1039,28 @@ class TeamsModule {
         }
     }
 
-    // Show copy success with visual feedback
     showCopySuccess(buttonElement, email) {
-        // Change button appearance
         const originalText = buttonElement.innerHTML;
         const originalClass = buttonElement.className;
         
         buttonElement.innerHTML = '✅';
         buttonElement.classList.add('success');
         
-        // Show notification
         UIHelpers.showNotification(`Email copied: ${email}`, 'success');
         
-        // Restore button after 1 second
         setTimeout(() => {
             buttonElement.innerHTML = originalText;
             buttonElement.className = originalClass;
         }, 1000);
     }
 
-    renderPerformance(container) {
-        const teams = DataManager.getTeams();
-        const contacts = DataManager.getContacts();
-        const deals = DataManager.getDeals();
-
-        const performanceCards = Object.keys(teams).map(teamId => {
-            const team = teams[teamId];
-            const teamContacts = contacts[teamId] || [];
-            const teamDeals = deals.filter(deal => 
-                teamContacts.some(contact => contact.id === deal.contactId)
-            );
-
-            const totalValue = teamDeals.reduce((sum, deal) => sum + deal.value, 0);
-            const avgDealSize = teamDeals.length > 0 ? totalValue / teamDeals.length : 0;
-            const winRate = this.calculateWinRate(teamDeals);
-            const engagementRate = this.calculateEngagementRate(teamContacts);
-
-            return `
-                <div class="performance-card">
-                    <div class="performance-header">
-                        <h3>${team.name}</h3>
-                        <span style="background: ${team.color}; color: white; padding: 2px 6px; border-radius: 8px; font-size: 0.8em;">
-                            ${team.region}
-                        </span>
-                    </div>
-                    
-                    <div class="team-metrics">
-                        <div class="metric">
-                            <div class="metric-value" style="color: #28a745;">${winRate}%</div>
-                            <div class="metric-label">Win Rate</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value" style="color: #17a2b8;">${(avgDealSize / 1000).toFixed(0)}K</div>
-                            <div class="metric-label">Avg Deal Size</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value" style="color: #ffc107;">${engagementRate}%</div>
-                            <div class="metric-label">Engagement</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value" style="color: #fd7e14;">${teamContacts.length}</div>
-                            <div class="metric-label">Contacts</div>
-                        </div>
-                    </div>
-
-                    <div class="performance-chart">
-                        Performance trends chart would go here
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        container.innerHTML = `
-            <div class="performance-grid">
-                ${performanceCards}
-            </div>
-        `;
-    }
-
-    renderAllContacts(container) {
-        const teams = DataManager.getTeams();
-        const contacts = DataManager.getContacts();
-        const deals = DataManager.getDeals();
-
-        let allContacts = [];
-        Object.keys(contacts).forEach(teamId => {
-            const teamContacts = contacts[teamId] || [];
-            teamContacts.forEach(contact => {
-                contact.teamName = teams[teamId]?.name || teamId;
-                contact.teamColor = teams[teamId]?.color || '#666';
-                allContacts.push(contact);
-            });
-        });
-
-        // Sort by last contact date
-        allContacts.sort((a, b) => {
-            const dateA = a.lastContact ? new Date(a.lastContact) : new Date(0);
-            const dateB = b.lastContact ? new Date(b.lastContact) : new Date(0);
-            return dateB - dateA;
-        });
-
-        const contactRows = allContacts.map(contact => {
-            const contactDeals = deals.filter(deal => deal.contactId === contact.id);
-            const totalValue = contactDeals.reduce((sum, deal) => sum + deal.value, 0);
-            const status = this.getContactStatus(contact);
-            
-            return `
-                <tr onclick="contactsModule.editContact('${contact.id}')" style="cursor: pointer;">
-                    <td>
-                        <span class="status-indicator status-${status}"></span>
-                        <strong>${contact.name}</strong>
-                    </td>
-                    <td>${contact.title}</td>
-                    <td>${contact.company}</td>
-                    <td>
-                        <span style="background: ${contact.teamColor}; color: white; padding: 2px 6px; border-radius: 8px; font-size: 0.8em;">
-                            ${contact.teamName}
-                        </span>
-                    </td>
-                    <td>${contact.lastContact ? UIHelpers.formatDate(contact.lastContact) : 'Never'}</td>
-                    <td>${contactDeals.length}</td>
-                    <td><strong>${(totalValue / 1000).toFixed(0)}K</strong></td>
-                    <td>
-                        <button class="action-btn" onclick="event.stopPropagation(); contactsModule.editContact('${contact.id}')">Edit</button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-        container.innerHTML = `
-            <div style="margin-bottom: 20px;">
-                <p><strong>${allContacts.length} total contacts</strong> across ${Object.keys(teams).length} teams</p>
-            </div>
-            <table class="contacts-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Title</th>
-                        <th>Company</th>
-                        <th>Team</th>
-                        <th>Last Contact</th>
-                        <th>Deals</th>
-                        <th>Pipeline</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${contactRows}
-                </tbody>
-            </table>
-        `;
-    }
-
-    // Team member management methods
+    // Team member form methods
     addTeamMember() {
         this.showTeamMemberForm();
     }
 
     addTeamMemberToTeam(teamId) {
         this.showTeamMemberForm(teamId);
-    }
-
-    addFullTeam() {
-        this.showFullTeamForm();
-    }
-
-    createNewTeam() {
-        this.showNewTeamForm();
-    }
-
-    editTeam(teamId) {
-        this.showEditTeamForm(teamId);
-    }
-
-    deleteTeam(teamId) {
-        this.showDeleteTeamConfirmation(teamId);
-    }
-
-    bulkUpdateRoles() {
-        this.showBulkRoleUpdateForm();
-    }
-
-    transferTeamMembers() {
-        this.showTeamTransferForm();
     }
 
     showTeamMemberForm(preselectedTeamId = null) {
@@ -1021,8 +1100,8 @@ class TeamsModule {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="memberStartDate">Start Date:</label>
-                        <input type="date" id="memberStartDate" name="startDate">
+                        <label for="memberGeo">GEO:</label>
+                        <input type="text" id="memberGeo" name="geo" placeholder="e.g., West Coast, EMEA, APAC">
                     </div>
                 </div>
                 
@@ -1032,8 +1111,12 @@ class TeamsModule {
                         <input type="email" id="memberEmail" name="email" placeholder="john.smith@company.com">
                     </div>
                     <div class="form-group">
-                        <label for="memberPhone">Phone:</label>
-                        <input type="tel" id="memberPhone" name="phone" placeholder="+1-555-0123">
+                        <label for="memberTier">Tier:</label>
+                        <select id="memberTier" name="tier" required>
+                            <option value="3" selected>Tier 3 - Standard</option>
+                            <option value="2">Tier 2 - Important</option>
+                            <option value="1">Tier 1 - Strategic</option>
+                        </select>
                     </div>
                 </div>
                 
@@ -1048,83 +1131,17 @@ class TeamsModule {
         
         document.getElementById('teamMemberModalContent').innerHTML = modalContent;
         
-        // Handle form submission
         document.getElementById('teamMemberForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
             const member = Object.fromEntries(formData.entries());
+            member.tier = parseInt(member.tier);
+            member.id = Date.now().toString();
             
             DataManager.addTeamMember(member.teamId, member);
             UIHelpers.closeModal('teamMemberModal');
             UIHelpers.showNotification('Team member added successfully');
-        });
-        
-        UIHelpers.showModal('teamMemberModal');
-    }
-
-    showEditTeamForm(teamId) {
-        const teams = DataManager.getTeams();
-        const team = teams[teamId];
-        if (!team) return;
-        
-        const modalContent = `
-            <h3>Edit Team</h3>
-            <form id="editTeamForm">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="editTeamName">Team Name:</label>
-                        <input type="text" id="editTeamName" name="name" required value="${team.name}">
-                    </div>
-                    <div class="form-group">
-                        <label for="editTeamRegion">Region:</label>
-                        <input type="text" id="editTeamRegion" name="region" required value="${team.region}">
-                    </div>
-                </div>
-                
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="editTeamColor">Team Color:</label>
-                        <select id="editTeamColor" name="color" required>
-                            <option value="#1e88e5" ${team.color === '#1e88e5' ? 'selected' : ''}>Blue</option>
-                            <option value="#43a047" ${team.color === '#43a047' ? 'selected' : ''}>Green</option>
-                            <option value="#fb8c00" ${team.color === '#fb8c00' ? 'selected' : ''}>Orange</option>
-                            <option value="#8e24aa" ${team.color === '#8e24aa' ? 'selected' : ''}>Purple</option>
-                            <option value="#e53935" ${team.color === '#e53935' ? 'selected' : ''}>Red</option>
-                            <option value="#00acc1" ${team.color === '#00acc1' ? 'selected' : ''}>Teal</option>
-                            <option value="#7cb342" ${team.color === '#7cb342' ? 'selected' : ''}>Light Green</option>
-                            <option value="#f4511e" ${team.color === '#f4511e' ? 'selected' : ''}>Deep Orange</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="editTeamManager">Team Manager:</label>
-                        <input type="text" id="editTeamManager" name="manager" value="${team.manager || ''}" placeholder="Manager Name">
-                    </div>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="editTeamDescription">Description:</label>
-                    <textarea id="editTeamDescription" name="description" placeholder="Team description and objectives...">${team.description || ''}</textarea>
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button type="submit" class="action-btn">Update Team</button>
-                    <button type="button" class="action-btn secondary" onclick="UIHelpers.closeModal('teamMemberModal')">Cancel</button>
-                </div>
-            </form>
-        `;
-        
-        document.getElementById('teamMemberModalContent').innerHTML = modalContent;
-        
-        // Handle form submission
-        document.getElementById('editTeamForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const updatedTeam = Object.fromEntries(formData.entries());
-            updatedTeam.id = teamId;
-            
-            DataManager.updateTeam(updatedTeam);
-            UIHelpers.closeModal('teamMemberModal');
-            UIHelpers.showNotification('Team updated successfully');
+            this.renderIfActive();
         });
         
         UIHelpers.showModal('teamMemberModal');
@@ -1134,28 +1151,28 @@ class TeamsModule {
         const member = DataManager.getTeamMember(teamId, memberId);
         if (!member) return;
         
-        // Pre-populate the form with existing data
         this.showTeamMemberForm(teamId);
         setTimeout(() => {
             document.getElementById('memberName').value = member.name;
             document.getElementById('memberRole').value = member.role;
             document.getElementById('memberTeam').value = teamId;
-            document.getElementById('memberStartDate').value = member.startDate || '';
+            document.getElementById('memberGeo').value = member.geo || '';
             document.getElementById('memberEmail').value = member.email || '';
-            document.getElementById('memberPhone').value = member.phone || '';
+            document.getElementById('memberTier').value = member.tier || 3;
             document.getElementById('memberNotes').value = member.notes || '';
             
-            // Change form submission to update instead of add
             const form = document.getElementById('teamMemberForm');
             form.onsubmit = (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const updatedMember = Object.fromEntries(formData.entries());
                 updatedMember.id = memberId;
+                updatedMember.tier = parseInt(updatedMember.tier);
                 
                 DataManager.updateTeamMember(teamId, updatedMember);
                 UIHelpers.closeModal('teamMemberModal');
                 UIHelpers.showNotification('Team member updated successfully');
+                this.renderIfActive();
             };
         }, 100);
     }
@@ -1165,183 +1182,48 @@ class TeamsModule {
         if (member && confirm(`Are you sure you want to remove ${member.name} from the team?`)) {
             DataManager.removeTeamMember(teamId, memberId);
             UIHelpers.showNotification('Team member removed successfully');
+            this.renderIfActive();
         }
     }
 
+    // Placeholder methods for future implementation
+    addFullTeam() {
+        UIHelpers.showNotification('Add Full Team feature coming soon');
+    }
+
+    createNewTeam() {
+        UIHelpers.showNotification('Create New Team feature coming soon');
+    }
+
+    editTeam(teamId) {
+        UIHelpers.showNotification('Edit Team feature coming soon');
+    }
+
+    bulkUpdateRoles() {
+        UIHelpers.showNotification('Bulk Update Roles feature coming soon');
+    }
+
+    transferTeamMembers() {
+        UIHelpers.showNotification('Transfer Team Members feature coming soon');
+    }
+
     showTeamDetails(teamId) {
-        const teams = DataManager.getTeams();
-        const contacts = DataManager.getContacts();
-        const deals = DataManager.getDeals();
-        const teamMembers = DataManager.getTeamMembers() || {};
-        
-        const team = teams[teamId];
-        const teamContacts = contacts[teamId] || [];
-        const members = teamMembers[teamId] || [];
-        const teamDeals = deals.filter(deal => 
-            teamContacts.some(contact => contact.id === deal.contactId)
-        );
-
-        const totalPipeline = teamDeals.reduce((sum, deal) => sum + deal.value, 0);
-        const weightedPipeline = teamDeals.reduce((sum, deal) => sum + (deal.value * (deal.probability / 100)), 0);
-
-        const detailsContent = `
-            <div style="margin-bottom: 30px;">
-                <h2 style="color: #232F3E; margin-bottom: 10px;">${team.name}</h2>
-                <p style="color: #666; font-size: 1.1em;">${team.region} • ${members.length} team members • ${teamContacts.length} contacts • ${teamDeals.length} active deals</p>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <div class="metric" style="background: #e3f2fd; padding: 20px; border-radius: 8px; text-align: center;">
-                    <div class="metric-value" style="color: #1565c0; font-size: 2em;">${(totalPipeline / 1000).toFixed(0)}K</div>
-                    <div class="metric-label">Total Pipeline</div>
-                </div>
-                <div class="metric" style="background: #e8f5e8; padding: 20px; border-radius: 8px; text-align: center;">
-                    <div class="metric-value" style="color: #2e7d32; font-size: 2em;">${(weightedPipeline / 1000).toFixed(0)}K</div>
-                    <div class="metric-label">Weighted Pipeline</div>
-                </div>
-                <div class="metric" style="background: #fff3e0; padding: 20px; border-radius: 8px; text-align: center;">
-                    <div class="metric-value" style="color: #ef6c00; font-size: 2em;">${teamDeals.length}</div>
-                    <div class="metric-label">Active Deals</div>
-                </div>
-                <div class="metric" style="background: #fce4ec; padding: 20px; border-radius: 8px; text-align: center;">
-                    <div class="metric-value" style="color: #c2185b; font-size: 2em;">${this.calculateEngagementRate(teamContacts)}%</div>
-                    <div class="metric-label">Engagement Rate</div>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                <div>
-                    <h3>Team Members (${members.length})</h3>
-                    <div style="max-height: 300px; overflow-y: auto;">
-                        ${members.map(member => `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee;">
-                                <div>
-                                    <strong>${member.name}</strong>
-                                    <span class="role-badge" style="margin-left: 8px;">${member.role}</span><br>
-                                    <small style="color: #666;">${member.email || 'No email'}</small>
-                                </div>
-                                <div style="display: flex; gap: 5px;">
-                                    <button class="action-btn" onclick="teamsModule.editTeamMember('${teamId}', '${member.id}'); UIHelpers.closeModal('teamDetailsModal');">Edit</button>
-                                </div>
-                            </div>
-                        `).join('')}
-                        ${members.length === 0 ? '<p style="color: #666; font-style: italic; padding: 20px; text-align: center;">No team members added yet</p>' : ''}
-                    </div>
-                </div>
-
-                <div>
-                    <h3>Team Contacts (${teamContacts.length})</h3>
-                    <div style="max-height: 300px; overflow-y: auto;">
-                        ${teamContacts.map(contact => `
-                            <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; cursor: pointer;" onclick="contactsModule.editContact('${contact.id}')">
-                                <div>
-                                    <strong>${contact.name}</strong><br>
-                                    <small style="color: #666;">${contact.title} at ${contact.company}</small>
-                                </div>
-                                <div style="text-align: right;">
-                                    <span class="status-indicator status-${this.getContactStatus(contact)}"></span>
-                                    <small>${contact.lastContact ? UIHelpers.formatDate(contact.lastContact) : 'No contact'}</small>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-            
-            <div style="margin-top: 30px; display: flex; gap: 10px;">
-                <button class="action-btn" onclick="teamsModule.addTeamMemberToTeam('${teamId}'); UIHelpers.closeModal('teamDetailsModal');">
-                    Add Team Member
-                </button>
-                <button class="action-btn secondary" onclick="contactsModule.addContactToTeam('${teamId}'); UIHelpers.closeModal('teamDetailsModal');">
-                    Add Contact
-                </button>
-            </div>
-        `;
-
-        document.getElementById('teamDetailsContent').innerHTML = detailsContent;
-        UIHelpers.showModal('teamDetailsModal');
+        UIHelpers.showNotification('Team Details feature coming soon');
     }
 
     showTeamAnalytics() {
-        const teams = DataManager.getTeams();
-        const contacts = DataManager.getContacts();
-        const deals = DataManager.getDeals();
-        const teamMembers = DataManager.getTeamMembers() || {};
-
-        let analytics = 'Team Analytics Report\n\n';
-        
-        Object.keys(teams).forEach(teamId => {
-            const team = teams[teamId];
-            const teamContacts = contacts[teamId] || [];
-            const members = teamMembers[teamId] || [];
-            const teamDeals = deals.filter(deal => 
-                teamContacts.some(contact => contact.id === deal.contactId)
-            );
-            
-            const totalValue = teamDeals.reduce((sum, deal) => sum + deal.value, 0);
-            const engagementRate = this.calculateEngagementRate(teamContacts);
-            
-            analytics += `${team.name} (${team.region}):\n`;
-            analytics += `  • ${members.length} team members\n`;
-            analytics += `  • ${teamContacts.length} contacts\n`;
-            analytics += `  • ${teamDeals.length} deals worth ${(totalValue/1000).toFixed(0)}K\n`;
-            analytics += `  • ${engagementRate}% engagement rate\n\n`;
-        });
-
-        alert(analytics);
+        UIHelpers.showNotification('Team Analytics feature coming soon');
     }
 
-    // Helper functions
+    // Helper methods
     daysSince(date) {
         const today = new Date();
         const contactDate = new Date(date);
         const diffTime = today - contactDate;
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
-
-    isRecentContact(contact) {
-        if (!contact.lastContact) return false;
-        return this.daysSince(contact.lastContact) <= 7;
-    }
-
-    getContactStatus(contact) {
-        if (!contact.lastContact) return 'inactive';
-        const days = this.daysSince(contact.lastContact);
-        if (days <= 7) return 'active';
-        if (days <= 30) return 'pending';
-        return 'inactive';
-    }
-
-    calculateWinRate(deals) {
-        const closedDeals = deals.filter(deal => ['deal-won', 'deal-lost'].includes(deal.stage));
-        const wonDeals = deals.filter(deal => deal.stage === 'deal-won');
-        return closedDeals.length > 0 ? Math.round((wonDeals.length / closedDeals.length) * 100) : 0;
-    }
-
-    calculateEngagementRate(contacts) {
-        if (contacts.length === 0) return 0;
-        const activeContacts = contacts.filter(contact => 
-            contact.lastContact && this.daysSince(contact.lastContact) <= 30
-        );
-        return Math.round((activeContacts.length / contacts.length) * 100);
-    }
-
-    // Event handler for data changes from other modules
-    onEvent(eventType, data) {
-        switch(eventType) {
-            case 'contact:updated':
-            case 'contact:deleted':
-            case 'deal:updated':
-            case 'deal:deleted':
-            case 'team-member:added':
-            case 'team-member:updated':
-            case 'team-member:removed':
-                this.renderIfActive();
-                break;
-        }
-    }
 }
 
 // Create global instance
 const teamsModule = new TeamsModule();
-console.log('✅ Enhanced Teams module with role editing and email copy loaded successfully');
+console.log('✅ Enhanced Teams module with GEO, relationship scores, and touchpoint tracking loaded successfully');
