@@ -42,6 +42,15 @@ class TeamImportModule {
                         <p class="file-requirements">Supports .xlsx, .xls, .csv files</p>
                     </div>
                     <input type="file" id="teamFileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button class="action-btn" onclick="teamImportModule.downloadTemplate()">
+                            📋 Download Template
+                        </button>
+                        <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                            Download a CSV template with the correct column format
+                        </p>
+                    </div>
                 </div>
 
                 <div class="preview-section" id="previewSection" style="display: none;">
