@@ -226,6 +226,9 @@
             <button class="nav-btn" data-tab="relationships" onclick="AppController.switchTab('relationships')">
                 🕸️ Relationship Matrix
             </button>
+            <button class="nav-btn" data-tab="team-import" onclick="AppController.switchTab('team-import')">
+                📁 Team Import
+            </button>
         </nav>
 
         <!-- Main Content Area -->
@@ -236,6 +239,8 @@
 
     <!-- Notification Container -->
     <div id="notification-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <!-- Core JavaScript Files -->
     <script src="js/utils/ui-helpers.js"></script>
@@ -250,6 +255,7 @@
     <script src="js/modules/relationships-module.js"></script>
     <script src="js/modules/pipeline-module.js"></script>
     <script src="js/data-backup-manager.js"></script>
+    <script src="js/modules/team-import-module.js"></script>
 
     <!-- Initialize Application -->
     <script>
