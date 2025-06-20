@@ -29,7 +29,10 @@ class PipelineModule {
 
     render(container) {
         container.innerHTML = this.getHTML();
-        this.setupEventListeners();
+       setupEventListeners() {
+    // Event listeners are set up through onclick handlers in the HTML
+    // This method exists to prevent errors when called from render()
+}
         this.renderContent();
     }
 
