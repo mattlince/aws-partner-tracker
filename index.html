@@ -649,16 +649,16 @@
                 const content = document.getElementById('contentArea');
                 content.innerHTML = `
                     <div class="quick-actions">
-                        <div class="quick-action" onclick="AppController.switchTab('touchpoints')">
+                        <div class="quick-action" onclick="AppController.modules.touchpoints.showQuickAddModal()">
                             📞 Log Touchpoint
                         </div>
-                        <div class="quick-action" onclick="AppController.switchTab('deals')">
+                        <div class="quick-action" onclick="AppController.modules.deals.addDeal()">
                             💰 Add Deal
                         </div>
-                        <div class="quick-action" onclick="AppController.switchTab('contacts')">
+                        <div class="quick-action" onclick="AppController.modules.contacts.addContact()">
                             👥 Add Contact
                         </div>
-                        <div class="quick-action" onclick="this.refreshData()">
+                        <div class="quick-action" onclick="AppController.modules.dashboard.refreshData()">
                             🔄 Refresh
                         </div>
                     </div>
@@ -848,31 +848,98 @@
                     <div class="widget">
                         <div class="widget-header">
                             <h3 class="widget-title">👥 Contacts</h3>
-                            <button class="btn btn-primary" onclick="this.addContact()">Add Contact</button>
+                            <button class="btn btn-primary" onclick="AppController.modules.contacts.addContact()">Add Contact</button>
                         </div>
-                        <div>
-                            ${DataManager.getAllContacts().map(contact => `
-                                <div class="activity-item">
-                                    <div class="activity-icon">👤</div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">${contact.name}</div>
-                                        <div class="activity-meta">${contact.email || ''} • Score: ${contact.relationshipScore || 5}/10</div>
-                                    </div>
-                                </div>
-                            `).join('') || '<div style="padding: 20px; color: #666;">No contacts yet</div>'}
+                        <div id="contactsList">
+                            ${this.renderContactsList()}
                         </div>
                     </div>
                 `;
             }
+
+            renderContactsList() {
+                const contacts = DataManager.getAllContacts();
+                if (contacts.length === 0) {
+                    return '<div style="padding: 20px; color: #666; text-align: center;">No contacts yet. Click "Add Contact" to get started!</div>';
+                }
+
+                return contacts.map(contact => `
+                    <div class="activity-item">
+                        <div class="activity-icon">👤</div>
+                        <div class="activity-content">
+                            <div class="activity-title">${contact.name}</div>
+                            <div class="activity-meta">
+                                ${contact.email || 'No email'} • 
+                                Score: ${contact.relationshipScore || 5}/10 • 
+                                Last Contact: ${contact.lastContact ? UIHelpers.formatDate(contact.lastContact) : 'Never'}
+                            </div>
+                        </div>
+                        <button class="btn btn-sm" onclick="AppController.modules.contacts.logTouchpointFor('${contact.id}')">
+                            📞 Log Call
+                        </button>
+                    </div>
+                `).join('');
+            }
             
             addContact() {
                 const name = prompt('Contact name:');
-                const email = prompt('Contact email:');
-                if (name) {
-                    DataManager.addContact({ name, email });
-                    this.render();
-                    UIHelpers.showNotification(`Contact ${name} added successfully!`);
+                if (!name) return;
+                
+                const email = prompt('Contact email (optional):');
+                const company = prompt('Company (optional):');
+                const phone = prompt('Phone (optional):');
+                
+                const contact = DataManager.addContact({ 
+                    name, 
+                    email, 
+                    company, 
+                    phone,
+                    relationshipScore: 5 
+                });
+                
+                this.render();
+                UIHelpers.showNotification(`✅ Contact ${name} added successfully!`);
+                
+                // Update dashboard if it's the current tab
+                if (AppController.currentTab === 'dashboard') {
+                    AppController.modules.dashboard.updateMetrics();
                 }
+            }
+
+            logTouchpointFor(contactId) {
+                const contact = DataManager.getContact(contactId);
+                if (!contact) {
+                    UIHelpers.showNotification('Contact not found!', 3000, 'error');
+                    return;
+                }
+
+                const type = prompt('Touchpoint type (call, email, meeting, other):', 'call');
+                if (!type) return;
+
+                const notes = prompt('Notes (optional):');
+                const outcome = prompt('Outcome (positive, neutral, negative):', 'positive');
+
+                const touchpoint = DataManager.addTouchpoint({
+                    contactId: contactId,
+                    contactName: contact.name,
+                    type: type,
+                    notes: notes || '',
+                    outcome: outcome,
+                    date: new Date().toISOString()
+                });
+
+                // Update relationship score based on outcome
+                let scoreChange = 0;
+                if (outcome === 'positive') scoreChange = 0.5;
+                else if (outcome === 'negative') scoreChange = -0.5;
+
+                if (scoreChange !== 0) {
+                    const newScore = Math.max(1, Math.min(10, (contact.relationshipScore || 5) + scoreChange));
+                    DataManager.updateContact(contactId, { relationshipScore: newScore });
+                }
+
+                this.render();
+                UIHelpers.showNotification(`📞 ${type} logged with ${contact.name}!`);
             }
         }
 
@@ -887,30 +954,96 @@
                     <div class="widget">
                         <div class="widget-header">
                             <h3 class="widget-title">💰 Deals</h3>
-                            <button class="btn btn-primary" onclick="this.addDeal()">Add Deal</button>
+                            <button class="btn btn-primary" onclick="AppController.modules.deals.addDeal()">Add Deal</button>
                         </div>
-                        <div>
-                            ${DataManager.getDeals().map(deal => `
-                                <div class="activity-item">
-                                    <div class="activity-icon">💰</div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">${deal.title}</div>
-                                        <div class="activity-meta">${UIHelpers.formatCurrency(deal.value || 0)} • ${deal.stage}</div>
-                                    </div>
-                                </div>
-                            `).join('') || '<div style="padding: 20px; color: #666;">No deals yet</div>'}
+                        <div id="dealsList">
+                            ${this.renderDealsList()}
                         </div>
                     </div>
                 `;
             }
+
+            renderDealsList() {
+                const deals = DataManager.getDeals();
+                if (deals.length === 0) {
+                    return '<div style="padding: 20px; color: #666; text-align: center;">No deals yet. Click "Add Deal" to get started!</div>';
+                }
+
+                return deals.map(deal => `
+                    <div class="activity-item">
+                        <div class="activity-icon">💰</div>
+                        <div class="activity-content">
+                            <div class="activity-title">${deal.title}</div>
+                            <div class="activity-meta">
+                                ${UIHelpers.formatCurrency(deal.value || 0)} • 
+                                Stage: ${deal.stage} • 
+                                ${deal.closeDate ? 'Closes: ' + UIHelpers.formatDate(deal.closeDate) : 'No close date'}
+                            </div>
+                        </div>
+                        <button class="btn btn-sm" onclick="AppController.modules.deals.updateStage('${deal.id}')">
+                            Update Stage
+                        </button>
+                    </div>
+                `).join('');
+            }
             
             addDeal() {
                 const title = prompt('Deal title:');
-                const value = prompt('Deal value:');
-                if (title) {
-                    DataManager.addDeal({ title, value: parseFloat(value) || 0 });
+                if (!title) return;
+                
+                const value = prompt('Deal value (USD):');
+                const stage = prompt('Stage (prospecting, qualification, proposal, negotiation, closed-won, closed-lost):', 'prospecting');
+                const closeDate = prompt('Expected close date (YYYY-MM-DD):');
+                
+                const contacts = DataManager.getAllContacts();
+                let contactId = null;
+                if (contacts.length > 0) {
+                    const contactNames = contacts.map(c => c.name).join(', ');
+                    const selectedContact = prompt(`Associated contact (${contactNames}):`);
+                    const contact = contacts.find(c => c.name.toLowerCase().includes(selectedContact?.toLowerCase() || ''));
+                    if (contact) contactId = contact.id;
+                }
+
+                const deal = DataManager.addDeal({ 
+                    title, 
+                    value: parseFloat(value) || 0,
+                    stage: stage || 'prospecting',
+                    closeDate: closeDate || null,
+                    contactId: contactId,
+                    priority: 'medium'
+                });
+                
+                this.render();
+                UIHelpers.showNotification(`💰 Deal "${title}" added successfully!`);
+                
+                // Update dashboard if it's the current tab
+                if (AppController.currentTab === 'dashboard') {
+                    AppController.modules.dashboard.updateMetrics();
+                }
+            }
+
+            updateStage(dealId) {
+                const deal = DataManager.getDeals().find(d => d.id === dealId);
+                if (!deal) return;
+
+                const stages = ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed-won', 'closed-lost'];
+                const currentIndex = stages.indexOf(deal.stage);
+                const stageOptions = stages.map((stage, index) => 
+                    `${index + 1}. ${stage}${index === currentIndex ? ' (current)' : ''}`
+                ).join('\n');
+
+                const newStageNum = prompt(`Select new stage for "${deal.title}":\n${stageOptions}\n\nEnter number (1-${stages.length}):`);
+                const newStageIndex = parseInt(newStageNum) - 1;
+
+                if (newStageIndex >= 0 && newStageIndex < stages.length) {
+                    DataManager.updateDeal(dealId, { stage: stages[newStageIndex] });
                     this.render();
-                    UIHelpers.showNotification(`Deal ${title} added successfully!`);
+                    UIHelpers.showNotification(`✅ Deal stage updated to "${stages[newStageIndex]}"`);
+                    
+                    // Update dashboard
+                    if (AppController.currentTab === 'dashboard') {
+                        AppController.modules.dashboard.updateMetrics();
+                    }
                 }
             }
         }
@@ -928,41 +1061,124 @@
                     <div class="widget">
                         <div class="widget-header">
                             <h3 class="widget-title">📞 Touchpoints</h3>
-                            <button class="btn btn-primary" onclick="this.addTouchpoint()">Log Touchpoint</button>
+                            <button class="btn btn-primary" onclick="AppController.modules.touchpoints.showQuickAddModal()">Log Touchpoint</button>
                         </div>
-                        <div>
-                            ${recentTouchpoints.map(tp => {
-                                const contact = DataManager.getContact(tp.contactId);
-                                const contactName = contact ? contact.name : 'Unknown Contact';
-                                return `
-                                    <div class="activity-item">
-                                        <div class="activity-icon">📞</div>
-                                        <div class="activity-content">
-                                            <div class="activity-title">${tp.type} with ${contactName}</div>
-                                            <div class="activity-meta">${UIHelpers.formatDate(tp.date)} • ${tp.notes || 'No notes'}</div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('') || '<div style="padding: 20px; color: #666;">No touchpoints yet</div>'}
+                        <div id="touchpointsList">
+                            ${this.renderTouchpointsList()}
                         </div>
                     </div>
                 `;
             }
+
+            renderTouchpointsList() {
+                const recentTouchpoints = window.getRecentTouchpoints({ limit: 20 });
+                if (recentTouchpoints.length === 0) {
+                    return '<div style="padding: 20px; color: #666; text-align: center;">No touchpoints yet. Click "Log Touchpoint" to get started!</div>';
+                }
+
+                return recentTouchpoints.map(tp => {
+                    const contact = DataManager.getContact(tp.contactId);
+                    const contactName = contact ? contact.name : 'Unknown Contact';
+                    const typeIcon = {
+                        'call': '📞',
+                        'email': '✉️', 
+                        'meeting': '🤝',
+                        'other': '📝'
+                    }[tp.type] || '📞';
+                    
+                    return `
+                        <div class="activity-item">
+                            <div class="activity-icon">${typeIcon}</div>
+                            <div class="activity-content">
+                                <div class="activity-title">${tp.type} with ${contactName}</div>
+                                <div class="activity-meta">
+                                    ${UIHelpers.formatDate(tp.date)} • 
+                                    ${tp.outcome ? `Outcome: ${tp.outcome} • ` : ''}
+                                    ${tp.notes || 'No notes'}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
             
-            addTouchpoint() {
+            showQuickAddModal() {
                 const contacts = DataManager.getAllContacts();
                 if (contacts.length === 0) {
-                    UIHelpers.showNotification('Please add contacts first!', 3000, 'warning');
+                    UIHelpers.showNotification('⚠️ Please add contacts first before logging touchpoints!', 3000, 'warning');
+                    // Offer to add a contact first
+                    if (confirm('Would you like to add a contact first?')) {
+                        AppController.modules.contacts.addContact();
+                    }
                     return;
                 }
                 
-                const contactId = contacts[0].id; // Use first contact for demo
-                const type = prompt('Touchpoint type (call, email, meeting):') || 'call';
-                const notes = prompt('Notes:') || '';
+                // Show contact selection
+                const contactNames = contacts.map((c, i) => `${i + 1}. ${c.name}`).join('\n');
+                const contactChoice = prompt(`Select contact:\n${contactNames}\n\nEnter number (1-${contacts.length}):`);
+                const contactIndex = parseInt(contactChoice) - 1;
                 
-                DataManager.addTouchpoint({ contactId, type, notes });
+                if (contactIndex < 0 || contactIndex >= contacts.length) {
+                    UIHelpers.showNotification('❌ Invalid contact selection', 3000, 'error');
+                    return;
+                }
+                
+                const selectedContact = contacts[contactIndex];
+                this.addTouchpointFor(selectedContact.id);
+            }
+
+            addTouchpointFor(contactId) {
+                const contact = DataManager.getContact(contactId);
+                if (!contact) {
+                    UIHelpers.showNotification('Contact not found!', 3000, 'error');
+                    return;
+                }
+
+                const type = prompt('Touchpoint type:\n1. Call\n2. Email\n3. Meeting\n4. Other\n\nEnter number (1-4):', '1');
+                const typeMap = { '1': 'call', '2': 'email', '3': 'meeting', '4': 'other' };
+                const selectedType = typeMap[type] || 'call';
+
+                const notes = prompt('Notes about this touchpoint:');
+                const outcome = prompt('Outcome:\n1. Positive\n2. Neutral\n3. Negative\n\nEnter number (1-3):', '1');
+                const outcomeMap = { '1': 'positive', '2': 'neutral', '3': 'negative' };
+                const selectedOutcome = outcomeMap[outcome] || 'positive';
+
+                const touchpoint = DataManager.addTouchpoint({
+                    contactId: contactId,
+                    contactName: contact.name,
+                    type: selectedType,
+                    notes: notes || '',
+                    outcome: selectedOutcome,
+                    date: new Date().toISOString()
+                });
+
+                // Update relationship score based on outcome
+                let scoreChange = 0;
+                if (selectedOutcome === 'positive') scoreChange = 0.5;
+                else if (selectedOutcome === 'negative') scoreChange = -0.5;
+
+                if (scoreChange !== 0) {
+                    const newScore = Math.max(1, Math.min(10, (contact.relationshipScore || 5) + scoreChange));
+                    DataManager.updateContact(contactId, { relationshipScore: newScore });
+                    
+                    if (scoreChange > 0) {
+                        UIHelpers.showNotification(`🎉 Relationship score with ${contact.name} improved to ${newScore.toFixed(1)}!`);
+                    }
+                }
+
                 this.render();
-                UIHelpers.showNotification('Touchpoint logged successfully!');
+                UIHelpers.showNotification(`📞 ${selectedType} logged with ${contact.name}!`);
+                
+                // Update dashboard
+                if (AppController.currentTab === 'dashboard') {
+                    AppController.modules.dashboard.updateMetrics();
+                    AppController.modules.dashboard.updateRecentActivity();
+                }
+            }
+
+            // Legacy method name for compatibility
+            addTouchpoint() {
+                this.showQuickAddModal();
             }
         }
 
@@ -980,14 +1196,199 @@
         }
 
         class TeamsModule {
-            init() { console.log('Teams module initialized'); }
+            init() { 
+                console.log('Teams module initialized'); 
+            }
+            
             render() {
-                document.getElementById('contentArea').innerHTML = `
+                const content = document.getElementById('contentArea');
+                content.innerHTML = `
                     <div class="widget">
-                        <h3>🏢 Teams</h3>
-                        <p>Team management coming soon...</p>
+                        <div class="widget-header">
+                            <h3 class="widget-title">🏢 Teams & Organizations</h3>
+                            <button class="btn btn-primary" onclick="AppController.modules.teams.addTeam()">Add Team</button>
+                        </div>
+                        <div id="teamsList">
+                            ${this.renderTeamsList()}
+                        </div>
                     </div>
                 `;
+            }
+
+            renderTeamsList() {
+                const teams = DataManager.data.teams || {};
+                const teamEntries = Object.entries(teams);
+                
+                if (teamEntries.length === 0) {
+                    return `
+                        <div style="padding: 20px; color: #666; text-align: center;">
+                            <p>No teams yet. Click "Add Team" to get started!</p>
+                            <p style="margin-top: 12px; font-size: 14px;">
+                                💡 <strong>Tip:</strong> Teams represent customer organizations you're tracking
+                            </p>
+                        </div>
+                    `;
+                }
+
+                return teamEntries.map(([teamId, team]) => {
+                    const teamContacts = DataManager.getAllContacts().filter(c => c.teamId === teamId);
+                    const teamDeals = DataManager.getDeals().filter(d => d.teamId === teamId);
+                    const totalValue = teamDeals.reduce((sum, deal) => sum + (deal.value || 0), 0);
+                    
+                    return `
+                        <div class="activity-item">
+                            <div class="activity-icon">🏢</div>
+                            <div class="activity-content">
+                                <div class="activity-title">${team.name}</div>
+                                <div class="activity-meta">
+                                    ${teamContacts.length} contacts • 
+                                    ${teamDeals.length} deals • 
+                                    ${UIHelpers.formatCurrency(totalValue)} pipeline
+                                    ${team.tier ? ` • Tier: ${team.tier}` : ''}
+                                    ${team.geo ? ` • ${team.geo}` : ''}
+                                </div>
+                            </div>
+                            <button class="btn btn-sm" onclick="AppController.modules.teams.viewTeamDetails('${teamId}')">
+                                View Details
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            addTeam() {
+                const name = prompt('Team/Organization name:');
+                if (!name) return;
+
+                const tier = prompt('Tier (Enterprise, Commercial, SMB):');
+                const geo = prompt('Geography/Region:');
+                const industry = prompt('Industry:');
+                const website = prompt('Website (optional):');
+
+                const teamId = Date.now().toString();
+                const team = {
+                    id: teamId,
+                    name: name,
+                    tier: tier || '',
+                    geo: geo || '',
+                    industry: industry || '',
+                    website: website || '',
+                    createdAt: new Date().toISOString()
+                };
+
+                if (!DataManager.data.teams) {
+                    DataManager.data.teams = {};
+                }
+                DataManager.data.teams[teamId] = team;
+                DataManager.saveData();
+
+                this.render();
+                UIHelpers.showNotification(`🏢 Team "${name}" added successfully!`);
+            }
+
+            viewTeamDetails(teamId) {
+                const team = DataManager.data.teams[teamId];
+                if (!team) return;
+
+                const teamContacts = DataManager.getAllContacts().filter(c => c.teamId === teamId);
+                const teamDeals = DataManager.getDeals().filter(d => d.teamId === teamId);
+
+                const details = `
+Team: ${team.name}
+${team.tier ? `Tier: ${team.tier}\n` : ''}${team.geo ? `Geography: ${team.geo}\n` : ''}${team.industry ? `Industry: ${team.industry}\n` : ''}
+Contacts: ${teamContacts.length}
+Deals: ${teamDeals.length}
+Pipeline Value: ${UIHelpers.formatCurrency(teamDeals.reduce((sum, d) => sum + (d.value || 0), 0))}
+
+Would you like to:
+1. Add contact to this team
+2. Add deal to this team
+3. View team touchpoints
+                `;
+
+                const choice = prompt(details + '\n\nEnter choice (1-3):');
+                
+                switch(choice) {
+                    case '1':
+                        this.addContactToTeam(teamId);
+                        break;
+                    case '2':
+                        this.addDealToTeam(teamId);
+                        break;
+                    case '3':
+                        this.viewTeamTouchpoints(teamId);
+                        break;
+                }
+            }
+
+            addContactToTeam(teamId) {
+                const team = DataManager.data.teams[teamId];
+                const name = prompt(`Add contact to ${team.name}:\n\nContact name:`);
+                if (!name) return;
+
+                const email = prompt('Contact email:');
+                const role = prompt('Role/Title:');
+                const phone = prompt('Phone (optional):');
+
+                const contact = DataManager.addContact({
+                    name: name,
+                    email: email,
+                    role: role,
+                    phone: phone,
+                    teamId: teamId,
+                    teamName: team.name
+                });
+
+                UIHelpers.showNotification(`👤 ${name} added to ${team.name}!`);
+                this.render();
+            }
+
+            addDealToTeam(teamId) {
+                const team = DataManager.data.teams[teamId];
+                const title = prompt(`Add deal to ${team.name}:\n\nDeal title:`);
+                if (!title) return;
+
+                const value = prompt('Deal value (USD):');
+                const stage = prompt('Stage (prospecting, qualification, proposal, negotiation, closed-won, closed-lost):', 'prospecting');
+
+                const deal = DataManager.addDeal({
+                    title: title,
+                    value: parseFloat(value) || 0,
+                    stage: stage || 'prospecting',
+                    teamId: teamId,
+                    teamName: team.name
+                });
+
+                UIHelpers.showNotification(`💰 Deal "${title}" added to ${team.name}!`);
+                this.render();
+            }
+
+            viewTeamTouchpoints(teamId) {
+                const team = DataManager.data.teams[teamId];
+                const teamContacts = DataManager.getAllContacts().filter(c => c.teamId === teamId);
+                const contactIds = teamContacts.map(c => c.id);
+                
+                const teamTouchpoints = window.touchpointData.filter(tp => 
+                    contactIds.includes(tp.contactId)
+                );
+
+                if (teamTouchpoints.length === 0) {
+                    alert(`No touchpoints recorded for ${team.name} yet.`);
+                    return;
+                }
+
+                const summary = `
+${team.name} - Recent Activity:
+
+${teamTouchpoints.slice(0, 5).map(tp => {
+    const contact = DataManager.getContact(tp.contactId);
+    return `• ${tp.type} with ${contact?.name || 'Unknown'} (${new Date(tp.date).toLocaleDateString()})`;
+}).join('\n')}
+
+Total touchpoints: ${teamTouchpoints.length}
+                `;
+
+                alert(summary);
             }
         }
 
