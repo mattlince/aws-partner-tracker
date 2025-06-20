@@ -1,7 +1,11 @@
-// Contacts Module - Team and Contact Management
+// Contacts Management Module
 class ContactsModule {
     constructor() {
-        this.currentFilter = { team: '', search: '' };
+        this.currentView = 'grid';
+        this.searchTerm = '';
+        this.selectedTeam = 'all';
+        this.sortBy = 'name';
+        this.sortOrder = 'asc';
     }
 
     init() {
@@ -10,17 +14,17 @@ class ContactsModule {
         // Listen for data changes
         DataManager.on('contact:updated', () => this.renderIfActive());
         DataManager.on('contact:deleted', () => this.renderIfActive());
+        DataManager.on('contact:added', () => this.renderIfActive());
         DataManager.on('data:loaded', () => this.renderIfActive());
     }
 
     render(container) {
         container.innerHTML = this.getHTML();
         this.setupEventListeners();
-        this.renderAllTeams();
     }
 
     renderIfActive() {
-        if (AppController.currentTab === 'teams') {
+        if (AppController.currentTab === 'contacts') {
             const container = document.getElementById('content-area');
             if (container) {
                 this.render(container);
@@ -29,34 +33,132 @@ class ContactsModule {
     }
 
     getHTML() {
+        const contacts = this.getFilteredContacts();
+        const stats = this.calculateStats(contacts);
+
         return `
             <div class="contacts-container">
-                <div class="controls-bar">
+                <div class="contacts-header">
                     <div>
-                        <button class="action-btn" onclick="contactsModule.addNewContact()">+ Add Individual</button>
-                        <button class="action-btn" onclick="contactsModule.addNewTeam()">+ Add Team</button>
-                        <button class="action-btn secondary" onclick="contactsModule.exportAllData()">Export All Data</button>
+                        <h2>👥 Contact Management</h2>
+                        <p>Manage your professional network • ${contacts.length} contacts • ${stats.teams} teams</p>
                     </div>
-                    <div>
-                        <input type="text" id="searchContacts" class="search-input" placeholder="Search contacts..." oninput="contactsModule.filterContacts()">
-                        <select id="filterByTeam" class="search-input" onchange="contactsModule.filterContacts()" style="width: auto; margin-left: 10px;">
-                            <option value="">All Teams</option>
-                        </select>
+                    <div class="contacts-controls">
+                        <button class="view-btn ${this.currentView === 'grid' ? 'active' : ''}" onclick="contactsModule.switchView('grid')">
+                            📱 Grid View
+                        </button>
+                        <button class="view-btn ${this.currentView === 'table' ? 'active' : ''}" onclick="contactsModule.switchView('table')">
+                            📋 Table View
+                        </button>
+                        <button class="action-btn" onclick="contactsModule.showContactForm()">
+                            + Add Contact
+                        </button>
+                        <button class="action-btn secondary" onclick="contactsModule.exportContacts()">
+                            📥 Export
+                        </button>
                     </div>
                 </div>
-                <div id="teamsContainer">
-                    <!-- Teams will be populated here -->
+
+                <div class="contacts-filters">
+                    <div class="filter-group">
+                        <label>Search:</label>
+                        <input type="text" id="contactSearch" placeholder="Search contacts..." 
+                               value="${this.searchTerm}" onkeyup="contactsModule.updateSearch(this.value)">
+                    </div>
+                    <div class="filter-group">
+                        <label>Team:</label>
+                        <select id="teamFilter" onchange="contactsModule.updateTeamFilter(this.value)">
+                            <option value="all">All Teams</option>
+                            ${this.getTeamOptions()}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Sort:</label>
+                        <select id="sortBy" onchange="contactsModule.updateSort(this.value)">
+                            <option value="name" ${this.sortBy === 'name' ? 'selected' : ''}>Name</option>
+                            <option value="company" ${this.sortBy === 'company' ? 'selected' : ''}>Company</option>
+                            <option value="title" ${this.sortBy === 'title' ? 'selected' : ''}>Title</option>
+                            <option value="lastContact" ${this.sortBy === 'lastContact' ? 'selected' : ''}>Last Contact</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button class="action-btn secondary" onclick="contactsModule.resetFilters()">Reset</button>
+                    </div>
+                </div>
+
+                <div class="contacts-stats">
+                    <div class="stat-card">
+                        <span class="stat-label">Total Contacts</span>
+                        <span class="stat-value">${stats.total}</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">AWS Contacts</span>
+                        <span class="stat-value">${stats.aws}</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Recent Activity</span>
+                        <span class="stat-value">${stats.recentActivity}</span>
+                    </div>
+                </div>
+
+                <div id="contactsContent">
+                    ${this.renderContactsContent(contacts)}
+                </div>
+
+                <!-- Contact Form Modal -->
+                <div id="contactFormModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <span class="close" onclick="UIHelpers.closeModal('contactFormModal')">&times;</span>
+                        <div id="contactFormContent">
+                            <!-- Contact form will be populated here -->
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <style>
-                .controls-bar {
-                    margin-bottom: 20px;
+                .contacts-container {
+                    max-width: 100%;
+                }
+                .contacts-header {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
+                    margin-bottom: 20px;
                     flex-wrap: wrap;
+                    gap: 15px;
+                }
+                .contacts-header h2 {
+                    margin: 0;
+                    color: #232F3E;
+                    font-size: 1.8em;
+                }
+                .contacts-header p {
+                    margin: 5px 0 0 0;
+                    color: #666;
+                }
+                .contacts-controls {
+                    display: flex;
                     gap: 10px;
+                    align-items: center;
+                    flex-wrap: wrap;
+                }
+                .view-btn {
+                    background: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 0.9em;
+                    transition: all 0.3s ease;
+                }
+                .view-btn.active {
+                    background: #232F3E;
+                    color: white;
+                    border-color: #232F3E;
+                }
+                .view-btn:hover:not(.active) {
+                    background: #e9ecef;
                 }
                 .action-btn {
                     background: #FF9900;
@@ -67,10 +169,9 @@ class ContactsModule {
                     cursor: pointer;
                     font-size: 0.9em;
                     transition: all 0.3s ease;
-                    margin: 2px;
                 }
-                .action-btn:hover { 
-                    background: #e68900; 
+                .action-btn:hover {
+                    background: #e68900;
                     transform: translateY(-1px);
                 }
                 .action-btn.secondary {
@@ -85,474 +186,637 @@ class ContactsModule {
                 .action-btn.danger:hover {
                     background: #c82333;
                 }
-                .search-input {
+                .contacts-filters {
+                    display: flex;
+                    gap: 20px;
+                    align-items: center;
+                    padding: 15px 20px;
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    margin-bottom: 20px;
+                    flex-wrap: wrap;
+                }
+                .filter-group {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                .filter-group label {
+                    font-weight: 500;
+                    color: #232F3E;
+                    font-size: 0.9em;
+                }
+                .filter-group input,
+                .filter-group select {
+                    padding: 6px 12px;
+                    border: 1px solid #ddd;
+                    border-radius: 6px;
+                    font-size: 0.9em;
+                    background: white;
+                }
+                .contacts-stats {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                    gap: 15px;
+                    margin-bottom: 25px;
+                    padding: 20px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 12px;
+                    color: white;
+                }
+                .stat-card {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                }
+                .stat-label {
+                    font-size: 0.9em;
+                    opacity: 0.9;
+                    margin-bottom: 5px;
+                }
+                .stat-value {
+                    font-size: 1.4em;
+                    font-weight: bold;
+                }
+
+                /* Grid View Styles */
+                .contacts-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                    gap: 20px;
+                }
+                .contact-card {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 20px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                    border-left: 4px solid #FF9900;
+                }
+                .contact-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                }
+                .contact-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 15px;
+                }
+                .contact-name {
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    color: #232F3E;
+                    margin: 0 0 5px 0;
+                }
+                .contact-title {
+                    color: #666;
+                    font-size: 0.9em;
+                    margin-bottom: 5px;
+                }
+                .contact-company {
+                    color: #FF9900;
+                    font-weight: 500;
+                    font-size: 0.9em;
+                }
+                .contact-details {
+                    margin-bottom: 15px;
+                }
+                .contact-detail {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 5px;
+                    font-size: 0.9em;
+                    color: #666;
+                }
+                .contact-actions {
+                    display: flex;
+                    gap: 8px;
+                    margin-top: 15px;
+                }
+                .contact-action-btn {
+                    background: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 0.75em;
+                    transition: all 0.3s ease;
+                }
+                .contact-action-btn:hover {
+                    background: #e9ecef;
+                }
+
+                /* Table View Styles */
+                .contacts-table-container {
+                    background: white;
+                    border-radius: 12px;
+                    padding: 20px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                    overflow-x: auto;
+                }
+                .contacts-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                .contacts-table th {
+                    background: #232F3E;
+                    color: white;
+                    padding: 12px;
+                    text-align: left;
+                    font-size: 0.9em;
+                    cursor: pointer;
+                }
+                .contacts-table th:hover {
+                    background: #1a252f;
+                }
+                .contacts-table td {
+                    padding: 12px;
+                    border-bottom: 1px solid #eee;
+                    font-size: 0.9em;
+                }
+                .contacts-table tbody tr {
+                    cursor: pointer;
+                    transition: background 0.3s ease;
+                }
+                .contacts-table tbody tr:hover {
+                    background: #f8f9fa;
+                }
+
+                /* Modal Styles */
+                .modal {
+                    display: none;
+                    position: fixed;
+                    z-index: 1000;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0,0,0,0.5);
+                    backdrop-filter: blur(5px);
+                }
+                .modal-content {
+                    background-color: white;
+                    margin: 5% auto;
+                    padding: 30px;
+                    border-radius: 15px;
+                    width: 90%;
+                    max-width: 600px;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    position: relative;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                }
+                .close {
+                    color: #aaa;
+                    float: right;
+                    font-size: 28px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    position: absolute;
+                    right: 20px;
+                    top: 15px;
+                }
+                .close:hover { color: #000; }
+
+                /* Form Styles */
+                .contact-form {
+                    display: grid;
+                    gap: 20px;
+                }
+                .form-row {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 15px;
+                }
+                .form-group {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .form-group label {
+                    font-weight: bold;
+                    margin-bottom: 5px;
+                    color: #232F3E;
+                }
+                .form-group input,
+                .form-group select,
+                .form-group textarea {
                     padding: 8px 12px;
                     border: 1px solid #ddd;
                     border-radius: 6px;
                     font-size: 14px;
                 }
-                .team-section {
-                    margin-bottom: 40px;
-                    background: #f8f9fa;
-                    border-radius: 12px;
-                    padding: 25px;
+                .form-group textarea {
+                    height: 80px;
+                    resize: vertical;
                 }
-                .team-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 20px;
-                    padding-bottom: 15px;
-                    border-bottom: 2px solid #e9ecef;
-                }
-                .team-name {
-                    font-size: 1.5em;
-                    font-weight: bold;
-                    color: #232F3E;
-                }
-                .team-stats {
-                    display: flex;
-                    gap: 20px;
-                    font-size: 0.9em;
-                    color: #666;
-                    align-items: center;
-                }
-                .rep-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    background: white;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-                }
-                .rep-table th {
-                    background: #232F3E;
-                    color: white;
-                    padding: 12px 8px;
-                    text-align: left;
-                    font-size: 0.85em;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
-                .rep-table td {
-                    padding: 10px 8px;
-                    border-bottom: 1px solid #eee;
-                    font-size: 0.9em;
-                }
-                .rep-table tbody tr:hover {
-                    background: #f8f9fa;
-                }
-                .status-badge {
-                    padding: 4px 8px;
-                    border-radius: 20px;
-                    font-size: 0.75em;
-                    font-weight: bold;
-                    text-transform: uppercase;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                }
-                .status-badge:hover { transform: scale(1.05); }
-                .status-tier1 { background: #d4edda; color: #155724; }
-                .status-tier2 { background: #fff3cd; color: #856404; }
-                .status-tier3 { background: #f8d7da; color: #721c24; }
-                .relationship-score {
-                    display: inline-block;
-                    width: 30px;
-                    height: 30px;
-                    border-radius: 50%;
-                    text-align: center;
-                    line-height: 30px;
-                    color: white;
-                    font-weight: bold;
-                    font-size: 0.8em;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                }
-                .relationship-score:hover { transform: scale(1.1); }
-                .score-5 { background: #28a745; }
-                .score-4 { background: #17a2b8; }
-                .score-3 { background: #ffc107; color: #000; }
-                .score-2 { background: #fd7e14; }
-                .score-1 { background: #dc3545; }
-                .editable {
-                    background: transparent;
-                    border: 1px solid transparent;
-                    padding: 2px 4px;
-                    border-radius: 3px;
-                    transition: all 0.2s ease;
-                    cursor: pointer;
-                }
-                .editable:hover {
-                    background: #f8f9fa;
-                    border-color: #ddd;
-                }
-                .editable:focus {
+                .form-group input:focus,
+                .form-group select:focus,
+                .form-group textarea:focus {
                     outline: none;
                     border-color: #FF9900;
-                    background: white;
+                    box-shadow: 0 0 0 2px rgba(255, 153, 0, 0.2);
                 }
             </style>
         `;
     }
 
     setupEventListeners() {
-        // Set up editable field handling
-        document.addEventListener('blur', (e) => {
-            if (e.target.classList.contains('editable')) {
-                this.handleEditableUpdate(e.target);
-            }
-        }, true);
-
-        // Update team dropdowns
-        this.updateTeamDropdowns();
+        // Event listeners will be set up through onclick handlers
     }
 
-    handleEditableUpdate(element) {
-        const field = element.dataset.field;
-        const contactId = element.dataset.contact;
-        const teamId = element.dataset.team;
-        const value = element.textContent.trim();
+    switchView(view) {
+        this.currentView = view;
+        this.renderContactsContent();
+    }
+
+    updateSearch(searchTerm) {
+        this.searchTerm = searchTerm;
+        this.renderContactsContent();
+    }
+
+    updateTeamFilter(team) {
+        this.selectedTeam = team;
+        this.renderContactsContent();
+    }
+
+    updateSort(sortBy) {
+        this.sortBy = sortBy;
+        this.renderContactsContent();
+    }
+
+    resetFilters() {
+        this.searchTerm = '';
+        this.selectedTeam = 'all';
+        this.sortBy = 'name';
         
-        if (contactId && teamId && field) {
-            const updates = {};
-            updates[field] = value;
-            DataManager.updateContact(teamId, contactId, updates);
-            UIHelpers.showNotification(`${field} updated`);
-        }
-    }
-
-    updateTeamDropdowns() {
-        const teams = DataManager.getTeams();
-        const filterTeamSelect = document.getElementById('filterByTeam');
+        document.getElementById('contactSearch').value = '';
+        document.getElementById('teamFilter').value = 'all';
+        document.getElementById('sortBy').value = 'name';
         
-        if (filterTeamSelect) {
-            filterTeamSelect.innerHTML = '<option value="">All Teams</option>';
-            Object.keys(teams).forEach(teamId => {
-                const option = document.createElement('option');
-                option.value = teamId;
-                option.textContent = teams[teamId].name;
-                filterTeamSelect.appendChild(option);
-            });
-        }
+        this.renderContactsContent();
     }
 
-    addNewContact() {
-        const modalContent = `
-            <form id="contactForm">
-                <input type="hidden" id="contactId" name="id">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div>
-                        <label for="contactName">Name:</label>
-                        <input type="text" id="contactName" name="name" required style="width: 100%; padding: 8px; margin-top: 5px;">
-                    </div>
-                    <div>
-                        <label for="contactRole">Role:</label>
-                        <select id="contactRole" name="role" required style="width: 100%; padding: 8px; margin-top: 5px;">
-                            <option value="AM">Account Manager (AM)</option>
-                            <option value="PSM">Partner Solutions Manager (PSM)</option>
-                            <option value="DM">District Manager (DM)</option>
-                            <option value="PDM">Partner Development Manager (PDM)</option>
-                            <option value="ISV">ISV Partner</option>
-                        </select>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div>
-                        <label for="contactTeam">Team:</label>
-                        <select id="contactTeam" name="team" required style="width: 100%; padding: 8px; margin-top: 5px;">
-                            <option value="">Select Team</option>
-                            ${Object.keys(DataManager.getTeams()).map(teamId => 
-                                `<option value="${teamId}">${DataManager.getTeams()[teamId].name}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
-                    <div>
-                        <label for="contactGeo">Geography:</label>
-                        <input type="text" id="contactGeo" name="geo" placeholder="e.g., HQ1, ATX, Remote" style="width: 100%; padding: 8px; margin-top: 5px;">
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div>
-                        <label for="contactTier">Tier Status:</label>
-                        <select id="contactTier" name="tier" style="width: 100%; padding: 8px; margin-top: 5px;">
-                            <option value="tier3">Tier 3 - Prospect</option>
-                            <option value="tier2">Tier 2 - Active Partner</option>
-                            <option value="tier1">Tier 1 - Strategic Partner</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="contactScore">Relationship Score:</label>
-                        <select id="contactScore" name="relationshipScore" style="width: 100%; padding: 8px; margin-top: 5px;">
-                            <option value="1">1 - Cold/No Response</option>
-                            <option value="2">2 - Initial Contact</option>
-                            <option value="3">3 - Engaged</option>
-                            <option value="4">4 - Strong Partnership</option>
-                            <option value="5">5 - Strategic Alliance</option>
-                        </select>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div>
-                        <label for="contactLastContact">Last Contact Date:</label>
-                        <input type="date" id="contactLastContact" name="lastContact" style="width: 100%; padding: 8px; margin-top: 5px;">
-                    </div>
-                    <div>
-                        <label for="contactPipeline">Pipeline Value:</label>
-                        <input type="text" id="contactPipeline" name="pipeline" placeholder="$0" style="width: 100%; padding: 8px; margin-top: 5px;">
-                    </div>
-                </div>
-                <div style="margin-bottom: 20px;">
-                    <label for="contactNextSteps">Next Steps:</label>
-                    <textarea id="contactNextSteps" name="nextSteps" placeholder="Initial outreach planned..." style="width: 100%; padding: 8px; margin-top: 5px; height: 80px;"></textarea>
-                </div>
-                <button type="submit" class="action-btn" style="background: #FF9900; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">Save Contact</button>
-            </form>
-        `;
-
-        const modal = UIHelpers.createModal('contactModal', 'Add New Individual', modalContent);
-        
-        // Set default values
-        const today = new Date().toISOString().split('T')[0];
-        setTimeout(() => {
-            document.getElementById('contactLastContact').value = today;
-            document.getElementById('contactPipeline').value = '$0';
-            document.getElementById('contactNextSteps').value = 'Initial outreach planned';
-        }, 100);
-
-        // Handle form submission
-        document.getElementById('contactForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const contact = Object.fromEntries(formData.entries());
-            contact.relationshipScore = parseInt(contact.relationshipScore);
-            
-            DataManager.addContact(contact.team, contact);
-            UIHelpers.closeModal('contactModal');
-            UIHelpers.showNotification('Contact added successfully');
-        });
-
-        UIHelpers.showModal('contactModal');
-    }
-
-    addNewTeam() {
-        // Simplified team addition for now
-        const teamName = prompt('Team Name:');
-        const teamId = prompt('Team ID (lowercase, hyphens only):');
-        
-        if (teamName && teamId) {
-            const teams = DataManager.getTeams();
-            teams[teamId] = {
-                name: teamName,
-                dm: 'TBD',
-                psm: 'TBD'
-            };
-            DataManager.data.teams = teams;
-            DataManager.saveToStorage();
-            this.renderAllTeams();
-            this.updateTeamDropdowns();
-            UIHelpers.showNotification(`Team "${teamName}" created successfully`);
-        }
-    }
-
-    renderAllTeams() {
-        const container = document.getElementById('teamsContainer');
+    renderContactsContent() {
+        const container = document.getElementById('contactsContent');
         if (!container) return;
-
-        const teams = DataManager.getTeams();
-        const contacts = DataManager.getContacts();
         
-        container.innerHTML = '';
-        
-        Object.keys(teams).forEach(teamId => {
-            const teamConfig = teams[teamId];
-            const teamContacts = contacts[teamId] || [];
-            
-            const teamSection = this.renderTeamSection(teamId, teamConfig, teamContacts);
-            container.appendChild(teamSection);
-        });
+        const contacts = this.getFilteredContacts();
+        container.innerHTML = this.renderContactsContentHTML(contacts);
     }
 
-    renderTeamSection(teamId, teamConfig, teamContacts) {
-        const engagedContacts = teamContacts.filter(c => c.relationshipScore > 2).length;
-        const engagementRate = teamContacts.length > 0 ? Math.round((engagedContacts / teamContacts.length) * 100) : 0;
-        
-        const section = document.createElement('div');
-        section.className = 'team-section';
-        
-        if (teamContacts.length === 0) {
-            section.innerHTML = `
-                <div class="team-header">
-                    <div class="team-name">${teamConfig.name}</div>
-                    <div class="team-stats">
-                        <span>DM: ${teamConfig.dm}</span>
-                        <span>PSM: ${teamConfig.psm}</span>
-                        <span>0 members</span>
-                        <button class="action-btn" onclick="contactsModule.addContactToTeam('${teamId}')">+ Add Member</button>
-                    </div>
-                </div>
-                <p style="text-align: center; color: #666; padding: 20px;">No team members yet. Click "Add Member" to get started.</p>
-            `;
+    renderContactsContentHTML(contacts) {
+        if (this.currentView === 'grid') {
+            return this.renderGridView(contacts);
         } else {
-            section.innerHTML = `
-                <div class="team-header">
-                    <div class="team-name">${teamConfig.name}</div>
-                    <div class="team-stats">
-                        <span>DM: ${teamConfig.dm}</span>
-                        <span>PSM: ${teamConfig.psm}</span>
-                        <span>${teamContacts.length} members</span>
-                        <span>Engagement: ${engagementRate}%</span>
-                        <button class="action-btn" onclick="contactsModule.addContactToTeam('${teamId}')">+ Add Member</button>
+            return this.renderTableView(contacts);
+        }
+    }
+
+    renderGridView(contacts) {
+        if (contacts.length === 0) {
+            return `
+                <div style="text-align: center; padding: 60px; color: #666;">
+                    <h3>No contacts found</h3>
+                    <p>Try adjusting your filters or add a new contact to get started.</p>
+                    <button class="action-btn" onclick="contactsModule.showContactForm()">+ Add First Contact</button>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="contacts-grid">
+                ${contacts.map(contact => this.renderContactCard(contact)).join('')}
+            </div>
+        `;
+    }
+
+    renderContactCard(contact) {
+        const lastContactDate = contact.lastContact ? new Date(contact.lastContact).toLocaleDateString() : 'Never';
+        
+        return `
+            <div class="contact-card" onclick="contactsModule.editContact('${contact.id}')">
+                <div class="contact-header">
+                    <div>
+                        <h3 class="contact-name">${contact.name}</h3>
+                        <div class="contact-title">${contact.title || 'No title'}</div>
+                        <div class="contact-company">${contact.company || 'No company'}</div>
                     </div>
                 </div>
-                <table class="rep-table">
+                <div class="contact-details">
+                    ${contact.email ? `
+                        <div class="contact-detail">
+                            <span>📧</span>
+                            <span>${contact.email}</span>
+                        </div>
+                    ` : ''}
+                    ${contact.phone ? `
+                        <div class="contact-detail">
+                            <span>📞</span>
+                            <span>${contact.phone}</span>
+                        </div>
+                    ` : ''}
+                    <div class="contact-detail">
+                        <span>📅</span>
+                        <span>Last contact: ${lastContactDate}</span>
+                    </div>
+                </div>
+                <div class="contact-actions" onclick="event.stopPropagation()">
+                    <button class="contact-action-btn" onclick="contactsModule.editContact('${contact.id}')">Edit</button>
+                    <button class="contact-action-btn" onclick="contactsModule.deleteContact('${contact.id}')">Delete</button>
+                    ${contact.email ? `<button class="contact-action-btn" onclick="window.open('mailto:${contact.email}')">Email</button>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    renderTableView(contacts) {
+        if (contacts.length === 0) {
+            return `
+                <div class="contacts-table-container">
+                    <div style="text-align: center; padding: 60px; color: #666;">
+                        <h3>No contacts found</h3>
+                        <p>Try adjusting your filters or add a new contact to get started.</p>
+                        <button class="action-btn" onclick="contactsModule.showContactForm()">+ Add First Contact</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="contacts-table-container">
+                <table class="contacts-table">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Role</th>
-                            <th>Geo</th>
-                            <th>Tier</th>
-                            <th>Rel Score</th>
-                            <th>Last Contact</th>
-                            <th>Response</th>
-                            <th>Pipeline</th>
-                            <th>Next Steps</th>
+                            <th onclick="contactsModule.updateSort('name')">Name</th>
+                            <th onclick="contactsModule.updateSort('title')">Title</th>
+                            <th onclick="contactsModule.updateSort('company')">Company</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th onclick="contactsModule.updateSort('lastContact')">Last Contact</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${teamContacts.map(contact => this.renderContactRow(contact, teamId)).join('')}
+                        ${contacts.map(contact => this.renderTableRow(contact)).join('')}
                     </tbody>
                 </table>
-            `;
-        }
-        
-        return section;
+            </div>
+        `;
     }
 
-    renderContactRow(contact, teamId) {
-        const responseStatus = contact.relationshipScore > 2 ? '✅ Yes' : '❌ No';
+    renderTableRow(contact) {
+        const lastContactDate = contact.lastContact ? new Date(contact.lastContact).toLocaleDateString() : 'Never';
         
         return `
-            <tr data-contact="${contact.id}" data-team="${teamId}">
-                <td><strong>${contact.name}</strong></td>
-                <td>${contact.role}</td>
-                <td>${contact.geo}</td>
-                <td><span class="status-badge status-${contact.tier}" onclick="contactsModule.toggleTier('${contact.id}', '${teamId}')">${contact.tier.charAt(0).toUpperCase() + contact.tier.slice(1)}</span></td>
-                <td><span class="relationship-score score-${contact.relationshipScore}" onclick="contactsModule.changeScore('${contact.id}', '${teamId}')">${contact.relationshipScore}</span></td>
-                <td class="editable" contenteditable="true" data-field="lastContact" data-contact="${contact.id}" data-team="${teamId}">${contact.lastContact}</td>
-                <td>${responseStatus}</td>
-                <td class="editable" contenteditable="true" data-field="pipeline" data-contact="${contact.id}" data-team="${teamId}">${contact.pipeline}</td>
-                <td class="editable" contenteditable="true" data-field="nextSteps" data-contact="${contact.id}" data-team="${teamId}">${contact.nextSteps}</td>
-                <td>
-                    <button class="action-btn" onclick="contactsModule.editContact('${contact.id}', '${teamId}')">Edit</button>
-                    <button class="action-btn danger" onclick="contactsModule.deleteContact('${contact.id}', '${teamId}')">Delete</button>
+            <tr onclick="contactsModule.editContact('${contact.id}')">
+                <td style="font-weight: bold; color: #232F3E;">${contact.name}</td>
+                <td>${contact.title || '-'}</td>
+                <td style="color: #FF9900; font-weight: 500;">${contact.company || '-'}</td>
+                <td>${contact.email || '-'}</td>
+                <td>${contact.phone || '-'}</td>
+                <td>${lastContactDate}</td>
+                <td onclick="event.stopPropagation()">
+                    <button class="contact-action-btn" onclick="contactsModule.editContact('${contact.id}')">Edit</button>
+                    <button class="contact-action-btn" onclick="contactsModule.deleteContact('${contact.id}')">Delete</button>
                 </td>
             </tr>
         `;
     }
 
-    addContactToTeam(teamId) {
-        // Similar to addNewContact but pre-select the team
-        this.addNewContact();
-        setTimeout(() => {
-            const teamSelect = document.getElementById('contactTeam');
-            if (teamSelect) {
-                teamSelect.value = teamId;
+    // Contact Management Methods
+    showContactForm(contactId = null) {
+        const contact = contactId ? DataManager.getContactById(contactId) : null;
+        const teams = DataManager.getTeams();
+        const isEdit = !!contact;
+        
+        const modalContent = `
+            <h3>${isEdit ? 'Edit Contact' : 'Add New Contact'}</h3>
+            <form id="contactForm" class="contact-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactName">Name *</label>
+                        <input type="text" id="contactName" name="name" required 
+                               value="${contact ? contact.name : ''}" 
+                               placeholder="Enter full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactTitle">Title</label>
+                        <input type="text" id="contactTitle" name="title" 
+                               value="${contact ? contact.title || '' : ''}" 
+                               placeholder="Job title">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactCompany">Company</label>
+                        <input type="text" id="contactCompany" name="company" 
+                               value="${contact ? contact.company || '' : ''}" 
+                               placeholder="Company name">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactTeam">Team</label>
+                        <select id="contactTeam" name="team">
+                            <option value="">Select Team</option>
+                            ${Object.keys(teams).map(teamId => `
+                                <option value="${teamId}" ${contact && contact.team === teamId ? 'selected' : ''}>
+                                    ${teams[teamId].name}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactEmail">Email</label>
+                        <input type="email" id="contactEmail" name="email" 
+                               value="${contact ? contact.email || '' : ''}" 
+                               placeholder="email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactPhone">Phone</label>
+                        <input type="tel" id="contactPhone" name="phone" 
+                               value="${contact ? contact.phone || '' : ''}" 
+                               placeholder="Phone number">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contactNotes">Notes</label>
+                    <textarea id="contactNotes" name="notes" 
+                              placeholder="Additional notes or context...">${contact ? contact.notes || '' : ''}</textarea>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="action-btn">
+                        ${isEdit ? 'Update Contact' : 'Create Contact'}
+                    </button>
+                    <button type="button" class="action-btn secondary" onclick="UIHelpers.closeModal('contactFormModal')">
+                        Cancel
+                    </button>
+                    ${isEdit ? `
+                        <button type="button" class="action-btn danger" onclick="contactsModule.deleteContact('${contact.id}')">
+                            Delete Contact
+                        </button>
+                    ` : ''}
+                </div>
+            </form>
+        `;
+        
+        document.getElementById('contactFormContent').innerHTML = modalContent;
+        
+        // Handle form submission
+        document.getElementById('contactForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const contactData = Object.fromEntries(formData.entries());
+            
+            // Remove empty fields
+            Object.keys(contactData).forEach(key => {
+                if (!contactData[key]) {
+                    delete contactData[key];
+                }
+            });
+            
+            if (isEdit) {
+                DataManager.updateContact({ ...contact, ...contactData });
+                UIHelpers.showNotification('Contact updated successfully', 'success');
+            } else {
+                DataManager.addContact(contactData);
+                UIHelpers.showNotification('Contact created successfully', 'success');
             }
-        }, 100);
+            
+            UIHelpers.closeModal('contactFormModal');
+        });
+        
+        UIHelpers.showModal('contactFormModal');
     }
 
-    editContact(contactId, teamId) {
-        const contact = DataManager.getContacts()[teamId]?.find(c => c.id === contactId);
+    editContact(contactId) {
+        this.showContactForm(contactId);
+    }
+
+    deleteContact(contactId) {
+        const contact = DataManager.getContactById(contactId);
         if (!contact) return;
-
-        // Pre-populate the form with existing data
-        this.addNewContact();
-        setTimeout(() => {
-            document.getElementById('contactId').value = contact.id;
-            document.getElementById('contactName').value = contact.name;
-            document.getElementById('contactRole').value = contact.role;
-            document.getElementById('contactTeam').value = teamId;
-            document.getElementById('contactGeo').value = contact.geo;
-            document.getElementById('contactTier').value = contact.tier;
-            document.getElementById('contactScore').value = contact.relationshipScore;
-            document.getElementById('contactLastContact').value = contact.lastContact;
-            document.getElementById('contactPipeline').value = contact.pipeline;
-            document.getElementById('contactNextSteps').value = contact.nextSteps;
-        }, 100);
-    }
-
-    deleteContact(contactId, teamId) {
-        if (confirm('Are you sure you want to delete this contact?')) {
-            DataManager.deleteContact(teamId, contactId);
-            UIHelpers.showNotification('Contact deleted successfully');
+        
+        if (confirm(`Are you sure you want to delete "${contact.name}"? This action cannot be undone.`)) {
+            DataManager.deleteContact(contactId);
+            UIHelpers.closeModal('contactFormModal');
+            UIHelpers.showNotification('Contact deleted successfully', 'success');
         }
     }
 
-    toggleTier(contactId, teamId) {
-        const contact = DataManager.getContacts()[teamId]?.find(c => c.id === contactId);
-        if (!contact) return;
-
-        const tiers = ['tier1', 'tier2', 'tier3'];
-        const currentIndex = tiers.indexOf(contact.tier);
-        const nextIndex = (currentIndex + 1) % tiers.length;
+    // Data processing methods
+    getFilteredContacts() {
+        let contacts = DataManager.getAllContacts();
         
-        DataManager.updateContact(teamId, contactId, { tier: tiers[nextIndex] });
-        UIHelpers.showNotification('Tier updated');
-    }
-
-    changeScore(contactId, teamId) {
-        const contact = DataManager.getContacts()[teamId]?.find(c => c.id === contactId);
-        if (!contact) return;
-
-        let currentScore = parseInt(contact.relationshipScore);
-        currentScore = currentScore >= 5 ? 1 : currentScore + 1;
+        // Apply search filter
+        if (this.searchTerm) {
+            const term = this.searchTerm.toLowerCase();
+            contacts = contacts.filter(contact => 
+                contact.name.toLowerCase().includes(term) ||
+                (contact.company && contact.company.toLowerCase().includes(term)) ||
+                (contact.title && contact.title.toLowerCase().includes(term)) ||
+                (contact.email && contact.email.toLowerCase().includes(term))
+            );
+        }
         
-        DataManager.updateContact(teamId, contactId, { relationshipScore: currentScore });
-        UIHelpers.showNotification('Relationship score updated');
-    }
-
-    filterContacts() {
-        const searchTerm = document.getElementById('searchContacts')?.value.toLowerCase() || '';
-        const teamFilter = document.getElementById('filterByTeam')?.value || '';
+        // Apply team filter
+        if (this.selectedTeam !== 'all') {
+            contacts = contacts.filter(contact => contact.team === this.selectedTeam);
+        }
         
-        document.querySelectorAll('.team-section').forEach(section => {
-            const teamHeader = section.querySelector('.team-name').textContent;
-            const teams = DataManager.getTeams();
-            const teamId = Object.keys(teams).find(id => teams[id].name === teamHeader);
+        // Apply sorting
+        contacts.sort((a, b) => {
+            let aValue, bValue;
             
-            let showTeam = !teamFilter || teamFilter === teamId;
-            let hasVisibleRows = false;
-            
-            const table = section.querySelector('.rep-table');
-            if (table) {
-                section.querySelectorAll('.rep-table tbody tr').forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    const matchesSearch = !searchTerm || text.includes(searchTerm);
-                    
-                    if (showTeam && matchesSearch) {
-                        row.style.display = '';
-                        hasVisibleRows = true;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
+            switch(this.sortBy) {
+                case 'name':
+                    aValue = a.name.toLowerCase();
+                    bValue = b.name.toLowerCase();
+                    break;
+                case 'company':
+                    aValue = (a.company || '').toLowerCase();
+                    bValue = (b.company || '').toLowerCase();
+                    break;
+                case 'title':
+                    aValue = (a.title || '').toLowerCase();
+                    bValue = (b.title || '').toLowerCase();
+                    break;
+                case 'lastContact':
+                    aValue = new Date(a.lastContact || 0);
+                    bValue = new Date(b.lastContact || 0);
+                    break;
+                default:
+                    return 0;
             }
             
-            section.style.display = (showTeam && (hasVisibleRows || !table)) ? '' : 'none';
+            if (aValue < bValue) return this.sortOrder === 'asc' ? -1 : 1;
+            if (aValue > bValue) return this.sortOrder === 'asc' ? 1 : -1;
+            return 0;
         });
-    }
-
-    exportAllData() {
-        const allData = {
-            contacts: DataManager.getContacts(),
-            teams: DataManager.getTeams(),
-            exportDate: new Date().toISOString()
-        };
         
-        const jsonStr = JSON.stringify(allData, null, 2);
-        this.downloadFile(jsonStr, 'aws_contacts_export.json', 'application/json');
+        return contacts;
     }
 
-    downloadFile(content, filename, contentType) {
-        const blob = ne
+    getTeamOptions() {
+        try {
+            const teams = DataManager.getTeams();
+            return Object.keys(teams).map(teamId => 
+                `<option value="${teamId}">${teams[teamId].name}</option>`
+            ).join('');
+        } catch (error) {
+            return '';
+        }
+    }
+
+    calculateStats(contacts) {
+        const total = contacts.length;
+        const aws = contacts.filter(contact => 
+            contact.company && contact.company.toLowerCase().includes('aws')
+        ).length;
+        
+        // Calculate recent activity (contacts contacted in last 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const recentActivity = contacts.filter(contact => 
+            contact.lastContact && new Date(contact.lastContact) > thirtyDaysAgo
+        ).length;
+        
+        const teams = new Set(contacts.map(contact => contact.team).filter(Boolean)).size;
+        
+        return { total, aws, recentActivity, teams };
+    }
+
+    exportContacts() {
+        const contacts = this.getFilteredContacts();
+        let csv = 'Name,Title,Company,Team,Email,Phone,Last Contact,Notes\n';
+        
+        contacts.forEach(contact => {
+            const team = contact.team ? DataManager.getTeams()[contact.team]?.name || contact.team : '';
+            const lastContact = contact.lastContact ? new Date(contact.lastContact).toLocaleDateString() : '';
+            
+            csv += `"${contact.name}","${contact.title || ''}","${contact.company || ''}","${team}","${contact.email || ''}","${contact.phone || ''}","${lastContact}","${contact.notes || ''}"\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `contacts-export-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        UIHelpers.showNotification('Contacts exported successfully', 'success');
+    }
+}
+
+// Create global instance
+const contactsModule = new ContactsModule();
+console.log('✅ Contacts module loaded successfully');
