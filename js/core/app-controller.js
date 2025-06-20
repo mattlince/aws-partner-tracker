@@ -1,4 +1,4 @@
-// App Controller - Main application controller and router
+// App Controller - Main application controller and router with Team Import Support
 const AppController = {
     modules: {},
     currentTab: 'dashboard',
@@ -70,6 +70,15 @@ const AppController = {
             console.log('✅ Relationships module registered');
         } else {
             console.warn('⚠️ Relationships module not found');
+        }
+        
+        // Register team import module
+        if (typeof teamImportModule !== 'undefined') {
+            this.modules.teamImport = teamImportModule;
+            teamImportModule.init();
+            console.log('✅ Team Import module registered');
+        } else {
+            console.warn('⚠️ Team Import module not found');
         }
         
         console.log('Module initialization complete');
@@ -149,12 +158,20 @@ const AppController = {
                     }
                     break;
                     
+                case 'team-import':
+                    if (this.modules.teamImport) {
+                        this.modules.teamImport.render(container);
+                    } else {
+                        this.showModuleError(container, 'Team Import');
+                    }
+                    break;
+                    
                 default:
                     container.innerHTML = `
                         <div class="error">
                             <h3>🚫 Page Not Found</h3>
                             <p>The requested page "${tabName}" could not be found.</p>
-                            <p>Available pages: Dashboard, Teams, Pipeline, Touchpoints, Relationships</p>
+                            <p>Available pages: Dashboard, Teams, Pipeline, Touchpoints, Relationships, Team Import</p>
                             <button onclick="AppController.switchTab('dashboard')" 
                                     style="background: #FF9900; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
                                 🏠 Go to Dashboard
@@ -194,7 +211,7 @@ const AppController = {
                 <h3>🚫 Module Not Available</h3>
                 <p>The ${moduleName} module is not currently loaded.</p>
                 <p>Please check that the module file is properly uploaded and included in the page.</p>
-                <p><strong>Expected file:</strong> js/modules/${moduleName.toLowerCase()}-module.js</p>
+                <p><strong>Expected file:</strong> js/modules/${moduleName.toLowerCase().replace(' ', '-')}-module.js</p>
                 <div style="margin-top: 15px;">
                     <button onclick="AppController.switchTab('dashboard')" 
                             style="background: #FF9900; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-right: 10px;">
@@ -265,4 +282,4 @@ function switchTab(tabName) {
     AppController.switchTab(tabName);
 }
 
-console.log('✅ AppController loaded successfully');
+console.log('✅ AppController with Team Import support loaded successfully');
