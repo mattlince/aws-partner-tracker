@@ -275,11 +275,14 @@
                     DataManager.init();
                     AppController.init();
                     
-                    // Load sample data if needed (only in development)
-                    if (localStorage.getItem('aws-partner-tracker-data') === null) {
-                        console.log('📝 Loading sample data for demo...');
-                        DataManager.loadSampleData();
-                    }
+                   // Initialize core systems
+                    DataManager.init();
+                    AppController.init();
+                    
+                    // Start with clean data - no sample data loading
+                    console.log('🚀 AWS Partner Tracker ready - starting with clean data');
+                    
+                    console.log('✅ AWS Partner Tracker initialized successfully!');
                     
                     console.log('✅ AWS Partner Tracker initialized successfully!');
                     
