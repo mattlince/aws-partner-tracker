@@ -1,4 +1,4 @@
-// Enhanced Teams Module - Complete with GEO, Tier, Relationship Score, and Touchpoint Tracking
+// Updated Teams Module - Integrated with Centralized Touchpoint System
 class TeamsModule {
     constructor() {
         this.currentView = 'overview';
@@ -8,7 +8,25 @@ class TeamsModule {
     init() {
         console.log('Teams module initialized');
         
-        // Listen for data changes
+        // 🎯 KEY INTEGRATION: Subscribe to centralized touchpoint events
+        if (typeof window.subscribeTouchpoints === 'function') {
+            window.subscribeTouchpoints('teamsModule', (eventType, data) => {
+                console.log(`Teams module received ${eventType}:`, data);
+                
+                switch(eventType) {
+                    case 'touchpoint:logged':
+                    case 'touchpoint:updated':
+                    case 'touchpoint:deleted':
+                        // Refresh the view if the touchpoint affects a team member we're displaying
+                        if (data.teamMemberId && this.currentView === 'members') {
+                            this.renderTeamMembers(document.getElementById('teamsContent'));
+                        }
+                        break;
+                }
+            });
+        }
+        
+        // Listen for data changes (existing code)
         DataManager.on('contact:updated', () => this.renderIfActive());
         DataManager.on('contact:deleted', () => this.renderIfActive());
         DataManager.on('deal:updated', () => this.renderIfActive());
@@ -98,10 +116,10 @@ class TeamsModule {
                     </div>
                 </div>
 
-                <div id="touchpointModal" class="modal" style="display: none;">
-                    <div class="modal-content">
-                        <span class="close" onclick="UIHelpers.closeModal('touchpointModal')">&times;</span>
-                        <div id="touchpointModalContent"></div>
+                <div id="touchpointHistoryModal" class="modal" style="display: none;">
+                    <div class="modal-content large-modal">
+                        <span class="close" onclick="UIHelpers.closeModal('touchpointHistoryModal')">&times;</span>
+                        <div id="touchpointHistoryModalContent"></div>
                     </div>
                 </div>
             </div>
@@ -460,6 +478,12 @@ class TeamsModule {
                     padding: 2px 6px;
                     border-radius: 4px;
                     font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+
+                .touchpoint-indicator:hover {
+                    transform: scale(1.05);
                 }
 
                 .touchpoint-recent { background: #d4edda; color: #155724; }
@@ -489,6 +513,7 @@ class TeamsModule {
                 .icon-btn.touchpoint { color: #28a745; }
                 .icon-btn.edit { color: #17a2b8; }
                 .icon-btn.delete { color: #dc3545; }
+                .icon-btn.history { color: #6f42c1; }
 
                 .copy-btn {
                     background: #6c757d;
@@ -536,6 +561,10 @@ class TeamsModule {
                     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
                 }
 
+                .modal-content.large-modal {
+                    max-width: 900px;
+                }
+
                 .close {
                     color: #aaa;
                     float: right;
@@ -581,10 +610,12 @@ class TeamsModule {
                     .teams-header {
                         flex-direction: column;
                         align-items: stretch;
+                        gap: 20px;
                     }
 
                     .teams-controls {
                         justify-content: center;
+                        flex-wrap: wrap;
                     }
 
                     .members-table {
@@ -746,7 +777,7 @@ class TeamsModule {
                                 <th style="width: 60px;">Tier</th>
                                 <th style="width: 120px;">Relationship Score</th>
                                 <th style="width: 120px;">Days Since Touchpoint</th>
-                                <th style="width: 120px;">Actions</th>
+                                <th style="width: 140px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -792,13 +823,16 @@ class TeamsModule {
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="touchpoint-indicator ${touchpointStatus.class}">
+                                            <span class="touchpoint-indicator ${touchpointStatus.class}" 
+                                                  onclick="teamsModule.showTouchpointHistory('${teamId}', '${member.id}')"
+                                                  title="Click to view touchpoint history">
                                                 ${touchpointStatus.text}
                                             </span>
                                         </td>
                                         <td>
                                             <div class="action-icons">
                                                 <button class="icon-btn touchpoint" onclick="teamsModule.logTouchpoint('${teamId}', '${member.id}')" title="Log Touchpoint">📞</button>
+                                                <button class="icon-btn history" onclick="teamsModule.showTouchpointHistory('${teamId}', '${member.id}')" title="Touchpoint History">📝</button>
                                                 <button class="icon-btn edit" onclick="teamsModule.editTeamMember('${teamId}', '${member.id}')" title="Edit">✏️</button>
                                                 <button class="icon-btn delete" onclick="teamsModule.removeTeamMember('${teamId}', '${member.id}')" title="Remove">🗑️</button>
                                             </div>
@@ -837,35 +871,217 @@ class TeamsModule {
         container.innerHTML = '<div style="padding: 40px; text-align: center; color: #666;">All contacts view implementation needed</div>';
     }
 
-    // Helper methods for relationship scoring and touchpoint tracking
-    calculateRelationshipScore(member) {
-        let score = 5; // Base score
-        
-        // Tier weight (higher tier = higher importance, needs more attention)
-        const tierMultiplier = {1: 1.2, 2: 1.1, 3: 1.0};
-        const tier = member.tier || 3;
-        
-        // Touchpoint recency scoring
-        const daysSince = this.daysSinceLastTouchpoint(member);
-        if (daysSince <= 7) score += 3;
-        else if (daysSince <= 14) score += 2;
-        else if (daysSince <= 30) score += 1;
-        else if (daysSince <= 60) score -= 1;
-        else if (daysSince <= 90) score -= 2;
-        else score -= 3;
-        
-        // Touchpoint frequency (if available)
-        const touchpointCount = member.touchpointCount || 0;
-        if (touchpointCount >= 10) score += 2;
-        else if (touchpointCount >= 5) score += 1;
-        
-        // Apply tier multiplier and clamp between 1-10
-        score = Math.round(score * tierMultiplier[tier]);
-        return Math.max(1, Math.min(10, score));
+    // ===============================
+    // 🎯 UPDATED TOUCHPOINT METHODS - Using Centralized System
+    // ===============================
+
+    /**
+     * 🎯 UPDATED: Log touchpoint using centralized system
+     */
+    async logTouchpoint(teamId, memberId) {
+        const member = DataManager.getTeamMember(teamId, memberId);
+        if (!member) return;
+
+        // 🎯 KEY INTEGRATION: Use centralized touchpoint logging
+        if (typeof window.logTouchpoint === 'function') {
+            try {
+                const touchpointData = {
+                    teamMemberId: memberId,
+                    teamId: teamId,
+                    type: 'call', // Default type
+                    outcome: 'neutral',
+                    notes: '',
+                    isImportant: member.tier <= 2 // Tier 1 and 2 are important
+                };
+
+                // Let the centralized system handle the full touchpoint modal
+                if (typeof touchpointTracker !== 'undefined' && touchpointTracker.showAddTouchpointModal) {
+                    touchpointTracker.showAddTouchpointModal(touchpointData);
+                } else {
+                    // Fallback to direct API call
+                    const result = await window.logTouchpoint(touchpointData, 'teamsModule');
+                    if (result) {
+                        UIHelpers.showNotification(`Touchpoint logged for ${member.name}`, 'success');
+                        this.renderTeamMembers(document.getElementById('teamsContent'));
+                    }
+                }
+            } catch (error) {
+                console.error('Error logging touchpoint:', error);
+                UIHelpers.showNotification('Failed to log touchpoint. Please try again.', 'error');
+            }
+        } else {
+            UIHelpers.showNotification('Touchpoint system not available', 'error');
+        }
     }
 
+    /**
+     * 🎯 NEW: Show touchpoint history for a team member
+     */
+    showTouchpointHistory(teamId, memberId) {
+        const member = DataManager.getTeamMember(teamId, memberId);
+        if (!member) return;
+
+        // 🎯 KEY INTEGRATION: Get touchpoints from centralized system
+        const touchpoints = typeof window.getRecentTouchpoints === 'function' ? 
+            window.getRecentTouchpoints({ teamMemberId: memberId }) : [];
+
+        const stats = typeof window.getTouchpointStats === 'function' ?
+            window.getTouchpointStats(null, memberId) : {};
+
+        const historyHTML = touchpoints.length > 0 ? touchpoints.map(tp => {
+            const daysSince = Math.ceil((new Date() - new Date(tp.date)) / (1000 * 60 * 60 * 24));
+            
+            return `
+                <div style="border-bottom: 1px solid #eee; padding: 15px 0; cursor: pointer;" onclick="touchpointTracker?.showTouchpointDetails?.('${tp.id}')">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong>${this.getTypeLabel(tp.type)}</strong>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span style="color: #666; font-size: 0.9em;">
+                                ${daysSince === 0 ? 'Today' : daysSince === 1 ? 'Yesterday' : `${daysSince} days ago`}
+                            </span>
+                            <span class="outcome-badge outcome-${tp.outcome}" style="font-size: 0.8em;">${this.getOutcomeLabel(tp.outcome)}</span>
+                        </div>
+                    </div>
+                    <div style="color: #232F3E; margin-bottom: 8px;">${tp.notes}</div>
+                    ${tp.tags && tp.tags.length > 0 ? `
+                        <div style="margin-top: 8px;">
+                            ${tp.tags.map(tag => `<span style="background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 12px; font-size: 0.8em; margin-right: 4px;">${tag}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    ${tp.relationshipScoreImpact ? `
+                        <div style="margin-top: 8px; font-size: 0.9em; color: ${tp.relationshipScoreImpact > 0 ? '#28a745' : '#dc3545'};">
+                            Relationship Impact: ${tp.relationshipScoreImpact > 0 ? '+' : ''}${tp.relationshipScoreImpact}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('') : '<div style="text-align: center; color: #666; padding: 40px;">No touchpoints recorded yet</div>';
+
+        const modalContent = `
+            <h3>Touchpoint History - ${member.name}</h3>
+            
+            ${stats.total ? `
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; text-align: center;">
+                        <div>
+                            <div style="font-size: 1.5em; font-weight: bold; color: #232F3E;">${stats.total}</div>
+                            <div style="font-size: 0.9em; color: #666;">Total</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5em; font-weight: bold; color: #28a745;">${stats.thisWeek}</div>
+                            <div style="font-size: 0.9em; color: #666;">This Week</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5em; font-weight: bold; color: #17a2b8;">${stats.averageGap || 0}d</div>
+                            <div style="font-size: 0.9em; color: #666;">Avg Gap</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5em; font-weight: bold; color: #6f42c1;">${stats.relationshipTrend || 'stable'}</div>
+                            <div style="font-size: 0.9em; color: #666;">Trend</div>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div style="max-height: 400px; overflow-y: auto;">
+                ${historyHTML}
+            </div>
+            
+            <div style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center;">
+                <button class="action-btn" onclick="teamsModule.logTouchpoint('${teamId}', '${memberId}'); UIHelpers.closeModal('touchpointHistoryModal');">
+                    + Log New Touchpoint
+                </button>
+                <button class="action-btn secondary" onclick="UIHelpers.closeModal('touchpointHistoryModal');">
+                    Close
+                </button>
+            </div>
+        `;
+        
+        document.getElementById('touchpointHistoryModalContent').innerHTML = modalContent;
+        UIHelpers.showModal('touchpointHistoryModal');
+    }
+
+    /**
+     * 🎯 UPDATED: Calculate relationship score using centralized data
+     */
+    calculateRelationshipScore(member) {
+        // 🎯 KEY INTEGRATION: Use centralized touchpoint stats for more accurate scoring
+        if (typeof window.getTouchpointStats === 'function') {
+            const stats = window.getTouchpointStats(null, member.id);
+            
+            let score = 5; // Base score
+            
+            // Use centralized touchpoint data for scoring
+            const daysSince = stats.lastTouchpoint ? 
+                Math.ceil((new Date() - new Date(stats.lastTouchpoint.date)) / (1000 * 60 * 60 * 24)) : 999;
+            
+            // Touchpoint recency scoring
+            if (daysSince <= 7) score += 3;
+            else if (daysSince <= 14) score += 2;
+            else if (daysSince <= 30) score += 1;
+            else if (daysSince <= 60) score -= 1;
+            else if (daysSince <= 90) score -= 2;
+            else score -= 3;
+            
+            // Touchpoint frequency scoring
+            if (stats.total >= 10) score += 2;
+            else if (stats.total >= 5) score += 1;
+            
+            // Recent activity bonus (this week)
+            if (stats.thisWeek >= 2) score += 1;
+            
+            // Relationship trend impact
+            if (stats.relationshipTrend === 'improving') score += 1;
+            else if (stats.relationshipTrend === 'declining') score -= 1;
+            
+            // Tier weight (higher tier = higher importance, needs more attention)
+            const tierMultiplier = {1: 1.2, 2: 1.1, 3: 1.0};
+            const tier = member.tier || 3;
+            
+            // Apply tier multiplier and clamp between 1-10
+            score = Math.round(score * tierMultiplier[tier]);
+            return Math.max(1, Math.min(10, score));
+        } else {
+            // Fallback to existing logic if centralized system not available
+            let score = 5;
+            const daysSince = this.daysSinceLastTouchpoint(member);
+            
+            if (daysSince <= 7) score += 3;
+            else if (daysSince <= 14) score += 2;
+            else if (daysSince <= 30) score += 1;
+            else if (daysSince <= 60) score -= 1;
+            else if (daysSince <= 90) score -= 2;
+            else score -= 3;
+            
+            const touchpointCount = member.touchpointCount || 0;
+            if (touchpointCount >= 10) score += 2;
+            else if (touchpointCount >= 5) score += 1;
+            
+            const tierMultiplier = {1: 1.2, 2: 1.1, 3: 1.0};
+            const tier = member.tier || 3;
+            
+            score = Math.round(score * tierMultiplier[tier]);
+            return Math.max(1, Math.min(10, score));
+        }
+    }
+
+    /**
+     * 🎯 UPDATED: Get days since last touchpoint using centralized data
+     */
     daysSinceLastTouchpoint(member) {
-        if (!member.lastTouchpoint) return 999; // No touchpoint recorded
+        // 🎯 KEY INTEGRATION: Get touchpoint data from centralized system
+        if (typeof window.getTouchpointStats === 'function') {
+            const stats = window.getTouchpointStats(null, member.id);
+            if (stats.lastTouchpoint) {
+                const today = new Date();
+                const touchpointDate = new Date(stats.lastTouchpoint.date);
+                const diffTime = today - touchpointDate;
+                return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
+        }
+        
+        // Fallback to member's own data if centralized system not available
+        if (!member.lastTouchpoint) return 999;
         const today = new Date();
         const touchpointDate = new Date(member.lastTouchpoint);
         const diffTime = today - touchpointDate;
@@ -903,7 +1119,33 @@ class TeamsModule {
             .join(' • ');
     }
 
-    // Team member management methods
+    // Helper methods for touchpoint display
+    getTypeLabel(type) {
+        const labels = {
+            'call': '📞 Call',
+            'email': '📧 Email',
+            'meeting': '🤝 Meeting',
+            'text': '💬 Text',
+            'event': '🎉 Event',
+            'other': '📝 Other'
+        };
+        return labels[type] || '📝 Other';
+    }
+
+    getOutcomeLabel(outcome) {
+        const labels = {
+            'positive': '✅ Positive',
+            'neutral': '➖ Neutral',
+            'needs-follow-up': '⚠️ Follow-up',
+            'negative': '❌ Negative'
+        };
+        return labels[outcome] || '➖ Neutral';
+    }
+
+    // ===============================
+    // EXISTING TEAM MEMBER MANAGEMENT METHODS
+    // ===============================
+
     updateMemberRole(teamId, memberId, newRole) {
         const member = DataManager.getTeamMember(teamId, memberId);
         if (member) {
@@ -927,80 +1169,6 @@ class TeamsModule {
             UIHelpers.showNotification(`GEO updated to: ${newGeo}`, 'success');
             this.renderTeamMembers(document.getElementById('teamsContent'));
         }
-    }
-
-    logTouchpoint(teamId, memberId) {
-        const member = DataManager.getTeamMember(teamId, memberId);
-        if (!member) return;
-
-        const modalContent = `
-            <h3>Log Touchpoint - ${member.name}</h3>
-            <form id="touchpointForm">
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="touchpointDate">Date:</label>
-                    <input type="date" id="touchpointDate" name="date" value="${new Date().toISOString().split('T')[0]}" required>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="touchpointType">Type:</label>
-                    <select id="touchpointType" name="type" required>
-                        <option value="call">📞 Phone Call</option>
-                        <option value="email">📧 Email</option>
-                        <option value="meeting">🤝 Meeting</option>
-                        <option value="text">💬 Text/Slack</option>
-                        <option value="event">🎉 Event/Social</option>
-                        <option value="other">📝 Other</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="touchpointOutcome">Outcome:</label>
-                    <select id="touchpointOutcome" name="outcome" required>
-                        <option value="positive">✅ Positive</option>
-                        <option value="neutral">➖ Neutral</option>
-                        <option value="needs-follow-up">⚠️ Needs Follow-up</option>
-                        <option value="negative">❌ Negative</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="touchpointNotes">Notes:</label>
-                    <textarea id="touchpointNotes" name="notes" placeholder="What was discussed? Next steps?" rows="4"></textarea>
-                </div>
-                
-                <button type="submit" class="action-btn">Log Touchpoint</button>
-            </form>
-        `;
-
-        document.getElementById('touchpointModalContent').innerHTML = modalContent;
-        
-        document.getElementById('touchpointForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const touchpoint = Object.fromEntries(formData.entries());
-            
-            // Update member's last touchpoint
-            member.lastTouchpoint = touchpoint.date;
-            member.touchpointCount = (member.touchpointCount || 0) + 1;
-            
-            // Store the touchpoint record
-            if (!member.touchpoints) member.touchpoints = [];
-            member.touchpoints.push({
-                id: Date.now().toString(),
-                date: touchpoint.date,
-                type: touchpoint.type,
-                outcome: touchpoint.outcome,
-                notes: touchpoint.notes,
-                timestamp: new Date().toISOString()
-            });
-            
-            DataManager.updateTeamMember(teamId, member);
-            UIHelpers.closeModal('touchpointModal');
-            UIHelpers.showNotification(`Touchpoint logged for ${member.name}`, 'success');
-            this.renderTeamMembers(document.getElementById('teamsContent'));
-        });
-        
-        UIHelpers.showModal('touchpointModal');
     }
 
     async copyToClipboard(text, buttonElement) {
@@ -1226,4 +1394,4 @@ class TeamsModule {
 
 // Create global instance
 const teamsModule = new TeamsModule();
-console.log('✅ Enhanced Teams module with GEO, relationship scores, and touchpoint tracking loaded successfully');
+console.log('✅ Teams module updated with centralized touchpoint integration');
