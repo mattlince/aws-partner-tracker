@@ -29,10 +29,7 @@ class PipelineModule {
 
     render(container) {
         container.innerHTML = this.getHTML();
-       setupEventListeners() {
-    // Event listeners are set up through onclick handlers in the HTML
-    // This method exists to prevent errors when called from render()
-}
+        this.setupEventListeners();
         this.renderContent();
     }
 
@@ -170,16 +167,6 @@ class PipelineModule {
                         </div>
                     </div>
                 </div>
-
-                <!-- Deal Quick Edit Modal -->
-                <div id="dealQuickEditModal" class="modal" style="display: none;">
-                    <div class="modal-content">
-                        <span class="close" onclick="UIHelpers.closeModal('dealQuickEditModal')">&times;</span>
-                        <div id="dealQuickEditContent">
-                            <!-- Quick edit form will be populated here -->
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <style>
@@ -199,10 +186,6 @@ class PipelineModule {
                     margin: 0;
                     color: #232F3E;
                     font-size: 1.8em;
-                }
-                .pipeline-header p {
-                    margin: 5px 0 0 0;
-                    color: #666;
                 }
                 .pipeline-controls {
                     display: flex;
@@ -224,9 +207,6 @@ class PipelineModule {
                     color: white;
                     border-color: #232F3E;
                 }
-                .view-btn:hover:not(.active) {
-                    background: #e9ecef;
-                }
                 .action-btn {
                     background: #FF9900;
                     color: white;
@@ -237,21 +217,11 @@ class PipelineModule {
                     font-size: 0.9em;
                     transition: all 0.3s ease;
                 }
-                .action-btn:hover {
-                    background: #e68900;
-                    transform: translateY(-1px);
-                }
                 .action-btn.secondary {
                     background: #6c757d;
                 }
-                .action-btn.secondary:hover {
-                    background: #5a6268;
-                }
                 .action-btn.danger {
                     background: #dc3545;
-                }
-                .action-btn.danger:hover {
-                    background: #c82333;
                 }
                 .pipeline-filters {
                     display: flex;
@@ -305,35 +275,6 @@ class PipelineModule {
                     font-size: 1.4em;
                     font-weight: bold;
                 }
-
-                /* Referral badges */
-                .referral-badge {
-                    display: inline-block;
-                    padding: 2px 6px;
-                    border-radius: 10px;
-                    font-size: 0.7em;
-                    font-weight: bold;
-                    text-transform: uppercase;
-                    margin-bottom: 5px;
-                }
-                .referral-aws {
-                    background: #FF9900;
-                    color: white;
-                }
-                .referral-cdw {
-                    background: #E31B23;
-                    color: white;
-                }
-                .referral-direct {
-                    background: #28a745;
-                    color: white;
-                }
-                .referral-other {
-                    background: #6c757d;
-                    color: white;
-                }
-
-                /* Modal Styles */
                 .modal {
                     display: none;
                     position: fixed;
@@ -343,7 +284,6 @@ class PipelineModule {
                     width: 100%;
                     height: 100%;
                     background-color: rgba(0,0,0,0.5);
-                    backdrop-filter: blur(5px);
                 }
                 .modal-content {
                     background-color: white;
@@ -367,9 +307,6 @@ class PipelineModule {
                     right: 20px;
                     top: 15px;
                 }
-                .close:hover { color: #000; }
-
-                /* Form Styles */
                 .deal-form {
                     display: grid;
                     gap: 20px;
@@ -377,11 +314,6 @@ class PipelineModule {
                 .form-row {
                     display: grid;
                     grid-template-columns: 1fr 1fr;
-                    gap: 15px;
-                }
-                .form-row-triple {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr 1fr;
                     gap: 15px;
                 }
                 .form-group {
@@ -401,32 +333,19 @@ class PipelineModule {
                     border-radius: 6px;
                     font-size: 14px;
                 }
-                .form-group textarea {
-                    height: 80px;
-                    resize: vertical;
-                }
-                .form-group input:focus,
-                .form-group select:focus,
-                .form-group textarea:focus {
-                    outline: none;
-                    border-color: #FF9900;
-                    box-shadow: 0 0 0 2px rgba(255, 153, 0, 0.2);
-                }
                 .referral-section {
                     background: #f8f9fa;
                     padding: 20px;
                     border-radius: 8px;
                     border-left: 4px solid #FF9900;
                 }
-                .referral-section h4 {
-                    margin: 0 0 15px 0;
-                    color: #232F3E;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
             </style>
         `;
+    }
+
+    setupEventListeners() {
+        // Event listeners are set up through onclick handlers in the HTML
+        // This method exists to prevent errors when called from render()
     }
 
     switchView(view) {
@@ -562,11 +481,11 @@ class PipelineModule {
         
         container.innerHTML = `
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center;" class="aws-metric">
+                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center;">
                     <div style="font-size: 2em; font-weight: bold; color: #FF9900;">${(referralStats.awsValue / 1000000).toFixed(1)}M</div>
                     <div style="color: #666;">AWS Referral Value</div>
                 </div>
-                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center;" class="cdw-metric">
+                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center;">
                     <div style="font-size: 2em; font-weight: bold; color: #E31B23;">${(referralStats.cdwValue / 1000000).toFixed(1)}M</div>
                     <div style="color: #666;">CDW Referral Value</div>
                 </div>
@@ -590,7 +509,6 @@ class PipelineModule {
         `;
     }
 
-    // Deal Management Methods
     showDealForm(dealId = null) {
         const deal = dealId ? DataManager.getDeals().find(d => d.id === dealId) : null;
         const contacts = DataManager.getAllContacts();
@@ -655,7 +573,7 @@ class PipelineModule {
                 
                 <div class="referral-section">
                     <h4>🤝 Referral Information</h4>
-                    <div class="form-row-triple">
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="referralSource">Referral Source</label>
                             <select id="referralSource" name="referralSource">
@@ -676,12 +594,12 @@ class PipelineModule {
                                 <option value="marketplace" ${deal && deal.referralType === 'marketplace' ? 'selected' : ''}>Marketplace Lead</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label for="awsOpportunityId">AWS Opportunity ID</label>
-                            <input type="text" id="awsOpportunityId" name="awsOpportunityId" 
-                                   value="${deal ? deal.awsOpportunityId || '' : ''}"
-                                   placeholder="AWS Partner Central ID">
-                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="awsOpportunityId">AWS Opportunity ID</label>
+                        <input type="text" id="awsOpportunityId" name="awsOpportunityId" 
+                               value="${deal ? deal.awsOpportunityId || '' : ''}"
+                               placeholder="AWS Partner Central ID">
                     </div>
                 </div>
                 
@@ -767,19 +685,6 @@ class PipelineModule {
             UIHelpers.closeModal('dealFormModal');
             UIHelpers.showNotification('Deal deleted successfully', 'success');
         }
-    }
-
-    // Helper methods for referral tracking
-    getReferralBadge(deal) {
-        if (!deal.referralSource || deal.referralSource === 'direct') return '';
-        
-        const badges = {
-            aws: '<span class="referral-badge referral-aws">AWS</span>',
-            cdw: '<span class="referral-badge referral-cdw">CDW</span>',
-            other: '<span class="referral-badge referral-other">Partner</span>'
-        };
-        
-        return badges[deal.referralSource] || '';
     }
 
     // Data processing methods
