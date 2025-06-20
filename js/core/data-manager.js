@@ -5,6 +5,9 @@ const DataManager = {
         contacts: {},
         deals: [],
         touchpoints: [],
+        tasks: [],
+        relationships: [],
+        teamMembers: {},
         settings: {}
     },
     
@@ -72,51 +75,51 @@ const DataManager = {
             this.saveToStorage();
         }, 30000);
     },
-// Add these methods to your DataManager object:
 
-// Team Members methods
-getTeamMembers() {
-    return this.data.teamMembers || {};
-},
+    // Team Members methods
+    getTeamMembers() {
+        return this.data.teamMembers || {};
+    },
 
-getTeamMember(teamId, memberId) {
-    const teamMembers = this.getTeamMembers();
-    const members = teamMembers[teamId] || [];
-    return members.find(member => member.id === memberId);
-},
+    getTeamMember(teamId, memberId) {
+        const teamMembers = this.getTeamMembers();
+        const members = teamMembers[teamId] || [];
+        return members.find(member => member.id === memberId);
+    },
 
-addTeamMember(teamId, member) {
-    if (!this.data.teamMembers) this.data.teamMembers = {};
-    if (!this.data.teamMembers[teamId]) this.data.teamMembers[teamId] = [];
-    
-    member.id = member.id || this.generateId();
-    member.addedAt = new Date().toISOString();
-    this.data.teamMembers[teamId].push(member);
-    this.emit('team-member:added', member);
-    this.saveToStorage();
-},
-
-updateTeamMember(teamId, updatedMember) {
-    const teamMembers = this.getTeamMembers();
-    const members = teamMembers[teamId] || [];
-    const index = members.findIndex(m => m.id === updatedMember.id);
-    if (index >= 0) {
-        members[index] = { ...members[index], ...updatedMember };
-        this.emit('team-member:updated', members[index]);
+    addTeamMember(teamId, member) {
+        if (!this.data.teamMembers) this.data.teamMembers = {};
+        if (!this.data.teamMembers[teamId]) this.data.teamMembers[teamId] = [];
+        
+        member.id = member.id || this.generateId();
+        member.addedAt = new Date().toISOString();
+        this.data.teamMembers[teamId].push(member);
+        this.emit('team-member:added', member);
         this.saveToStorage();
-    }
-},
+    },
 
-removeTeamMember(teamId, memberId) {
-    const teamMembers = this.getTeamMembers();
-    const members = teamMembers[teamId] || [];
-    const index = members.findIndex(m => m.id === memberId);
-    if (index >= 0) {
-        members.splice(index, 1);
-        this.emit('team-member:removed', memberId);
-        this.saveToStorage();
-    }
-},
+    updateTeamMember(teamId, updatedMember) {
+        const teamMembers = this.getTeamMembers();
+        const members = teamMembers[teamId] || [];
+        const index = members.findIndex(m => m.id === updatedMember.id);
+        if (index >= 0) {
+            members[index] = { ...members[index], ...updatedMember };
+            this.emit('team-member:updated', members[index]);
+            this.saveToStorage();
+        }
+    },
+
+    removeTeamMember(teamId, memberId) {
+        const teamMembers = this.getTeamMembers();
+        const members = teamMembers[teamId] || [];
+        const index = members.findIndex(m => m.id === memberId);
+        if (index >= 0) {
+            members.splice(index, 1);
+            this.emit('team-member:removed', memberId);
+            this.saveToStorage();
+        }
+    },
+
     // Teams methods
     getTeams() {
         return this.data.teams;
@@ -127,6 +130,64 @@ removeTeamMember(teamId, memberId) {
         this.data.teams[team.id] = team;
         this.saveToStorage();
         this.emit('team:added', team);
+    },
+
+    updateTeam(updatedTeam) {
+        if (this.data.teams[updatedTeam.id]) {
+            this.data.teams[updatedTeam.id] = { ...this.data.teams[updatedTeam.id], ...updatedTeam };
+            this.emit('team:updated', updatedTeam);
+            this.saveToStorage();
+        }
+    },
+
+    deleteTeam(teamId) {
+        if (this.data.teams[teamId]) {
+            delete this.data.teams[teamId];
+            this.emit('team:deleted', teamId);
+            this.saveToStorage();
+        }
+    },
+
+    transferTeamData(fromTeamId, toTeamId) {
+        // Transfer team members
+        const fromMembers = this.data.teamMembers[fromTeamId] || [];
+        if (!this.data.teamMembers[toTeamId]) this.data.teamMembers[toTeamId] = [];
+        this.data.teamMembers[toTeamId].push(...fromMembers);
+        delete this.data.teamMembers[fromTeamId];
+        
+        // Transfer contacts
+        const fromContacts = this.data.contacts[fromTeamId] || [];
+        if (!this.data.contacts[toTeamId]) this.data.contacts[toTeamId] = [];
+        this.data.contacts[toTeamId].push(...fromContacts);
+        delete this.data.contacts[fromTeamId];
+        
+        this.emit('team:data-transferred', { fromTeamId, toTeamId });
+        this.saveToStorage();
+    },
+
+    transferTeamMembers(fromTeamId, toTeamId, memberIds, includeContacts = false) {
+        const fromMembers = this.data.teamMembers[fromTeamId] || [];
+        const toTransfer = fromMembers.filter(member => memberIds.includes(member.id));
+        
+        // Add members to destination team
+        if (!this.data.teamMembers[toTeamId]) this.data.teamMembers[toTeamId] = [];
+        this.data.teamMembers[toTeamId].push(...toTransfer);
+        
+        // Remove members from source team
+        this.data.teamMembers[fromTeamId] = fromMembers.filter(member => !memberIds.includes(member.id));
+        
+        // If transferring contacts, move related contacts too
+        if (includeContacts) {
+            // This is a simplified transfer - in reality you might want more sophisticated contact assignment logic
+            const fromContacts = this.data.contacts[fromTeamId] || [];
+            const contactsToTransfer = fromContacts.splice(0, Math.ceil(fromContacts.length * (toTransfer.length / (fromMembers.length + toTransfer.length))));
+            
+            if (!this.data.contacts[toTeamId]) this.data.contacts[toTeamId] = [];
+            this.data.contacts[toTeamId].push(...contactsToTransfer);
+        }
+        
+        this.emit('team:members-transferred', { fromTeamId, toTeamId, memberIds });
+        this.saveToStorage();
     },
 
     // Contacts methods
@@ -168,11 +229,11 @@ removeTeamMember(teamId, memberId) {
         this.saveToStorage();
     },
 
-    updateContact(teamId, updatedContact) {
+    updateContact(teamId, contactId, updates) {
         const teamContacts = this.data.contacts[teamId] || [];
-        const index = teamContacts.findIndex(c => c.id === updatedContact.id);
+        const index = teamContacts.findIndex(c => c.id === contactId);
         if (index >= 0) {
-            teamContacts[index] = { ...teamContacts[index], ...updatedContact };
+            teamContacts[index] = { ...teamContacts[index], ...updates };
             this.emit('contact:updated', teamContacts[index]);
             this.saveToStorage();
         }
@@ -187,69 +248,15 @@ removeTeamMember(teamId, memberId) {
             this.saveToStorage();
         }
     },
-// Add these methods to your DataManager object:
 
-// Enhanced Team methods
-updateTeam(updatedTeam) {
-    if (this.data.teams[updatedTeam.id]) {
-        this.data.teams[updatedTeam.id] = { ...this.data.teams[updatedTeam.id], ...updatedTeam };
-        this.emit('team:updated', updatedTeam);
-        this.saveToStorage();
-    }
-},
-
-deleteTeam(teamId) {
-    if (this.data.teams[teamId]) {
-        delete this.data.teams[teamId];
-        this.emit('team:deleted', teamId);
-        this.saveToStorage();
-    }
-},
-
-transferTeamData(fromTeamId, toTeamId) {
-    // Transfer team members
-    const fromMembers = this.data.teamMembers[fromTeamId] || [];
-    if (!this.data.teamMembers[toTeamId]) this.data.teamMembers[toTeamId] = [];
-    this.data.teamMembers[toTeamId].push(...fromMembers);
-    delete this.data.teamMembers[fromTeamId];
-    
-    // Transfer contacts
-    const fromContacts = this.data.contacts[fromTeamId] || [];
-    if (!this.data.contacts[toTeamId]) this.data.contacts[toTeamId] = [];
-    this.data.contacts[toTeamId].push(...fromContacts);
-    delete this.data.contacts[fromTeamId];
-    
-    this.emit('team:data-transferred', { fromTeamId, toTeamId });
-    this.saveToStorage();
-},
-
-transferTeamMembers(fromTeamId, toTeamId, memberIds, includeContacts = false) {
-    const fromMembers = this.data.teamMembers[fromTeamId] || [];
-    const toTransfer = fromMembers.filter(member => memberIds.includes(member.id));
-    
-    // Add members to destination team
-    if (!this.data.teamMembers[toTeamId]) this.data.teamMembers[toTeamId] = [];
-    this.data.teamMembers[toTeamId].push(...toTransfer);
-    
-    // Remove members from source team
-    this.data.teamMembers[fromTeamId] = fromMembers.filter(member => !memberIds.includes(member.id));
-    
-    // If transferring contacts, move related contacts too
-    if (includeContacts) {
-        // This is a simplified transfer - in reality you might want more sophisticated contact assignment logic
-        const fromContacts = this.data.contacts[fromTeamId] || [];
-        const contactsToTransfer = fromContacts.splice(0, Math.ceil(fromContacts.length * (toTransfer.length / (fromMembers.length + toTransfer.length))));
-        
-        if (!this.data.contacts[toTeamId]) this.data.contacts[toTeamId] = [];
-        this.data.contacts[toTeamId].push(...contactsToTransfer);
-    }
-    
-    this.emit('team:members-transferred', { fromTeamId, toTeamId, memberIds });
-    this.saveToStorage();
-},
     // Deals methods
     getDeals() {
         return this.data.deals || [];
+    },
+
+    // Alias for pipeline compatibility
+    getPipelineEntries() {
+        return this.getDeals();
     },
 
     addDeal(deal) {
@@ -259,6 +266,11 @@ transferTeamMembers(fromTeamId, toTeamId, memberIds, includeContacts = false) {
         this.data.deals.push(deal);
         this.emit('deal:added', deal);
         this.saveToStorage();
+    },
+
+    // Alias for pipeline compatibility
+    addPipelineEntry(deal) {
+        return this.addDeal(deal);
     },
 
     updateDeal(updatedDeal) {
@@ -314,240 +326,79 @@ transferTeamMembers(fromTeamId, toTeamId, memberIds, includeContacts = false) {
             this.saveToStorage();
         }
     },
-// Add to DataManager object
-getRelationships() {
-    return this.data.relationships || [];
-},
 
-addRelationship(relationship) {
-    if (!this.data.relationships) this.data.relationships = [];
-    relationship.id = relationship.id || this.generateId();
-    relationship.createdAt = new Date().toISOString();
-    this.data.relationships.push(relationship);
-    this.emit('relationship:added', relationship);
-    this.saveToStorage();
-},
+    // Tasks methods
+    getTasks() {
+        return this.data.tasks || [];
+    },
 
-updateRelationship(updatedRelationship) {
-    const relationships = this.getRelationships();
-    const index = relationships.findIndex(r => r.id === updatedRelationship.id);
-    if (index >= 0) {
-        relationships[index] = { ...relationships[index], ...updatedRelationship };
-        this.emit('relationship:updated', relationships[index]);
+    addTask(task) {
+        if (!this.data.tasks) this.data.tasks = [];
+        task.id = task.id || this.generateId();
+        task.createdAt = new Date().toISOString();
+        task.completed = task.completed || false;
+        this.data.tasks.push(task);
+        this.emit('task:added', task);
         this.saveToStorage();
-    }
-},
+    },
 
-deleteRelationship(relationshipId) {
-    if (!this.data.relationships) return;
-    const index = this.data.relationships.findIndex(r => r.id === relationshipId);
-    if (index >= 0) {
-        this.data.relationships.splice(index, 1);
-        this.emit('relationship:deleted', relationshipId);
+    updateTask(updatedTask) {
+        const tasks = this.getTasks();
+        const index = tasks.findIndex(t => t.id === updatedTask.id);
+        if (index >= 0) {
+            tasks[index] = { ...tasks[index], ...updatedTask };
+            this.emit('task:updated', tasks[index]);
+            this.saveToStorage();
+        }
+    },
+
+    deleteTask(taskId) {
+        if (!this.data.tasks) return;
+        const index = this.data.tasks.findIndex(t => t.id === taskId);
+        if (index >= 0) {
+            this.data.tasks.splice(index, 1);
+            this.emit('task:deleted', taskId);
+            this.saveToStorage();
+        }
+    },
+
+    // Relationships methods
+    getRelationships() {
+        return this.data.relationships || [];
+    },
+
+    addRelationship(relationship) {
+        if (!this.data.relationships) this.data.relationships = [];
+        relationship.id = relationship.id || this.generateId();
+        relationship.createdAt = new Date().toISOString();
+        this.data.relationships.push(relationship);
+        this.emit('relationship:added', relationship);
         this.saveToStorage();
-    }
-},
+    },
+
+    updateRelationship(updatedRelationship) {
+        const relationships = this.getRelationships();
+        const index = relationships.findIndex(r => r.id === updatedRelationship.id);
+        if (index >= 0) {
+            relationships[index] = { ...relationships[index], ...updatedRelationship };
+            this.emit('relationship:updated', relationships[index]);
+            this.saveToStorage();
+        }
+    },
+
+    deleteRelationship(relationshipId) {
+        if (!this.data.relationships) return;
+        const index = this.data.relationships.findIndex(r => r.id === relationshipId);
+        if (index >= 0) {
+            this.data.relationships.splice(index, 1);
+            this.emit('relationship:deleted', relationshipId);
+            this.saveToStorage();
+        }
+    },
+
     // Utility methods
     generateId() {
         return 'id_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-    },
-
-    // Sample data for development
-    loadSampleData() {
-        // Only load if no existing data
-        if (Object.keys(this.data.teams).length > 0) {
-            return;
-        }
-
-        console.log('Loading sample data...');
-        
-        // Sample teams
-        this.data.teams = {
-            'team_1': {
-                id: 'team_1',
-                name: 'Enterprise North',
-                region: 'North America',
-                color: '#1e88e5',
-                manager: 'Sarah Johnson'
-            },
-            'team_2': {
-                id: 'team_2',
-                name: 'Enterprise South',
-                region: 'South America',
-                color: '#43a047',
-                manager: 'Carlos Rodriguez'
-            },
-            'team_3': {
-                id: 'team_3',
-                name: 'SMB East',
-                region: 'Eastern US',
-                color: '#fb8c00',
-                manager: 'Jennifer Kim'
-            },
-            'team_4': {
-                id: 'team_4',
-                name: 'SMB West',
-                region: 'Western US',
-                color: '#8e24aa',
-                manager: 'Michael Chen'
-            }
-        };
-
-        // Sample contacts
-        this.data.contacts = {
-            'team_1': [
-                {
-                    id: 'contact_1',
-                    name: 'John Smith',
-                    title: 'CTO',
-                    company: 'TechCorp Solutions',
-                    email: 'john.smith@techcorp.com',
-                    phone: '+1-555-0123',
-                    lastContact: '2024-06-15',
-                    status: 'active',
-                    notes: 'Interested in enterprise migration to AWS',
-                    createdAt: '2024-01-15T10:00:00Z'
-                },
-                {
-                    id: 'contact_2',
-                    name: 'Emily Davis',
-                    title: 'VP Engineering',
-                    company: 'DataFlow Inc',
-                    email: 'emily.davis@dataflow.com',
-                    phone: '+1-555-0124',
-                    lastContact: '2024-06-10',
-                    status: 'active',
-                    notes: 'Looking for data analytics solutions',
-                    createdAt: '2024-02-01T09:30:00Z'
-                }
-            ],
-            'team_2': [
-                {
-                    id: 'contact_3',
-                    name: 'Roberto Silva',
-                    title: 'IT Director',
-                    company: 'InnovaTech Brazil',
-                    email: 'roberto.silva@innovatech.br',
-                    phone: '+55-11-9999-8888',
-                    lastContact: '2024-06-12',
-                    status: 'active',
-                    notes: 'Expanding operations, needs scalable infrastructure',
-                    createdAt: '2024-01-20T14:00:00Z'
-                }
-            ],
-            'team_3': [
-                {
-                    id: 'contact_4',
-                    name: 'Lisa Wang',
-                    title: 'CEO',
-                    company: 'StartupX',
-                    email: 'lisa@startupx.com',
-                    phone: '+1-555-0125',
-                    lastContact: '2024-06-08',
-                    status: 'pending',
-                    notes: 'Early stage startup, budget conscious',
-                    createdAt: '2024-03-01T11:15:00Z'
-                }
-            ]
-        };
-
-        // Sample deals
-        this.data.deals = [
-            {
-                id: 'deal_1',
-                name: 'TechCorp Enterprise Migration',
-                contactId: 'contact_1',
-                value: 250000,
-                stage: 'proposal-development',
-                probability: 40,
-                closeDate: '2024-08-15',
-                description: 'Complete migration of on-premise infrastructure to AWS',
-                createdAt: '2024-05-01T10:00:00Z'
-            },
-            {
-                id: 'deal_2',
-                name: 'DataFlow Analytics Platform',
-                contactId: 'contact_2',
-                value: 150000,
-                stage: 'qualified',
-                probability: 25,
-                closeDate: '2024-07-30',
-                description: 'AWS-based data analytics and ML platform',
-                createdAt: '2024-05-15T14:30:00Z'
-            },
-            {
-                id: 'deal_3',
-                name: 'InnovaTech Infrastructure',
-                contactId: 'contact_3',
-                value: 180000,
-                stage: 'proposal-delivered',
-                probability: 60,
-                closeDate: '2024-07-15',
-                description: 'Scalable cloud infrastructure for Latin American expansion',
-                createdAt: '2024-04-20T16:00:00Z'
-            }
-        ];
-
-        // Sample touchpoints
-        this.data.touchpoints = [
-            {
-                id: 'touchpoint_1',
-                contactId: 'contact_1',
-                type: 'meeting',
-                subject: 'Initial Discovery Call',
-                date: '2024-06-15T14:00:00',
-                duration: 60,
-                notes: 'Discussed current infrastructure challenges and migration timeline. John is very interested in moving to AWS but needs board approval.',
-                nextSteps: 'Send detailed migration proposal by Friday',
-                createdAt: '2024-06-15T15:00:00Z'
-            },
-            {
-                id: 'touchpoint_2',
-                contactId: 'contact_2',
-                type: 'demo',
-                subject: 'AWS Analytics Services Demo',
-                date: '2024-06-10T10:00:00',
-                duration: 90,
-                notes: 'Showed SageMaker, Redshift, and QuickSight capabilities. Emily was impressed with the ML features.',
-                nextSteps: 'Prepare custom demo with their sample data',
-                createdAt: '2024-06-10T11:30:00Z'
-            },
-            {
-                id: 'touchpoint_3',
-                contactId: 'contact_3',
-                type: 'call',
-                subject: 'Pricing Discussion',
-                date: '2024-06-12T16:00:00',
-                duration: 45,
-                notes: 'Roberto wants to understand cost implications for their expansion plans.',
-                nextSteps: 'Send detailed pricing breakdown for 3-year growth projection',
-                createdAt: '2024-06-12T16:45:00Z'
-            },
-            {
-                id: 'touchpoint_4',
-                contactId: 'contact_4',
-                type: 'email',
-                subject: 'AWS Credits Program Information',
-                date: '2024-06-08T09:30:00',
-                notes: 'Sent information about AWS Activate program for startups. Lisa responded positively.',
-                nextSteps: 'Schedule follow-up call to discuss implementation timeline',
-                createdAt: '2024-06-08T09:35:00Z'
-            },
-            {
-                id: 'touchpoint_5',
-                contactId: 'contact_1',
-                type: 'proposal',
-                subject: 'Migration Proposal Delivery',
-                date: '2024-06-14T11:00:00',
-                notes: 'Delivered comprehensive migration proposal including timeline, costs, and risk mitigation strategies.',
-                nextSteps: 'Follow up next week for feedback and questions',
-                createdAt: '2024-06-14T11:15:00Z'
-            }
-        ];
-
-        this.saveToStorage();
-        this.emit('data:loaded');
-        console.log('Sample data loaded successfully');
     },
 
     // Export/Import functionality
@@ -568,13 +419,19 @@ deleteRelationship(relationshipId) {
         }
     },
 
+    // Load data (for reloading after import)
+    loadData() {
+        this.loadFromStorage();
+    },
+
     // Statistics and analytics
     getStatistics() {
         const stats = {
             totalContacts: this.getAllContacts().length,
             totalDeals: this.getDeals().length,
             totalTouchpoints: this.getTouchpoints().length,
-            totalPipelineValue: this.getDeals().reduce((sum, deal) => sum + deal.value, 0),
+            totalTasks: this.getTasks().length,
+            totalPipelineValue: this.getDeals().reduce((sum, deal) => sum + (deal.value || 0), 0),
             avgDealSize: 0,
             activeContacts: 0,
             engagementRate: 0
@@ -602,16 +459,25 @@ deleteRelationship(relationshipId) {
         return stats;
     },
 
-    // Clear all data (for testing/reset)
-    clearAllData() {
+    // Clear all sample data - for fresh start
+    clearAllSampleData() {
         this.data = {
             teams: {},
             contacts: {},
             deals: [],
             touchpoints: [],
+            tasks: [],
+            relationships: [],
+            teamMembers: {},
             settings: {}
         };
         this.saveToStorage();
         this.emit('data:cleared');
+        console.log('All sample data cleared');
+    },
+
+    // Clear all data (for testing/reset)
+    clearAllData() {
+        this.clearAllSampleData();
     }
 };
