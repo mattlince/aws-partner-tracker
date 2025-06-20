@@ -1,4 +1,4 @@
-// Enhanced Teams Module - Team Overview and Member Management
+// Enhanced Teams Module - Complete with Role Editing and Email Copy Features
 class TeamsModule {
     constructor() {
         this.currentView = 'overview';
@@ -15,6 +15,8 @@ class TeamsModule {
         DataManager.on('deal:deleted', () => this.renderIfActive());
         DataManager.on('team:updated', () => this.renderIfActive());
         DataManager.on('team-member:added', () => this.renderIfActive());
+        DataManager.on('team-member:updated', () => this.renderIfActive());
+        DataManager.on('team-member:removed', () => this.renderIfActive());
         DataManager.on('data:loaded', () => this.renderIfActive());
     }
 
@@ -321,6 +323,33 @@ class TeamsModule {
                     justify-content: space-between;
                     align-items: center;
                 }
+                .copy-btn {
+                    background: #6c757d;
+                    color: white;
+                    border: none;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 0.8em;
+                    margin-left: 8px;
+                    transition: all 0.3s ease;
+                }
+                .copy-btn:hover {
+                    background: #5a6268;
+                }
+                .copy-btn.success {
+                    background: #28a745;
+                }
+                .role-selector {
+                    padding: 4px 8px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    background: white;
+                    font-size: 0.85em;
+                    margin-bottom: 5px;
+                    width: 100%;
+                }
+                /* Additional styles from the original module... */
                 .contacts-preview {
                     margin-top: 15px;
                 }
@@ -496,7 +525,7 @@ class TeamsModule {
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.dropdown')) {
                 const dropdown = document.getElementById('addDropdown');
-        if (dropdown) dropdown.style.display = 'none';
+                if (dropdown) dropdown.style.display = 'none';
             }
         });
     }
@@ -616,6 +645,7 @@ class TeamsModule {
         `;
     }
 
+    // ENHANCED renderTeamMembers method with role editing and email copy
     renderTeamMembers(container) {
         const teams = DataManager.getTeams();
         const teamMembers = DataManager.getTeamMembers() || {};
@@ -628,7 +658,8 @@ class TeamsModule {
                 'LoL': members.filter(m => m.role === 'LoL'),
                 'DM': members.filter(m => m.role === 'DM'),
                 'PSM': members.filter(m => m.role === 'PSM'),
-                'AM': members.filter(m => m.role === 'AM')
+                'AM': members.filter(m => m.role === 'AM'),
+                'SA': members.filter(m => m.role === 'SA')
             };
 
             return `
@@ -663,8 +694,19 @@ class TeamsModule {
                             ${members.length > 0 ? members.map(member => `
                                 <tr>
                                     <td><strong>${member.name}</strong></td>
-                                    <td><span class="role-badge">${member.role}</span></td>
-                                    <td>${member.email || '-'}</td>
+                                    <td>
+                                        <select class="role-selector" onchange="teamsModule.updateMemberRole('${teamId}', '${member.id}', this.value)">
+                                            <option value="LoL" ${member.role === 'LoL' ? 'selected' : ''}>LoL - Leader of Leaders</option>
+                                            <option value="DM" ${member.role === 'DM' ? 'selected' : ''}>DM - District Manager</option>
+                                            <option value="PSM" ${member.role === 'PSM' ? 'selected' : ''}>PSM - Partner Sales Manager</option>
+                                            <option value="AM" ${member.role === 'AM' ? 'selected' : ''}>AM - Account Manager</option>
+                                            <option value="SA" ${member.role === 'SA' ? 'selected' : ''}>SA - Solution Architect</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        ${member.email || '-'}
+                                        ${member.email ? `<button class="copy-btn" onclick="teamsModule.copyToClipboard('${member.email}', this)" title="Copy email">📋</button>` : ''}
+                                    </td>
                                     <td>${member.phone || '-'}</td>
                                     <td>${member.startDate ? UIHelpers.formatDate(member.startDate) : '-'}</td>
                                     <td>
@@ -687,7 +729,8 @@ class TeamsModule {
                         LoL: ${membersByRole.LoL.length} • 
                         DM: ${membersByRole.DM.length} • 
                         PSM: ${membersByRole.PSM.length} • 
-                        AM: ${membersByRole.AM.length}
+                        AM: ${membersByRole.AM.length} • 
+                        SA: ${membersByRole.SA.length}
                         <span style="margin-left: 20px; color: #666;">
                             Total: ${members.length} members
                         </span>
@@ -697,6 +740,82 @@ class TeamsModule {
         }).join('');
 
         container.innerHTML = teamSections;
+    }
+
+    // Enhanced Role Update Method
+    updateMemberRole(teamId, memberId, newRole) {
+        const member = DataManager.getTeamMember(teamId, memberId);
+        if (member) {
+            const oldRole = member.role;
+            member.role = newRole;
+            DataManager.updateTeamMember(teamId, member);
+            
+            // Show success notification with role change details
+            UIHelpers.showNotification(`Role updated from ${oldRole} to ${newRole}`, 'success');
+            
+            // Auto-refresh the current view to update team composition counts
+            this.renderTeamMembers(document.getElementById('teamsContent'));
+        }
+    }
+
+    // Enhanced Email Copy Method with Visual Feedback
+    async copyToClipboard(text, buttonElement) {
+        try {
+            // Try modern clipboard API first
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                // Fallback for older browsers
+                this.fallbackCopyToClipboard(text);
+            }
+            
+            // Visual feedback - temporarily change button
+            this.showCopySuccess(buttonElement, text);
+            
+        } catch (err) {
+            console.error('Failed to copy to clipboard:', err);
+            UIHelpers.showNotification('Failed to copy email', 'error');
+        }
+    }
+
+    // Fallback copy method for older browsers
+    fallbackCopyToClipboard(text) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+            throw err;
+        } finally {
+            document.body.removeChild(textArea);
+        }
+    }
+
+    // Show copy success with visual feedback
+    showCopySuccess(buttonElement, email) {
+        // Change button appearance
+        const originalText = buttonElement.innerHTML;
+        const originalClass = buttonElement.className;
+        
+        buttonElement.innerHTML = '✅';
+        buttonElement.classList.add('success');
+        
+        // Show notification
+        UIHelpers.showNotification(`Email copied: ${email}`, 'success');
+        
+        // Restore button after 1 second
+        setTimeout(() => {
+            buttonElement.innerHTML = originalText;
+            buttonElement.className = originalClass;
+        }, 1000);
     }
 
     renderPerformance(container) {
@@ -731,7 +850,7 @@ class TeamsModule {
                             <div class="metric-label">Win Rate</div>
                         </div>
                         <div class="metric">
-                            <div class="metric-value" style="color: #17a2b8;">$${(avgDealSize / 1000).toFixed(0)}K</div>
+                            <div class="metric-value" style="color: #17a2b8;">${(avgDealSize / 1000).toFixed(0)}K</div>
                             <div class="metric-label">Avg Deal Size</div>
                         </div>
                         <div class="metric">
@@ -884,6 +1003,7 @@ class TeamsModule {
                             <option value="DM">DM - District Manager</option>
                             <option value="PSM">PSM - Partner Sales Manager</option>
                             <option value="AM">AM - Account Manager</option>
+                            <option value="SA">SA - Solution Architect</option>
                         </select>
                     </div>
                 </div>
@@ -1005,518 +1125,6 @@ class TeamsModule {
             DataManager.updateTeam(updatedTeam);
             UIHelpers.closeModal('teamMemberModal');
             UIHelpers.showNotification('Team updated successfully');
-        });
-        
-        UIHelpers.showModal('teamMemberModal');
-    }
-
-    showDeleteTeamConfirmation(teamId) {
-        const teams = DataManager.getTeams();
-        const contacts = DataManager.getContacts();
-        const teamMembers = DataManager.getTeamMembers() || {};
-        
-        const team = teams[teamId];
-        const teamContacts = contacts[teamId] || [];
-        const members = teamMembers[teamId] || [];
-        
-        if (!team) return;
-        
-        const hasData = teamContacts.length > 0 || members.length > 0;
-        
-        const modalContent = `
-            <h3 style="color: #dc3545;">⚠️ Delete Team</h3>
-            <p>Are you sure you want to delete the team <strong>"${team.name}"</strong>?</p>
-            
-            ${hasData ? `
-                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107;">
-                    <strong>Warning:</strong> This team has:
-                    <ul style="margin: 10px 0; padding-left: 20px;">
-                        ${members.length > 0 ? `<li>${members.length} team member(s)</li>` : ''}
-                        ${teamContacts.length > 0 ? `<li>${teamContacts.length} contact(s)</li>` : ''}
-                    </ul>
-                    <p><strong>What happens to the data?</strong></p>
-                    <div style="margin: 10px 0;">
-                        <label style="display: flex; align-items: center; margin-bottom: 10px;">
-                            <input type="radio" name="deleteOption" value="delete-all" checked style="margin-right: 8px;">
-                            Delete everything (team, members, and contacts)
-                        </label>
-                        <label style="display: flex; align-items: center; margin-bottom: 10px;">
-                            <input type="radio" name="deleteOption" value="transfer" style="margin-right: 8px;">
-                            Transfer members and contacts to another team
-                        </label>
-                    </div>
-                    
-                    <div id="transferTeamSelection" style="display: none; margin-top: 15px;">
-                        <label for="transferToTeam">Transfer to team:</label>
-                        <select id="transferToTeam" style="width: 100%; padding: 8px; margin-top: 5px;">
-                            ${Object.keys(teams).filter(id => id !== teamId).map(id => `
-                                <option value="${id}">${teams[id].name} (${teams[id].region})</option>
-                            `).join('')}
-                        </select>
-                    </div>
-                </div>
-            ` : ''}
-            
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button class="action-btn danger" onclick="teamsModule.confirmDeleteTeam('${teamId}')">
-                    🗑️ Delete Team
-                </button>
-                <button class="action-btn secondary" onclick="UIHelpers.closeModal('teamMemberModal')">
-                    Cancel
-                </button>
-            </div>
-        `;
-        
-        document.getElementById('teamMemberModalContent').innerHTML = modalContent;
-        
-        // Show/hide transfer options based on radio selection
-        const radioButtons = document.querySelectorAll('input[name="deleteOption"]');
-        radioButtons.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                const transferDiv = document.getElementById('transferTeamSelection');
-                if (e.target.value === 'transfer') {
-                    transferDiv.style.display = 'block';
-                } else {
-                    transferDiv.style.display = 'none';
-                }
-            });
-        });
-        
-        UIHelpers.showModal('teamMemberModal');
-    }
-
-    confirmDeleteTeam(teamId) {
-        const deleteOption = document.querySelector('input[name="deleteOption"]:checked')?.value;
-        const transferToTeam = document.getElementById('transferToTeam')?.value;
-        
-        if (deleteOption === 'transfer' && transferToTeam) {
-            // Transfer data first
-            DataManager.transferTeamData(teamId, transferToTeam);
-            UIHelpers.showNotification('Team data transferred successfully');
-        }
-        
-        // Delete the team
-        DataManager.deleteTeam(teamId);
-        UIHelpers.closeModal('teamMemberModal');
-        UIHelpers.showNotification('Team deleted successfully');
-    }
-
-    showBulkRoleUpdateForm() {
-        const teams = DataManager.getTeams();
-        const teamMembers = DataManager.getTeamMembers() || {};
-        
-        // Get all members across all teams
-        const allMembers = [];
-        Object.keys(teamMembers).forEach(teamId => {
-            const members = teamMembers[teamId] || [];
-            members.forEach(member => {
-                allMembers.push({
-                    ...member,
-                    teamId,
-                    teamName: teams[teamId]?.name || teamId
-                });
-            });
-        });
-        
-        const modalContent = `
-            <h3>Bulk Update Roles</h3>
-            <p style="color: #666; margin-bottom: 20px;">Update roles for multiple team members at once. Select the members you want to update and choose their new roles.</p>
-            
-            <div style="margin-bottom: 20px;">
-                <label style="display: flex; align-items: center; margin-bottom: 10px;">
-                    <input type="checkbox" id="selectAll" style="margin-right: 8px;" onchange="teamsModule.toggleSelectAll()">
-                    <strong>Select All Members</strong>
-                </label>
-            </div>
-            
-            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
-                ${allMembers.map(member => `
-                    <div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee;">
-                        <input type="checkbox" class="member-checkbox" data-member-id="${member.id}" data-team-id="${member.teamId}" style="margin-right: 12px;">
-                        <div style="flex: 1;">
-                            <strong>${member.name}</strong><br>
-                            <small style="color: #666;">${member.teamName} • Current role: ${member.role}</small>
-                        </div>
-                        <select class="new-role" data-member-id="${member.id}" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="">Keep current</option>
-                            <option value="LoL" ${member.role === 'LoL' ? 'selected' : ''}>LoL - Leader of Leaders</option>
-                            <option value="DM" ${member.role === 'DM' ? 'selected' : ''}>DM - District Manager</option>
-                            <option value="PSM" ${member.role === 'PSM' ? 'selected' : ''}>PSM - Partner Sales Manager</option>
-                            <option value="AM" ${member.role === 'AM' ? 'selected' : ''}>AM - Account Manager</option>
-                        </select>
-                    </div>
-                `).join('')}
-                ${allMembers.length === 0 ? '<div style="padding: 40px; text-align: center; color: #666; font-style: italic;">No team members found</div>' : ''}
-            </div>
-            
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button class="action-btn" onclick="teamsModule.saveBulkRoleUpdates()">
-                    🔄 Update Selected Roles
-                </button>
-                <button class="action-btn secondary" onclick="UIHelpers.closeModal('teamMemberModal')">
-                    Cancel
-                </button>
-            </div>
-        `;
-        
-        document.getElementById('teamMemberModalContent').innerHTML = modalContent;
-        UIHelpers.showModal('teamMemberModal');
-    }
-
-    toggleSelectAll() {
-        const selectAll = document.getElementById('selectAll');
-        const checkboxes = document.querySelectorAll('.member-checkbox');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = selectAll.checked;
-        });
-    }
-
-    saveBulkRoleUpdates() {
-        const checkboxes = document.querySelectorAll('.member-checkbox:checked');
-        const updates = [];
-        
-        checkboxes.forEach(checkbox => {
-            const memberId = checkbox.dataset.memberId;
-            const teamId = checkbox.dataset.teamId;
-            const newRoleSelect = document.querySelector(`.new-role[data-member-id="${memberId}"]`);
-            const newRole = newRoleSelect.value;
-            
-            if (newRole) {
-                updates.push({ teamId, memberId, newRole });
-            }
-        });
-        
-        if (updates.length === 0) {
-            alert('Please select members and specify new roles');
-            return;
-        }
-        
-        updates.forEach(update => {
-            const member = DataManager.getTeamMember(update.teamId, update.memberId);
-            if (member) {
-                member.role = update.newRole;
-                DataManager.updateTeamMember(update.teamId, member);
-            }
-        });
-        
-        UIHelpers.closeModal('teamMemberModal');
-        UIHelpers.showNotification(`${updates.length} role(s) updated successfully`);
-    }
-
-    showTeamTransferForm() {
-        const teams = DataManager.getTeams();
-        const teamMembers = DataManager.getTeamMembers() || {};
-        
-        const modalContent = `
-            <h3>Transfer Team Members</h3>
-            <p style="color: #666; margin-bottom: 20px;">Move team members and their contacts from one team to another.</p>
-            
-            <div class="form-grid" style="margin-bottom: 20px;">
-                <div class="form-group">
-                    <label for="fromTeam">From Team:</label>
-                    <select id="fromTeam" required onchange="teamsModule.updateMembersList()">
-                        <option value="">Select source team</option>
-                        ${Object.keys(teams).map(teamId => `
-                            <option value="${teamId}">${teams[teamId].name} (${teams[teamId].region})</option>
-                        `).join('')}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="toTeam">To Team:</label>
-                    <select id="toTeam" required>
-                        <option value="">Select destination team</option>
-                        ${Object.keys(teams).map(teamId => `
-                            <option value="${teamId}">${teams[teamId].name} (${teams[teamId].region})</option>
-                        `).join('')}
-                    </select>
-                </div>
-            </div>
-            
-            <div id="membersToTransfer" style="display: none;">
-                <h4>Select Members to Transfer:</h4>
-                <div id="membersList" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
-                    <!-- Members will be populated here -->
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: flex; align-items: center;">
-                        <input type="checkbox" id="transferContacts" checked style="margin-right: 8px;">
-                        Also transfer associated contacts and deals
-                    </label>
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button class="action-btn" onclick="teamsModule.executeTeamTransfer()">
-                    ↔️ Transfer Selected
-                </button>
-                <button class="action-btn secondary" onclick="UIHelpers.closeModal('teamMemberModal')">
-                    Cancel
-                </button>
-            </div>
-        `;
-        
-        document.getElementById('teamMemberModalContent').innerHTML = modalContent;
-        UIHelpers.showModal('teamMemberModal');
-    }
-
-    updateMembersList() {
-        const fromTeamId = document.getElementById('fromTeam').value;
-        const membersDiv = document.getElementById('membersToTransfer');
-        const membersList = document.getElementById('membersList');
-        
-        if (!fromTeamId) {
-            membersDiv.style.display = 'none';
-            return;
-        }
-        
-        const teamMembers = DataManager.getTeamMembers() || {};
-        const members = teamMembers[fromTeamId] || [];
-        
-        if (members.length === 0) {
-            membersList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666; font-style: italic;">No members in selected team</div>';
-            membersDiv.style.display = 'block';
-            return;
-        }
-        
-        membersList.innerHTML = members.map(member => `
-            <div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee;">
-                <input type="checkbox" class="transfer-member" data-member-id="${member.id}" style="margin-right: 12px;" checked>
-                <div style="flex: 1;">
-                    <strong>${member.name}</strong>
-                    <span class="role-badge" style="margin-left: 8px;">${member.role}</span><br>
-                    <small style="color: #666;">${member.email || 'No email'}</small>
-                </div>
-            </div>
-        `).join('');
-        
-        membersDiv.style.display = 'block';
-    }
-
-    executeTeamTransfer() {
-        const fromTeamId = document.getElementById('fromTeam').value;
-        const toTeamId = document.getElementById('toTeam').value;
-        const transferContacts = document.getElementById('transferContacts').checked;
-        
-        if (!fromTeamId || !toTeamId) {
-            alert('Please select both source and destination teams');
-            return;
-        }
-        
-        if (fromTeamId === toTeamId) {
-            alert('Source and destination teams cannot be the same');
-            return;
-        }
-        
-        const selectedMembers = Array.from(document.querySelectorAll('.transfer-member:checked'))
-            .map(checkbox => checkbox.dataset.memberId);
-        
-        if (selectedMembers.length === 0) {
-            alert('Please select at least one member to transfer');
-            return;
-        }
-        
-        // Execute the transfer
-        DataManager.transferTeamMembers(fromTeamId, toTeamId, selectedMembers, transferContacts);
-        
-        UIHelpers.closeModal('teamMemberModal');
-        UIHelpers.showNotification(`${selectedMembers.length} member(s) transferred successfully`);
-    }
-
-    showFullTeamForm() {
-        const teams = DataManager.getTeams();
-        
-        const modalContent = `
-            <h3>Add Full Team</h3>
-            <div style="margin-bottom: 20px;">
-                <div class="form-group">
-                    <label for="bulkTeamSelect">Select Team:</label>
-                    <select id="bulkTeamSelect" required>
-                        <option value="">Select Team</option>
-                        ${Object.keys(teams).map(teamId => `
-                            <option value="${teamId}">
-                                ${teams[teamId].name} (${teams[teamId].region})
-                            </option>
-                        `).join('')}
-                    </select>
-                </div>
-            </div>
-            
-            <div class="bulk-add-section">
-                <h4>Team Members</h4>
-                <p style="color: #666; margin-bottom: 15px;">Add multiple team members at once. You can add/remove rows as needed.</p>
-                
-                <div id="bulkMembersList">
-                    <div class="bulk-member-row">
-                        <div class="form-group">
-                            <label>Name</label>
-                            <input type="text" class="member-name" placeholder="Full Name" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" class="member-email" placeholder="email@company.com">
-                        </div>
-                        <div class="form-group">
-                            <label>Role</label>
-                            <select class="member-role" required>
-                                <option value="">Select</option>
-                                <option value="LoL">LoL</option>
-                                <option value="DM">DM</option>
-                                <option value="PSM">PSM</option>
-                                <option value="AM">AM</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Phone</label>
-                            <input type="tel" class="member-phone" placeholder="+1-555-0123">
-                        </div>
-                        <div>
-                            <button type="button" class="remove-member" onclick="this.parentElement.parentElement.remove()">×</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="margin: 15px 0;">
-                    <button type="button" class="action-btn secondary" onclick="teamsModule.addBulkMemberRow()">
-                        + Add Another Member
-                    </button>
-                </div>
-                
-                <button type="button" class="action-btn" onclick="teamsModule.saveBulkTeamMembers()">
-                    Save All Team Members
-                </button>
-            </div>
-        `;
-        
-        document.getElementById('teamMemberModalContent').innerHTML = modalContent;
-        UIHelpers.showModal('teamMemberModal');
-    }
-
-    addBulkMemberRow() {
-        const container = document.getElementById('bulkMembersList');
-        const newRow = document.createElement('div');
-        newRow.className = 'bulk-member-row';
-        newRow.innerHTML = `
-            <div class="form-group">
-                <input type="text" class="member-name" placeholder="Full Name" required>
-            </div>
-            <div class="form-group">
-                <input type="email" class="member-email" placeholder="email@company.com">
-            </div>
-            <div class="form-group">
-                <select class="member-role" required>
-                    <option value="">Select</option>
-                    <option value="LoL">LoL</option>
-                    <option value="DM">DM</option>
-                    <option value="PSM">PSM</option>
-                    <option value="AM">AM</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <input type="tel" class="member-phone" placeholder="+1-555-0123">
-            </div>
-            <div>
-                <button type="button" class="remove-member" onclick="this.parentElement.parentElement.remove()">×</button>
-            </div>
-        `;
-        container.appendChild(newRow);
-    }
-
-    saveBulkTeamMembers() {
-        const teamId = document.getElementById('bulkTeamSelect').value;
-        if (!teamId) {
-            alert('Please select a team first');
-            return;
-        }
-        
-        const rows = document.querySelectorAll('.bulk-member-row');
-        const members = [];
-        
-        rows.forEach(row => {
-            const name = row.querySelector('.member-name').value;
-            const email = row.querySelector('.member-email').value;
-            const role = row.querySelector('.member-role').value;
-            const phone = row.querySelector('.member-phone').value;
-            
-            if (name && role) {
-                members.push({
-                    name,
-                    email,
-                    role,
-                    phone,
-                    startDate: new Date().toISOString().split('T')[0]
-                });
-            }
-        });
-        
-        if (members.length === 0) {
-            alert('Please add at least one team member');
-            return;
-        }
-        
-        members.forEach(member => {
-            DataManager.addTeamMember(teamId, member);
-        });
-        
-        UIHelpers.closeModal('teamMemberModal');
-        UIHelpers.showNotification(`${members.length} team members added successfully`);
-    }
-
-    showNewTeamForm() {
-        const modalContent = `
-            <h3>Create New Team</h3>
-            <form id="newTeamForm">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="teamName">Team Name:</label>
-                        <input type="text" id="teamName" name="name" required placeholder="e.g., Enterprise West">
-                    </div>
-                    <div class="form-group">
-                        <label for="teamRegion">Region:</label>
-                        <input type="text" id="teamRegion" name="region" required placeholder="e.g., Western US">
-                    </div>
-                </div>
-                
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="teamColor">Team Color:</label>
-                        <select id="teamColor" name="color" required>
-                            <option value="#1e88e5">Blue</option>
-                            <option value="#43a047">Green</option>
-                            <option value="#fb8c00">Orange</option>
-                            <option value="#8e24aa">Purple</option>
-                            <option value="#e53935">Red</option>
-                            <option value="#00acc1">Teal</option>
-                            <option value="#7cb342">Light Green</option>
-                            <option value="#f4511e">Deep Orange</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="teamManager">Team Manager:</label>
-                        <input type="text" id="teamManager" name="manager" placeholder="Manager Name">
-                    </div>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="teamDescription">Description:</label>
-                    <textarea id="teamDescription" name="description" placeholder="Team description and objectives..."></textarea>
-                </div>
-                
-                <button type="submit" class="action-btn">Create Team</button>
-            </form>
-        `;
-        
-        document.getElementById('teamMemberModalContent').innerHTML = modalContent;
-        
-        // Handle form submission
-        document.getElementById('newTeamForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const team = Object.fromEntries(formData.entries());
-            
-            DataManager.addTeam(team);
-            UIHelpers.closeModal('teamMemberModal');
-            UIHelpers.showNotification('Team created successfully');
         });
         
         UIHelpers.showModal('teamMemberModal');
@@ -1736,3 +1344,4 @@ class TeamsModule {
 
 // Create global instance
 const teamsModule = new TeamsModule();
+console.log('✅ Enhanced Teams module with role editing and email copy loaded successfully');
