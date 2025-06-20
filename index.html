@@ -15,323 +15,1192 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: #333;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+        .main-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
             padding: 20px;
         }
 
+        .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin: 8px 0;
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .nav-item .icon {
+            margin-right: 12px;
+            font-size: 18px;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .main-content {
+            flex: 1;
+            background: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
+            background: white;
             padding: 20px 30px;
-            margin-bottom: 25px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom: 1px solid #e1e8ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .header h1 {
-            color: #232F3E;
-            font-size: 2.2em;
-            margin-bottom: 8px;
-            font-weight: 700;
-        }
-
-        .header p {
-            color: #666;
-            font-size: 1.1em;
+            color: #2c3e50;
+            font-size: 28px;
             margin: 0;
         }
 
-        .main-nav {
+        .header-actions {
             display: flex;
-            gap: 8px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            justify-content: center;
+            gap: 12px;
         }
 
-        .nav-btn {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
+        .btn {
+            padding: 10px 20px;
             border: none;
-            padding: 12px 20px;
-            border-radius: 25px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 0.95em;
-            font-weight: 600;
+            font-weight: 500;
             transition: all 0.3s ease;
-            color: #232F3E;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
-        .nav-btn:hover {
-            background: rgba(255, 255, 255, 1);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .nav-btn.active {
-            background: #FF9900;
+        .btn-primary {
+            background: #667eea;
             color: white;
-            box-shadow: 0 6px 20px rgba(255, 153, 0, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
         }
 
         .content-area {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
+            flex: 1;
             padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            min-height: 600px;
+            overflow-y: auto;
         }
 
         .loading {
             display: flex;
-            align-items: center;
             justify-content: center;
-            height: 400px;
+            align-items: center;
+            height: 200px;
             color: #666;
-            font-size: 1.1em;
         }
 
-        .loading::after {
-            content: '';
-            width: 20px;
-            height: 20px;
-            border: 2px solid #ddd;
-            border-top: 2px solid #FF9900;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-left: 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #f5c6cb;
-        }
-
-        .notification {
+        .notification-container {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #28a745;
-            color: white;
-            padding: 15px 20px;
+            z-index: 1000;
+        }
+
+        .notification {
+            background: white;
+            border: 1px solid #dee2e6;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            z-index: 10000;
-            transform: translateX(400px);
-            transition: transform 0.3s ease;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            min-width: 300px;
+            animation: slideIn 0.3s ease;
         }
 
-        .notification.show {
-            transform: translateX(0);
-        }
-
-        .notification.error {
-            background: #dc3545;
+        .notification.success {
+            border-left: 4px solid #28a745;
         }
 
         .notification.warning {
-            background: #ffc107;
-            color: #212529;
+            border-left: 4px solid #ffc107;
         }
 
-        .notification.info {
-            background: #17a2b8;
+        .notification.error {
+            border-left: 4px solid #dc3545;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
+        .notification.priority-high {
+            border-left: 4px solid #ff4757;
+            background: #fff5f5;
+        }
 
-            .header {
-                padding: 15px 20px;
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
             }
-
-            .header h1 {
-                font-size: 1.8em;
-            }
-
-            .nav-btn {
-                padding: 10px 16px;
-                font-size: 0.9em;
-            }
-
-            .content-area {
-                padding: 20px;
+            to {
+                transform: translateX(0);
+                opacity: 1;
             }
         }
 
-        @media (max-width: 480px) {
-            .main-nav {
-                flex-direction: column;
-            }
+        /* Dashboard Styles */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
 
-            .nav-btn {
-                width: 100%;
-                text-align: center;
-            }
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e1e8ed;
+        }
 
-            .header h1 {
-                font-size: 1.6em;
-            }
+        .metric-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
 
-            .header p {
-                font-size: 1em;
-            }
+        .metric-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .metric-change {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .metric-change.positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .metric-change.negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .widget {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e1e8ed;
+            margin-bottom: 24px;
+        }
+
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .widget-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .quick-action {
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .quick-action:hover {
+            background: #e9ecef;
+        }
+
+        .alert-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .alert-item.high-priority {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 16px;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .activity-meta {
+            color: #666;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1>🚀 Mission Cloud - Day Management System</h1>
-            <p>Comprehensive partner relationship and pipeline management platform</p>
-        </header>
-
-        <!-- Navigation -->
-        <nav class="main-nav">
-            <button class="nav-btn active" data-tab="dashboard" onclick="AppController.switchTab('dashboard')">
-                📊 Dashboard
-            </button>
-            <button class="nav-btn" data-tab="teams" onclick="AppController.switchTab('teams')">
-                👥 Team Overview
-            </button>
-            <button class="nav-btn" data-tab="pipeline" onclick="AppController.switchTab('pipeline')">
-                🚀 Pipeline Management
-            </button>
-            <button class="nav-btn" data-tab="touchpoints" onclick="AppController.switchTab('touchpoints')">
-                📞 Touchpoint Tracker
-            </button>
-            <button class="nav-btn" data-tab="relationships" onclick="AppController.switchTab('relationships')">
-                🕸️ Relationship Matrix
-            </button>
-            <button class="nav-btn" data-tab="team-import" onclick="AppController.switchTab('team-import')">
-                📁 Team Import
-            </button>
-        </nav>
+    <div class="main-container">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="logo">🎯 AWS Partner Tracker</div>
+            <nav>
+                <div class="nav-item active" data-tab="dashboard">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" data-tab="contacts">
+                    <span class="icon">👥</span>
+                    <span>Contacts</span>
+                </div>
+                <div class="nav-item" data-tab="deals">
+                    <span class="icon">💰</span>
+                    <span>Deals</span>
+                </div>
+                <div class="nav-item" data-tab="pipeline">
+                    <span class="icon">📈</span>
+                    <span>Pipeline</span>
+                </div>
+                <div class="nav-item" data-tab="touchpoints">
+                    <span class="icon">📞</span>
+                    <span>Touchpoints</span>
+                    <div class="notification-badge" id="touchpointBadge" style="display: none;">0</div>
+                </div>
+                <div class="nav-item" data-tab="teams">
+                    <span class="icon">🏢</span>
+                    <span>Teams</span>
+                </div>
+                <div class="nav-item" data-tab="relationships">
+                    <span class="icon">🔗</span>
+                    <span>Relationships</span>
+                </div>
+                <div class="nav-item" data-tab="import">
+                    <span class="icon">📤</span>
+                    <span>Import Teams</span>
+                </div>
+            </nav>
+        </div>
 
         <!-- Main Content Area -->
-        <main class="content-area" id="content-area">
-            <div class="loading">Loading AWS Partner Tracker...</div>
-        </main>
+        <div class="main-content">
+            <div class="header">
+                <h1 id="pageTitle">Dashboard</h1>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="AppController.showNotificationCenter()">
+                        🔔 Notifications (<span id="notificationCount">0</span>)
+                    </button>
+                    <button class="btn btn-primary" onclick="AppController.modules.touchpoints?.showQuickAddModal()">
+                        ➕ Quick Add
+                    </button>
+                </div>
+            </div>
+            <div class="content-area" id="contentArea">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
     </div>
 
     <!-- Notification Container -->
-    <div id="notification-container"></div>
+    <div class="notification-container" id="notificationContainer"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
-    <!-- Core JavaScript Files -->
-    <script src="js/utils/ui-helpers.js"></script>
-    <script src="js/core/data-manager.js"></script>
-    <script src="js/core/app-controller.js"></script>
-    
-    <!-- Module JavaScript Files -->
-    <script src="js/modules/dashboard-module.js"></script>
-    <script src="js/modules/contacts-module.js"></script>
-    <script src="js/modules/teams-module.js"></script>
-    <script src="js/modules/touchpoints-module.js"></script>
-    <script src="js/modules/relationships-module.js"></script>
-    <script src="js/modules/pipeline-module.js"></script>
-    <script src="js/data-backup-manager.js"></script>
-    <script src="js/modules/team-import-module.js"></script>
-
-    <!-- Initialize Application -->
     <script>
-        // Initialize the application when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Wait a bit to ensure all scripts are loaded
-            setTimeout(() => {
+        // Global touchpoint tracking system
+        window.touchpointSubscribers = new Map();
+        window.touchpointData = [];
+
+        window.subscribeTouchpoints = function(moduleId, callback) {
+            window.touchpointSubscribers.set(moduleId, callback);
+        };
+
+        window.notifyTouchpointChange = function(action, touchpoint) {
+            window.touchpointSubscribers.forEach(callback => {
                 try {
-                    console.log('🚀 Initializing AWS Partner Tracker...');
-                    
-                    // Check if all required objects exist
-                    if (typeof DataManager === 'undefined') {
-                        throw new Error('DataManager not loaded - check js/core/data-manager.js');
-                    }
-                    if (typeof AppController === 'undefined') {
-                        throw new Error('AppController not loaded - check js/core/app-controller.js');
-                    }
-                    if (typeof UIHelpers === 'undefined') {
-                        throw new Error('UIHelpers not loaded - check js/utils/ui-helpers.js');
-                    }
-                    
-                    // Initialize core systems
-                    DataManager.init();
-                    AppController.init();
-                    
-                   // Initialize core systems
-                    DataManager.init();
-                    AppController.init();
-                    
-                    // Start with clean data - no sample data loading
-                    console.log('🚀 AWS Partner Tracker ready - starting with clean data');
-                    
-                    console.log('✅ AWS Partner Tracker initialized successfully!');
-                    
-                    console.log('✅ AWS Partner Tracker initialized successfully!');
-                    
+                    callback(action, touchpoint);
                 } catch (error) {
-                    console.error('❌ Failed to initialize AWS Partner Tracker:', error);
-                    document.getElementById('content-area').innerHTML = `
-                        <div class="error">
-                            <h3>🚫 Initialization Error</h3>
-                            <p>Failed to start the AWS Partner Tracker. Please check the following:</p>
-                            <ul style="margin: 10px 0; padding-left: 20px;">
-                                <li>All JavaScript files are properly uploaded</li>
-                                <li>File paths match the directory structure</li>
-                                <li>No syntax errors in the JavaScript files</li>
-                            </ul>
-                            <p><strong>Error Details:</strong> ${error.message}</p>
-                            <p style="margin-top: 15px;">
-                                <button onclick="location.reload()" style="background: #FF9900; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-                                    🔄 Refresh Page
-                                </button>
-                            </p>
+                    console.error('Error in touchpoint callback:', error);
+                }
+            });
+        };
+
+        window.getRecentTouchpoints = function(options = {}) {
+            const { limit = 10, contactId = null, type = null, days = 7 } = options;
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+            
+            let filtered = window.touchpointData.filter(tp => new Date(tp.date) >= cutoffDate);
+            
+            if (contactId) filtered = filtered.filter(tp => tp.contactId === contactId);
+            if (type) filtered = filtered.filter(tp => tp.type === type);
+            
+            return filtered
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, limit);
+        };
+
+        window.getTouchpointStats = function(contactId = null, teamId = null) {
+            let filtered = window.touchpointData;
+            if (contactId) filtered = filtered.filter(tp => tp.contactId === contactId);
+            if (teamId) filtered = filtered.filter(tp => tp.teamId === teamId);
+            
+            const now = new Date();
+            const thisWeek = filtered.filter(tp => {
+                const tpDate = new Date(tp.date);
+                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                return tpDate >= weekAgo;
+            });
+            
+            return {
+                total: filtered.length,
+                thisWeek: thisWeek.length,
+                lastTouchpoint: filtered.length > 0 ? 
+                    filtered.sort((a, b) => new Date(b.date) - new Date(a.date))[0] : null
+            };
+        };
+
+        // Enhanced Data Manager
+        const DataManager = {
+            data: {
+                teams: {},
+                contacts: {},
+                deals: [],
+                touchpoints: [],
+                tasks: [],
+                relationships: [],
+                teamMembers: {},
+                settings: {}
+            },
+
+            init() {
+                this.loadData();
+                this.setupAutoSave();
+            },
+
+            loadData() {
+                try {
+                    const saved = localStorage.getItem('awsPartnerTrackerData');
+                    if (saved) {
+                        this.data = { ...this.data, ...JSON.parse(saved) };
+                    }
+                    
+                    // Sync with global touchpoint data
+                    window.touchpointData = this.data.touchpoints || [];
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                }
+            },
+
+            saveData() {
+                try {
+                    localStorage.setItem('awsPartnerTrackerData', JSON.stringify(this.data));
+                } catch (error) {
+                    console.error('Error saving data:', error);
+                }
+            },
+
+            setupAutoSave() {
+                setInterval(() => this.saveData(), 30000); // Auto-save every 30 seconds
+            },
+
+            // Contact methods
+            addContact(contact) {
+                contact.id = contact.id || Date.now().toString();
+                contact.createdAt = contact.createdAt || new Date().toISOString();
+                contact.relationshipScore = contact.relationshipScore || 5;
+                contact.lastContact = contact.lastContact || new Date().toISOString();
+                
+                this.data.contacts[contact.id] = contact;
+                this.saveData();
+                return contact;
+            },
+
+            updateContact(contactId, updates) {
+                if (this.data.contacts[contactId]) {
+                    this.data.contacts[contactId] = { ...this.data.contacts[contactId], ...updates };
+                    this.saveData();
+                    return this.data.contacts[contactId];
+                }
+                return null;
+            },
+
+            getContact(contactId) {
+                return this.data.contacts[contactId] || null;
+            },
+
+            getAllContacts() {
+                return Object.values(this.data.contacts);
+            },
+
+            // Deal methods
+            addDeal(deal) {
+                deal.id = deal.id || Date.now().toString();
+                deal.createdAt = deal.createdAt || new Date().toISOString();
+                deal.stage = deal.stage || 'prospecting';
+                deal.priority = deal.priority || 'medium';
+                
+                this.data.deals.push(deal);
+                this.saveData();
+                return deal;
+            },
+
+            updateDeal(dealId, updates) {
+                const dealIndex = this.data.deals.findIndex(d => d.id === dealId);
+                if (dealIndex !== -1) {
+                    this.data.deals[dealIndex] = { ...this.data.deals[dealIndex], ...updates };
+                    this.saveData();
+                    return this.data.deals[dealIndex];
+                }
+                return null;
+            },
+
+            getDeals() {
+                return this.data.deals;
+            },
+
+            // Touchpoint methods
+            addTouchpoint(touchpoint) {
+                touchpoint.id = touchpoint.id || Date.now().toString();
+                touchpoint.date = touchpoint.date || new Date().toISOString();
+                
+                this.data.touchpoints.push(touchpoint);
+                window.touchpointData.push(touchpoint);
+                
+                // Update contact's last contact date
+                if (touchpoint.contactId && this.data.contacts[touchpoint.contactId]) {
+                    this.data.contacts[touchpoint.contactId].lastContact = touchpoint.date;
+                }
+                
+                this.saveData();
+                window.notifyTouchpointChange('add', touchpoint);
+                return touchpoint;
+            }
+        };
+
+        // UI Helper Functions
+        const UIHelpers = {
+            showModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'block';
+                }
+            },
+
+            hideModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            },
+
+            showNotification(message, duration = 3000, type = 'success') {
+                const container = document.getElementById('notificationContainer');
+                if (!container) return;
+
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                
+                if (typeof message === 'object') {
+                    notification.innerHTML = `
+                        <div style="font-weight: 600; margin-bottom: 8px;">${message.title}</div>
+                        <div style="color: #666; font-size: 14px; margin-bottom: 12px;">${message.message}</div>
+                        ${message.actions ? message.actions.map(action => 
+                            `<button class="btn btn-sm" onclick="${action.action}; this.parentElement.remove();">${action.label}</button>`
+                        ).join(' ') : ''}
+                    `;
+                } else {
+                    notification.textContent = message;
+                }
+
+                container.appendChild(notification);
+
+                if (duration > 0 && !message.actions) {
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, duration);
+                }
+            },
+
+            formatDate(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            },
+
+            formatCurrency(amount) {
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+            }
+        };
+
+        // Dashboard Module
+        class DashboardModule {
+            constructor() {
+                this.refreshInterval = null;
+                this.currentTimeframe = 'week';
+            }
+
+            init() {
+                console.log('Dashboard module initialized');
+                this.render();
+                this.setupAutoRefresh();
+                
+                // Subscribe to touchpoint updates
+                window.subscribeTouchpoints('dashboardModule', (action, touchpoint) => {
+                    this.updateMetrics();
+                });
+            }
+
+            render() {
+                const content = document.getElementById('contentArea');
+                content.innerHTML = `
+                    <div class="quick-actions">
+                        <div class="quick-action" onclick="AppController.switchTab('touchpoints')">
+                            📞 Log Touchpoint
+                        </div>
+                        <div class="quick-action" onclick="AppController.switchTab('deals')">
+                            💰 Add Deal
+                        </div>
+                        <div class="quick-action" onclick="AppController.switchTab('contacts')">
+                            👥 Add Contact
+                        </div>
+                        <div class="quick-action" onclick="this.refreshData()">
+                            🔄 Refresh
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid" id="metricsGrid">
+                        <!-- Metrics will be loaded here -->
+                    </div>
+
+                    <div class="widget">
+                        <div class="widget-header">
+                            <h3 class="widget-title">⚠️ Priority Alerts</h3>
+                        </div>
+                        <div id="alertsContainer">
+                            <!-- Alerts will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div class="widget">
+                        <div class="widget-header">
+                            <h3 class="widget-title">📞 Recent Activity</h3>
+                        </div>
+                        <div id="activityContainer">
+                            <!-- Recent activity will be loaded here -->
+                        </div>
+                    </div>
+                `;
+
+                this.updateMetrics();
+                this.updateAlerts();
+                this.updateRecentActivity();
+            }
+
+            updateMetrics() {
+                const contacts = DataManager.getAllContacts();
+                const deals = DataManager.getDeals();
+                const touchpoints = window.getRecentTouchpoints({ days: 7 });
+
+                const totalPipeline = deals.reduce((sum, deal) => sum + (deal.value || 0), 0);
+                const closingSoon = deals.filter(deal => {
+                    if (!deal.closeDate) return false;
+                    const closeDate = new Date(deal.closeDate);
+                    const weekFromNow = new Date();
+                    weekFromNow.setDate(weekFromNow.getDate() + 7);
+                    return closeDate <= weekFromNow;
+                }).length;
+
+                const avgRelationshipScore = contacts.length > 0 ? 
+                    contacts.reduce((sum, c) => sum + (c.relationshipScore || 5), 0) / contacts.length : 0;
+
+                const metricsGrid = document.getElementById('metricsGrid');
+                if (metricsGrid) {
+                    metricsGrid.innerHTML = `
+                        <div class="metric-card">
+                            <div class="metric-value">${UIHelpers.formatCurrency(totalPipeline)}</div>
+                            <div class="metric-label">Total Pipeline</div>
+                            <div class="metric-change positive">+${deals.length} deals</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${touchpoints.length}</div>
+                            <div class="metric-label">Touchpoints This Week</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${contacts.length}</div>
+                            <div class="metric-label">Active Contacts</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${closingSoon}</div>
+                            <div class="metric-label">Closing Soon</div>
+                            <div class="metric-change ${closingSoon > 0 ? 'negative' : 'positive'}">Next 7 days</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${avgRelationshipScore.toFixed(1)}</div>
+                            <div class="metric-label">Avg Relationship Score</div>
                         </div>
                     `;
                 }
-            }, 100); // Small delay to ensure script loading
-        });
-
-        // Global error handler
-        window.addEventListener('error', function(event) {
-            console.error('Global error:', event.error);
-            if (typeof UIHelpers !== 'undefined' && UIHelpers.showNotification) {
-                UIHelpers.showNotification('An unexpected error occurred. Please try again.', 'error');
-            } else {
-                console.warn('UIHelpers not available for error notification');
             }
-        });
 
-        // Handle unhandled promise rejections
-        window.addEventListener('unhandledrejection', function(event) {
-            console.error('Unhandled promise rejection:', event.reason);
-            if (typeof UIHelpers !== 'undefined' && UIHelpers.showNotification) {
-                UIHelpers.showNotification('A system error occurred. Please try again.', 'error');
-            } else {
-                console.warn('UIHelpers not available for promise rejection notification');
+            updateAlerts() {
+                const contacts = DataManager.getAllContacts();
+                const deals = DataManager.getDeals();
+                const alerts = [];
+
+                // Check for stale contacts (30+ days without touchpoint)
+                const staleContacts = contacts.filter(contact => {
+                    const lastContact = new Date(contact.lastContact || contact.createdAt);
+                    const daysSince = (new Date() - lastContact) / (1000 * 60 * 60 * 24);
+                    return daysSince > 30;
+                });
+
+                if (staleContacts.length > 0) {
+                    alerts.push({
+                        type: 'warning',
+                        message: `${staleContacts.length} contacts haven't been contacted in 30+ days`,
+                        action: () => AppController.switchTab('contacts', 'stale')
+                    });
+                }
+
+                // Check for overdue deals
+                const overdueDeals = deals.filter(deal => {
+                    if (!deal.closeDate) return false;
+                    return new Date(deal.closeDate) < new Date();
+                });
+
+                if (overdueDeals.length > 0) {
+                    alerts.push({
+                        type: 'high-priority',
+                        message: `${overdueDeals.length} deals are overdue`,
+                        action: () => AppController.switchTab('deals', 'overdue')
+                    });
+                }
+
+                const alertsContainer = document.getElementById('alertsContainer');
+                if (alertsContainer) {
+                    if (alerts.length === 0) {
+                        alertsContainer.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">✅ No alerts - everything looks good!</div>';
+                    } else {
+                        alertsContainer.innerHTML = alerts.map(alert => `
+                            <div class="alert-item ${alert.type}">
+                                <span>${alert.message}</span>
+                                <button class="btn btn-sm" onclick="(${alert.action})()">Review</button>
+                            </div>
+                        `).join('');
+                    }
+                }
+            }
+
+            updateRecentActivity() {
+                const recentTouchpoints = window.getRecentTouchpoints({ limit: 5 });
+                const activityContainer = document.getElementById('activityContainer');
+                
+                if (activityContainer) {
+                    if (recentTouchpoints.length === 0) {
+                        activityContainer.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">No recent activity</div>';
+                    } else {
+                        activityContainer.innerHTML = recentTouchpoints.map(tp => {
+                            const contact = DataManager.getContact(tp.contactId);
+                            const contactName = contact ? contact.name : 'Unknown Contact';
+                            
+                            return `
+                                <div class="activity-item">
+                                    <div class="activity-icon">📞</div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">${tp.type} with ${contactName}</div>
+                                        <div class="activity-meta">${UIHelpers.formatDate(tp.date)} • ${tp.notes || 'No notes'}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+            }
+
+            setupAutoRefresh() {
+                this.refreshInterval = setInterval(() => {
+                    if (AppController.currentTab === 'dashboard') {
+                        this.updateMetrics();
+                        this.updateAlerts();
+                        this.updateRecentActivity();
+                    }
+                }, 120000); // Refresh every 2 minutes
+            }
+
+            refreshData() {
+                this.updateMetrics();
+                this.updateAlerts();
+                this.updateRecentActivity();
+                UIHelpers.showNotification('Dashboard refreshed successfully!');
+            }
+
+            destroy() {
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                }
+            }
+        }
+
+        // Simple placeholder modules for other tabs
+        class ContactsModule {
+            init() {
+                console.log('Contacts module initialized');
+            }
+            
+            render() {
+                const content = document.getElementById('contentArea');
+                content.innerHTML = `
+                    <div class="widget">
+                        <div class="widget-header">
+                            <h3 class="widget-title">👥 Contacts</h3>
+                            <button class="btn btn-primary" onclick="this.addContact()">Add Contact</button>
+                        </div>
+                        <div>
+                            ${DataManager.getAllContacts().map(contact => `
+                                <div class="activity-item">
+                                    <div class="activity-icon">👤</div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">${contact.name}</div>
+                                        <div class="activity-meta">${contact.email || ''} • Score: ${contact.relationshipScore || 5}/10</div>
+                                    </div>
+                                </div>
+                            `).join('') || '<div style="padding: 20px; color: #666;">No contacts yet</div>'}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            addContact() {
+                const name = prompt('Contact name:');
+                const email = prompt('Contact email:');
+                if (name) {
+                    DataManager.addContact({ name, email });
+                    this.render();
+                    UIHelpers.showNotification(`Contact ${name} added successfully!`);
+                }
+            }
+        }
+
+        class DealsModule {
+            init() {
+                console.log('Deals module initialized');
+            }
+            
+            render() {
+                const content = document.getElementById('contentArea');
+                content.innerHTML = `
+                    <div class="widget">
+                        <div class="widget-header">
+                            <h3 class="widget-title">💰 Deals</h3>
+                            <button class="btn btn-primary" onclick="this.addDeal()">Add Deal</button>
+                        </div>
+                        <div>
+                            ${DataManager.getDeals().map(deal => `
+                                <div class="activity-item">
+                                    <div class="activity-icon">💰</div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">${deal.title}</div>
+                                        <div class="activity-meta">${UIHelpers.formatCurrency(deal.value || 0)} • ${deal.stage}</div>
+                                    </div>
+                                </div>
+                            `).join('') || '<div style="padding: 20px; color: #666;">No deals yet</div>'}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            addDeal() {
+                const title = prompt('Deal title:');
+                const value = prompt('Deal value:');
+                if (title) {
+                    DataManager.addDeal({ title, value: parseFloat(value) || 0 });
+                    this.render();
+                    UIHelpers.showNotification(`Deal ${title} added successfully!`);
+                }
+            }
+        }
+
+        class TouchpointsModule {
+            init() {
+                console.log('Touchpoints module initialized');
+            }
+            
+            render() {
+                const content = document.getElementById('contentArea');
+                const recentTouchpoints = window.getRecentTouchpoints({ limit: 20 });
+                
+                content.innerHTML = `
+                    <div class="widget">
+                        <div class="widget-header">
+                            <h3 class="widget-title">📞 Touchpoints</h3>
+                            <button class="btn btn-primary" onclick="this.addTouchpoint()">Log Touchpoint</button>
+                        </div>
+                        <div>
+                            ${recentTouchpoints.map(tp => {
+                                const contact = DataManager.getContact(tp.contactId);
+                                const contactName = contact ? contact.name : 'Unknown Contact';
+                                return `
+                                    <div class="activity-item">
+                                        <div class="activity-icon">📞</div>
+                                        <div class="activity-content">
+                                            <div class="activity-title">${tp.type} with ${contactName}</div>
+                                            <div class="activity-meta">${UIHelpers.formatDate(tp.date)} • ${tp.notes || 'No notes'}</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('') || '<div style="padding: 20px; color: #666;">No touchpoints yet</div>'}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            addTouchpoint() {
+                const contacts = DataManager.getAllContacts();
+                if (contacts.length === 0) {
+                    UIHelpers.showNotification('Please add contacts first!', 3000, 'warning');
+                    return;
+                }
+                
+                const contactId = contacts[0].id; // Use first contact for demo
+                const type = prompt('Touchpoint type (call, email, meeting):') || 'call';
+                const notes = prompt('Notes:') || '';
+                
+                DataManager.addTouchpoint({ contactId, type, notes });
+                this.render();
+                UIHelpers.showNotification('Touchpoint logged successfully!');
+            }
+        }
+
+        // Simple placeholder modules
+        class PipelineModule {
+            init() { console.log('Pipeline module initialized'); }
+            render() {
+                document.getElementById('contentArea').innerHTML = `
+                    <div class="widget">
+                        <h3>📈 Pipeline Management</h3>
+                        <p>Pipeline visualization coming soon...</p>
+                    </div>
+                `;
+            }
+        }
+
+        class TeamsModule {
+            init() { console.log('Teams module initialized'); }
+            render() {
+                document.getElementById('contentArea').innerHTML = `
+                    <div class="widget">
+                        <h3>🏢 Teams</h3>
+                        <p>Team management coming soon...</p>
+                    </div>
+                `;
+            }
+        }
+
+        class RelationshipsModule {
+            init() { console.log('Relationships module initialized'); }
+            render() {
+                document.getElementById('contentArea').innerHTML = `
+                    <div class="widget">
+                        <h3>🔗 Relationships</h3>
+                        <p>Relationship mapping coming soon...</p>
+                    </div>
+                `;
+            }
+        }
+
+        class ImportModule {
+            init() { console.log('Import module initialized'); }
+            render() {
+                document.getElementById('contentArea').innerHTML = `
+                    <div class="widget">
+                        <h3>📤 Import Teams</h3>
+                        <p>Team import functionality coming soon...</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Enhanced App Controller
+        const AppController = {
+            modules: {},
+            currentTab: 'dashboard',
+            notifications: [],
+            notificationInterval: null,
+
+            init() {
+                console.log('AppController initializing...');
+                
+                // Initialize data manager first
+                DataManager.init();
+                
+                // Initialize all modules
+                this.initializeModules();
+                this.setupNavigation();
+                this.setupNotificationSystem();
+                this.switchTab('dashboard');
+                
+                console.log('✅ AWS Partner Tracker initialized successfully!');
+                UIHelpers.showNotification('🎉 AWS Partner Tracker loaded successfully!');
+            },
+
+            initializeModules() {
+                try {
+                    this.modules.dashboard = new DashboardModule();
+                    this.modules.contacts = new ContactsModule();
+                    this.modules.deals = new DealsModule();
+                    this.modules.touchpoints = new TouchpointsModule();
+                    this.modules.pipeline = new PipelineModule();
+                    this.modules.teams = new TeamsModule();
+                    this.modules.relationships = new RelationshipsModule();
+                    this.modules.import = new ImportModule();
+                    
+                    // Initialize all modules
+                    Object.values(this.modules).forEach(module => {
+                        if (module.init) module.init();
+                    });
+                    
+                    console.log('✅ All modules initialized successfully');
+                } catch (error) {
+                    console.error('❌ Error initializing modules:', error);
+                    UIHelpers.showNotification('Error initializing modules: ' + error.message, 5000, 'error');
+                }
+            },
+
+            setupNavigation() {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const tab = e.currentTarget.dataset.tab;
+                        if (tab) this.switchTab(tab);
+                    });
+                });
+            },
+
+            setupNotificationSystem() {
+                // Check for new alerts every 5 minutes
+                this.notificationInterval = setInterval(() => {
+                    this.checkForAlerts();
+                }, 300000);
+
+                // Subscribe to touchpoint changes for notifications
+                window.subscribeTouchpoints('appController', (action, touchpoint) => {
+                    if (action === 'add') {
+                        UIHelpers.showNotification(`📞 Touchpoint logged with ${touchpoint.contactName || 'contact'}!`);
+                        this.updateNotificationBadges();
+                    }
+                });
+            },
+
+            switchTab(tabName, subView = null) {
+                console.log(`Switching to tab: ${tabName}`);
+                
+                // Update navigation
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                const targetNav = document.querySelector(`[data-tab="${tabName}"]`);
+                if (targetNav) {
+                    targetNav.classList.add('active');
+                }
+
+                // Update page title
+                const titles = {
+                    dashboard: 'Dashboard',
+                    contacts: 'Contacts',
+                    deals: 'Deals', 
+                    pipeline: 'Pipeline',
+                    touchpoints: 'Touchpoints',
+                    teams: 'Teams',
+                    relationships: 'Relationships',
+                    import: 'Import Teams'
+                };
+                
+                document.getElementById('pageTitle').textContent = titles[tabName] || 'AWS Partner Tracker';
+                this.currentTab = tabName;
+
+                // Render the appropriate module
+                try {
+                    if (this.modules[tabName] && this.modules[tabName].render) {
+                        this.modules[tabName].render(subView);
+                    } else {
+                        document.getElementById('contentArea').innerHTML = `
+                            <div class="loading">
+                                <h3>🚧 ${titles[tabName]} Module</h3>
+                                <p>This module is being developed...</p>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    console.error(`Error rendering ${tabName} module:`, error);
+                    document.getElementById('contentArea').innerHTML = `
+                        <div class="loading">
+                            <h3>❌ Error Loading Module</h3>
+                            <p>Failed to load ${tabName} module: ${error.message}</p>
+                        </div>
+                    `;
+                }
+            },
+
+            checkForAlerts() {
+                const contacts = DataManager.getAllContacts();
+                const deals = DataManager.getDeals();
+                
+                // Check for high-value deals closing soon
+                const highValueDeals = deals.filter(deal => {
+                    if (!deal.closeDate || !deal.value) return false;
+                    const closeDate = new Date(deal.closeDate);
+                    const threeDaysFromNow = new Date();
+                    threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+                    return closeDate <= threeDaysFromNow && deal.value > 10000;
+                });
+
+                if (highValueDeals.length > 0) {
+                    UIHelpers.showNotification({
+                        title: '🚨 High-Value Deals Closing Soon',
+                        message: `${highValueDeals.length} high-value deals closing within 3 days`,
+                        actions: [
+                            { label: 'Review Now', action: () => this.switchTab('deals', 'closing-soon') }
+                        ]
+                    }, 0, 'priority-high');
+                }
+            },
+
+            updateNotificationBadges() {
+                const touchpointBadge = document.getElementById('touchpointBadge');
+                const notificationCount = document.getElementById('notificationCount');
+                
+                // Simple notification count (could be enhanced)
+                const recentTouchpoints = window.getRecentTouchpoints({ days: 1 });
+                
+                if (touchpointBadge) {
+                    if (recentTouchpoints.length > 0) {
+                        touchpointBadge.textContent = recentTouchpoints.length;
+                        touchpointBadge.style.display = 'flex';
+                    } else {
+                        touchpointBadge.style.display = 'none';
+                    }
+                }
+                
+                if (notificationCount) {
+                    notificationCount.textContent = this.notifications.length;
+                }
+            },
+
+            showNotificationCenter() {
+                UIHelpers.showNotification('Notification center coming soon!', 3000, 'info');
+            }
+        };
+
+        // Initialize the application when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Starting AWS Partner Tracker...');
+            try {
+                AppController.init();
+            } catch (error) {
+                console.error('❌ Failed to initialize AWS Partner Tracker:', error);
+                document.getElementById('contentArea').innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: #dc3545;">
+                        <h2>❌ Initialization Error</h2>
+                        <p>Failed to start the AWS Partner Tracker</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <button class="btn btn-primary" onclick="location.reload()">🔄 Refresh Page</button>
+                    </div>
+                `;
             }
         });
     </script>
