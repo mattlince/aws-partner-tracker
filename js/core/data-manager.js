@@ -1,4 +1,4 @@
-// Data Manager - Centralized data handling and storage with Referral Tracking
+// Enhanced Data Manager - Centralized data handling with Team Import Support
 const DataManager = {
     data: {
         teams: {},
@@ -148,6 +148,44 @@ const DataManager = {
         }
     },
 
+    // Team Import Support - Get or create team ID by name
+    getOrCreateTeamId(teamName) {
+        // Check if team already exists
+        const teams = this.getTeams();
+        for (const teamId in teams) {
+            if (teams[teamId].name === teamName) {
+                return teamId;
+            }
+        }
+        
+        // Create new team
+        const newTeam = {
+            id: this.generateId(),
+            name: teamName,
+            region: 'Imported',
+            color: '#2196F3',
+            description: 'Team created during import',
+            createdAt: new Date().toISOString()
+        };
+        
+        this.data.teams[newTeam.id] = newTeam;
+        this.emit('team:added', newTeam);
+        this.saveToStorage();
+        return newTeam.id;
+    },
+
+    // Team Import Support - Add team data
+    addTeamData(teamData) {
+        if (!teamData.id) {
+            teamData.id = this.generateId();
+        }
+        
+        teamData.createdAt = teamData.createdAt || new Date().toISOString();
+        this.data.teams[teamData.id] = teamData;
+        this.emit('team:added', teamData);
+        this.saveToStorage();
+    },
+
     transferTeamData(fromTeamId, toTeamId) {
         // Transfer team members
         const fromMembers = this.data.teamMembers[fromTeamId] || [];
@@ -189,7 +227,7 @@ const DataManager = {
         this.saveToStorage();
     },
 
-    // Contacts methods
+    // Enhanced Contacts methods with Team Import Support
     getContacts() {
         return this.data.contacts;
     },
@@ -217,15 +255,40 @@ const DataManager = {
         return contact ? contact.name : 'Unknown Contact';
     },
 
-    addContact(teamId, contact) {
-        if (!this.data.contacts[teamId]) {
-            this.data.contacts[teamId] = [];
+    // Enhanced addContact method - supports both old and new formats
+    addContact(contactDataOrTeamId, contactOrNull = null) {
+        // Handle both old format (teamId, contact) and new format (contactData)
+        if (typeof contactDataOrTeamId === 'string' && contactOrNull !== null) {
+            // Old format: addContact(teamId, contact)
+            const teamId = contactDataOrTeamId;
+            const contact = contactOrNull;
+            
+            if (!this.data.contacts[teamId]) {
+                this.data.contacts[teamId] = [];
+            }
+            contact.id = contact.id || this.generateId();
+            contact.createdAt = new Date().toISOString();
+            this.data.contacts[teamId].push(contact);
+            this.emit('contact:added', contact);
+            this.saveToStorage();
+        } else {
+            // New format: addContact(contactData) - for team import
+            const contact = contactDataOrTeamId;
+            contact.id = contact.id || this.generateId();
+            contact.createdAt = new Date().toISOString();
+            
+            // For team import, add to a team based on teamName
+            const teamName = contact.teamName || 'Imported';
+            const teamId = this.getOrCreateTeamId(teamName);
+            
+            if (!this.data.contacts[teamId]) {
+                this.data.contacts[teamId] = [];
+            }
+            
+            this.data.contacts[teamId].push(contact);
+            this.emit('contact:added', contact);
+            this.saveToStorage();
         }
-        contact.id = contact.id || this.generateId();
-        contact.createdAt = new Date().toISOString();
-        this.data.contacts[teamId].push(contact);
-        this.emit('contact:added', contact);
-        this.saveToStorage();
     },
 
     updateContact(teamId, contactId, updates) {
@@ -655,3 +718,5 @@ const DataManager = {
         this.emit('data:loaded');
     }
 };
+
+console.log('✅ Enhanced Data Manager with Team Import support loaded successfully');
