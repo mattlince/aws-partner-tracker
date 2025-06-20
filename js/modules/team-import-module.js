@@ -1,4 +1,4 @@
-// Team Import Module - Complete with Role Support (Everyone Tier 3)
+// Enhanced Team Import Module - Complete with GEO and Tier Support
 class TeamImportModule {
     constructor() {
         this.importedData = [];
@@ -31,7 +31,7 @@ class TeamImportModule {
             <div class="team-import-container">
                 <div class="import-header">
                     <h2>🏢 Import Team & Rep Data</h2>
-                    <p>Upload Excel/CSV with columns: <strong>Full Name | First Name | Email | District | Team Name | Role</strong></p>
+                    <p>Upload Excel/CSV with columns: <strong>Full Name | First Name | Email | GEO | Team Name | Role | Tier</strong></p>
                 </div>
 
                 <div class="upload-section" id="uploadSection">
@@ -48,7 +48,7 @@ class TeamImportModule {
                             📋 Download Template
                         </button>
                         <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
-                            Download a CSV template with the correct column format including roles
+                            Download a CSV template with the correct column format including GEO and tier assignments
                         </p>
                     </div>
                 </div>
@@ -62,6 +62,10 @@ class TeamImportModule {
                         <div class="stat-card">
                             <div class="stat-number" id="totalTeams">0</div>
                             <div class="stat-label">Teams Found</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="uniqueGeos">0</div>
+                            <div class="stat-label">Unique GEOs</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-number" id="avgTeamSize">0</div>
@@ -112,6 +116,13 @@ class TeamImportModule {
                 .import-header h2 {
                     color: #232F3E;
                     margin-bottom: 10px;
+                    font-size: 2em;
+                }
+
+                .import-header p {
+                    color: #666;
+                    font-size: 1.1em;
+                    margin: 0;
                 }
 
                 .upload-section {
@@ -141,11 +152,17 @@ class TeamImportModule {
                 .upload-area h3 {
                     color: #232F3E;
                     margin: 10px 0;
+                    font-size: 1.3em;
+                }
+
+                .upload-area p {
+                    color: #666;
+                    margin: 5px 0;
                 }
 
                 .file-requirements {
                     font-size: 0.9em;
-                    color: #666;
+                    color: #888;
                     margin-top: 10px;
                 }
 
@@ -162,6 +179,11 @@ class TeamImportModule {
                     border-radius: 12px;
                     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
                     text-align: center;
+                    transition: transform 0.3s ease;
+                }
+
+                .stat-card:hover {
+                    transform: translateY(-2px);
                 }
 
                 .stat-number {
@@ -174,6 +196,8 @@ class TeamImportModule {
                 .stat-label {
                     color: #666;
                     font-size: 0.9em;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }
 
                 .team-preview {
@@ -206,6 +230,7 @@ class TeamImportModule {
                     padding: 4px 12px;
                     border-radius: 12px;
                     font-size: 0.9em;
+                    font-weight: 500;
                 }
 
                 .rep-list {
@@ -214,11 +239,12 @@ class TeamImportModule {
 
                 .rep-item {
                     display: grid;
-                    grid-template-columns: 2fr 1.5fr 2fr 1fr;
+                    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 0.8fr;
                     gap: 15px;
                     padding: 12px 20px;
                     border-bottom: 1px solid #f0f0f0;
                     align-items: center;
+                    transition: background 0.3s ease;
                 }
 
                 .rep-item:hover {
@@ -230,8 +256,9 @@ class TeamImportModule {
                 }
 
                 .rep-name {
-                    font-weight: 500;
+                    font-weight: 600;
                     color: #232F3E;
+                    margin-bottom: 2px;
                 }
 
                 .rep-email {
@@ -239,12 +266,27 @@ class TeamImportModule {
                     font-size: 0.9em;
                 }
 
-                .rep-district {
-                    font-size: 0.8em;
-                    background: #e8f0fe;
+                .geo-badge {
+                    background: #28a745;
+                    color: white;
                     padding: 4px 8px;
                     border-radius: 4px;
-                    color: #1a73e8;
+                    font-size: 0.8em;
+                    font-weight: bold;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    display: inline-block;
+                    min-width: 60px;
+                    text-align: center;
+                }
+
+                .geo-badge:hover {
+                    background: #218838;
+                    transform: scale(1.05);
+                }
+
+                .geo-badge.empty {
+                    background: #6c757d;
                 }
 
                 .role-selector {
@@ -253,25 +295,42 @@ class TeamImportModule {
                     border-radius: 4px;
                     background: white;
                     font-size: 0.85em;
-                    margin-bottom: 5px;
                     width: 100%;
+                    cursor: pointer;
+                }
+
+                .tier-selector {
+                    padding: 4px 8px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    background: white;
+                    font-size: 0.85em;
+                    width: 100%;
+                    cursor: pointer;
                 }
 
                 .tier-display {
-                    padding: 6px 12px;
-                    background: #e8f5e8;
-                    color: #198754;
-                    border-radius: 6px;
+                    display: inline-block;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    color: white;
                     font-size: 0.9em;
+                    font-weight: bold;
                     text-align: center;
-                    font-weight: 500;
+                    line-height: 32px;
                 }
+
+                .tier-1 { background: #dc3545; }
+                .tier-2 { background: #ffc107; color: #000; }
+                .tier-3 { background: #28a745; }
 
                 .import-actions {
                     display: flex;
                     gap: 15px;
                     justify-content: center;
                     flex-wrap: wrap;
+                    margin-top: 30px;
                 }
 
                 .action-btn {
@@ -282,6 +341,10 @@ class TeamImportModule {
                     font-weight: 500;
                     cursor: pointer;
                     transition: all 0.3s ease;
+                    text-decoration: none;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
                 }
 
                 .action-btn.primary {
@@ -299,6 +362,14 @@ class TeamImportModule {
                     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
                 }
 
+                .action-btn.primary:hover {
+                    background: linear-gradient(135deg, #218838, #1ea085);
+                }
+
+                .action-btn.secondary:hover {
+                    background: #5a6268;
+                }
+
                 .existing-teams {
                     background: white;
                     border-radius: 12px;
@@ -307,14 +378,37 @@ class TeamImportModule {
                     margin-top: 30px;
                 }
 
+                .existing-teams h3 {
+                    margin: 0 0 20px 0;
+                    color: #232F3E;
+                    font-size: 1.3em;
+                }
+
                 .current-team-item {
                     display: flex;
                     justify-content: space-between;
-                    align-items: center;
-                    padding: 12px;
+                    align-items: flex-start;
+                    padding: 15px;
                     border: 1px solid #eee;
                     border-radius: 8px;
-                    margin-bottom: 10px;
+                    margin-bottom: 15px;
+                    transition: all 0.3s ease;
+                }
+
+                .current-team-item:hover {
+                    border-color: #4a90e2;
+                    background: #f8f9ff;
+                }
+
+                .team-stats {
+                    font-size: 0.9em;
+                    color: #666;
+                    margin-top: 8px;
+                    line-height: 1.4;
+                }
+
+                .team-stats strong {
+                    color: #232F3E;
                 }
 
                 .processing-overlay {
@@ -328,13 +422,20 @@ class TeamImportModule {
                     align-items: center;
                     justify-content: center;
                     z-index: 1000;
+                    backdrop-filter: blur(5px);
                 }
 
                 .processing-content {
                     background: white;
-                    padding: 30px;
+                    padding: 40px;
                     border-radius: 12px;
                     text-align: center;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                }
+
+                .processing-content h3 {
+                    margin: 15px 0 10px 0;
+                    color: #232F3E;
                 }
 
                 .error-message {
@@ -344,6 +445,7 @@ class TeamImportModule {
                     border-radius: 8px;
                     margin: 15px 0;
                     border: 1px solid #f5c6cb;
+                    font-weight: 500;
                 }
 
                 .success-message {
@@ -353,6 +455,81 @@ class TeamImportModule {
                     border-radius: 8px;
                     margin: 15px 0;
                     border: 1px solid #c3e6cb;
+                    font-weight: 500;
+                }
+
+                .validation-summary {
+                    background: #fff3cd;
+                    border: 1px solid #ffecb5;
+                    color: #856404;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                }
+
+                .validation-summary h4 {
+                    margin: 0 0 10px 0;
+                    color: #856404;
+                }
+
+                .validation-summary ul {
+                    margin: 0;
+                    padding-left: 20px;
+                }
+
+                /* Responsive Design */
+                @media (max-width: 768px) {
+                    .team-import-container {
+                        padding: 15px;
+                    }
+
+                    .import-stats {
+                        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                        gap: 15px;
+                    }
+
+                    .rep-item {
+                        grid-template-columns: 1fr;
+                        gap: 10px;
+                        padding: 15px;
+                    }
+
+                    .rep-item > div {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+
+                    .upload-area {
+                        padding: 30px 20px;
+                    }
+
+                    .import-actions {
+                        flex-direction: column;
+                        align-items: center;
+                    }
+
+                    .action-btn {
+                        width: 100%;
+                        max-width: 300px;
+                        justify-content: center;
+                    }
+                }
+
+                /* Animation for stats */
+                @keyframes countUp {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+
+                .stat-card.animate {
+                    animation: countUp 0.6s ease-out forwards;
+                }
+
+                /* Drag and drop styles */
+                .upload-area.drag-over {
+                    border-color: #28a745;
+                    background: #e8f5e8;
                 }
             </style>
         `;
@@ -363,6 +540,30 @@ class TeamImportModule {
         if (fileInput) {
             fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
         }
+
+        // Drag and drop functionality
+        const uploadArea = document.querySelector('.upload-area');
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+
+            uploadArea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.handleFileUpload({ target: { files } });
+                }
+            });
+        }
+
         this.displayCurrentTeams();
     }
 
@@ -480,12 +681,14 @@ class TeamImportModule {
             name: row["Full Name"] || row["Name"] || '',
             firstName: row["First Name"] || row["First"] || '',
             email: row["Email"] || row["E-mail"] || '',
-            district: row["District"] || row["Region"] || '',
+            geo: row["GEO"] || row["Geography"] || row["Region"] || '',
             teamName: row["Team Name"] || row["Team"] || 'Unassigned',
             role: row["Role"] || 'AM',
-            tier: 3, // Always Tier 3 for imports
+            tier: parseInt(row["Tier"]) || 3, // Default to Tier 3
             engagementScore: 0,
             lastContactDate: null,
+            lastTouchpoint: null,
+            touchpointCount: 0,
             activeDeals: 0,
             totalPipelineValue: 0,
             isActive: true,
@@ -525,6 +728,11 @@ class TeamImportModule {
             if (rep.email && !this.isValidEmail(rep.email)) {
                 errors.push(`Row ${index + 1}: Invalid email format`);
             }
+
+            // Validate tier
+            if (rep.tier < 1 || rep.tier > 3) {
+                errors.push(`Row ${index + 1}: Tier must be 1, 2, or 3`);
+            }
         });
 
         return {
@@ -551,18 +759,21 @@ class TeamImportModule {
                 this.teamMetrics[teamName] = {
                     totalReps: 0,
                     tier1: 0, tier2: 0, tier3: 0,
-                    districts: new Set()
+                    geos: new Set(),
+                    roles: new Set()
                 };
             }
             
             this.teamGroups[teamName].push(rep);
             this.teamMetrics[teamName].totalReps++;
             this.teamMetrics[teamName][`tier${rep.tier}`]++;
-            this.teamMetrics[teamName].districts.add(rep.district);
+            this.teamMetrics[teamName].geos.add(rep.geo);
+            this.teamMetrics[teamName].roles.add(rep.role);
         });
 
         Object.keys(this.teamMetrics).forEach(team => {
-            this.teamMetrics[team].districts = Array.from(this.teamMetrics[team].districts);
+            this.teamMetrics[team].geos = Array.from(this.teamMetrics[team].geos).filter(geo => geo);
+            this.teamMetrics[team].roles = Array.from(this.teamMetrics[team].roles);
         });
     }
 
@@ -571,11 +782,21 @@ class TeamImportModule {
         const totalTeams = Object.keys(this.teamGroups).length;
         const avgTeamSize = totalTeams > 0 ? Math.round(totalReps / totalTeams) : 0;
         const validation = this.validateImportData();
+        const uniqueGeos = new Set(this.importedData.map(rep => rep.geo).filter(geo => geo)).size;
 
-        document.getElementById('totalReps').textContent = totalReps;
-        document.getElementById('totalTeams').textContent = totalTeams;
-        document.getElementById('avgTeamSize').textContent = avgTeamSize;
-        document.getElementById('duplicateEmails').textContent = validation.duplicateEmails;
+        // Animate the stats
+        setTimeout(() => {
+            document.getElementById('totalReps').textContent = totalReps;
+            document.getElementById('totalTeams').textContent = totalTeams;
+            document.getElementById('avgTeamSize').textContent = avgTeamSize;
+            document.getElementById('uniqueGeos').textContent = uniqueGeos;
+            document.getElementById('duplicateEmails').textContent = validation.duplicateEmails;
+
+            // Add animation class
+            document.querySelectorAll('.stat-card').forEach((card, index) => {
+                setTimeout(() => card.classList.add('animate'), index * 100);
+            });
+        }, 100);
 
         this.renderTeamPreview();
         document.getElementById('previewSection').style.display = 'block';
@@ -598,18 +819,31 @@ class TeamImportModule {
                                     <div class="rep-name">${rep.name}</div>
                                     <div class="rep-email">${rep.email}</div>
                                 </div>
-                                <div class="rep-district">${rep.district || 'No District'}</div>
-                                <div style="font-size: 0.9em; color: #666;">
+                                <div>
                                     <select class="role-selector" onchange="teamImportModule.updateRepRole('${teamName}', ${index}, this.value)">
-                                        <option value="LoL" ${rep.role === 'LoL' ? 'selected' : ''}>LoL - Leader of Leaders</option>
-                                        <option value="DM" ${rep.role === 'DM' ? 'selected' : ''}>DM - District Manager</option>
-                                        <option value="PSM" ${rep.role === 'PSM' ? 'selected' : ''}>PSM - Partner Sales Manager</option>
-                                        <option value="AM" ${rep.role === 'AM' ? 'selected' : ''}>AM - Account Manager</option>
-                                        <option value="SA" ${rep.role === 'SA' ? 'selected' : ''}>SA - Solution Architect</option>
+                                        <option value="LoL" ${rep.role === 'LoL' ? 'selected' : ''}>LoL</option>
+                                        <option value="DM" ${rep.role === 'DM' ? 'selected' : ''}>DM</option>
+                                        <option value="PSM" ${rep.role === 'PSM' ? 'selected' : ''}>PSM</option>
+                                        <option value="AM" ${rep.role === 'AM' ? 'selected' : ''}>AM</option>
+                                        <option value="SA" ${rep.role === 'SA' ? 'selected' : ''}>SA</option>
                                     </select>
                                 </div>
-                                <div class="tier-display">
-                                    Tier 3
+                                <div>
+                                    <span class="geo-badge ${!rep.geo ? 'empty' : ''}" onclick="teamImportModule.editGeo('${teamName}', ${index})" title="Click to edit GEO">
+                                        ${rep.geo || 'Set GEO'}
+                                    </span>
+                                </div>
+                                <div>
+                                    <select class="tier-selector" onchange="teamImportModule.updateRepTier('${teamName}', ${index}, this.value)">
+                                        <option value="1" ${rep.tier === 1 ? 'selected' : ''}>Tier 1 - Strategic</option>
+                                        <option value="2" ${rep.tier === 2 ? 'selected' : ''}>Tier 2 - Important</option>
+                                        <option value="3" ${rep.tier === 3 ? 'selected' : ''}>Tier 3 - Standard</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <span class="tier-display tier-${rep.tier}" title="Tier ${rep.tier}">
+                                        T${rep.tier}
+                                    </span>
                                 </div>
                             </div>
                         `).join('')}
@@ -623,29 +857,46 @@ class TeamImportModule {
 
     updateRepRole(teamName, repIndex, newRole) {
         this.teamGroups[teamName][repIndex].role = newRole;
-        // Tier always stays 3 for imports
-        this.teamGroups[teamName][repIndex].tier = 3;
-        
         this.processTeamGroups();
+    }
+
+    updateRepTier(teamName, repIndex, newTier) {
+        this.teamGroups[teamName][repIndex].tier = parseInt(newTier);
+        this.processTeamGroups();
+        this.renderTeamPreview();
+    }
+
+    editGeo(teamName, repIndex) {
+        const rep = this.teamGroups[teamName][repIndex];
+        const newGeo = prompt(`Enter GEO for ${rep.name}:`, rep.geo || '');
+        if (newGeo !== null) {
+            rep.geo = newGeo.trim();
+            this.processTeamGroups();
+            this.renderTeamPreview();
+        }
     }
 
     executeImport() {
         this.showProcessing('Importing teams and reps...');
         
         try {
+            let importedCount = 0;
+            
             Object.values(this.teamGroups).flat().forEach(rep => {
                 const contactData = {
                     name: rep.name,
                     firstName: rep.firstName,
                     email: rep.email,
-                    company: rep.district ? `Team: ${rep.teamName}` : rep.teamName,
-                    district: rep.district,
+                    company: rep.geo ? `Team: ${rep.teamName} (${rep.geo})` : rep.teamName,
+                    geo: rep.geo,
                     teamName: rep.teamName,
                     role: rep.role,
                     type: 'rep',
                     tier: rep.tier,
                     engagementScore: rep.engagementScore,
                     lastContactDate: rep.lastContactDate,
+                    lastTouchpoint: rep.lastTouchpoint,
+                    touchpointCount: rep.touchpointCount,
                     activeDeals: rep.activeDeals,
                     totalPipelineValue: rep.totalPipelineValue,
                     isActive: rep.isActive,
@@ -653,6 +904,7 @@ class TeamImportModule {
                 };
                 
                 DataManager.addContact(contactData);
+                importedCount++;
             });
 
             // Also create team member records directly
@@ -665,22 +917,28 @@ class TeamImportModule {
                         name: rep.name,
                         email: rep.email,
                         role: rep.role,
+                        geo: rep.geo,
+                        tier: rep.tier,
                         startDate: rep.importDate?.split('T')[0] || new Date().toISOString().split('T')[0],
                         phone: rep.phone || '',
-                        notes: `Imported from ${rep.teamName} (District: ${rep.district || 'N/A'})`
+                        notes: `Imported from ${rep.teamName}${rep.geo ? ` (GEO: ${rep.geo})` : ''}`,
+                        lastTouchpoint: rep.lastTouchpoint,
+                        touchpointCount: rep.touchpointCount,
+                        touchpoints: []
                     };
                     
                     DataManager.addTeamMember(teamId, teamMember);
                 });
             });
 
-            // Store team metadata
+            // Store team metadata with GEO information
             Object.keys(this.teamGroups).forEach(teamName => {
                 const teamData = {
                     id: `team-${teamName.toLowerCase().replace(/\s+/g, '-')}`,
                     name: teamName,
                     repCount: this.teamMetrics[teamName].totalReps,
-                    districts: this.teamMetrics[teamName].districts,
+                    geos: this.teamMetrics[teamName].geos,
+                    roles: this.teamMetrics[teamName].roles,
                     tier1Count: this.teamMetrics[teamName].tier1,
                     tier2Count: this.teamMetrics[teamName].tier2,
                     tier3Count: this.teamMetrics[teamName].tier3,
@@ -693,12 +951,20 @@ class TeamImportModule {
             });
 
             this.hideProcessing();
-            this.showSuccess(`Successfully imported ${this.importedData.length} reps across ${Object.keys(this.teamGroups).length} teams with roles!`);
+            this.showSuccess(
+                `🎉 Successfully imported ${importedCount} reps across ${Object.keys(this.teamGroups).length} teams!\n` +
+                `✅ GEO assignments: ${new Set(this.importedData.map(rep => rep.geo).filter(geo => geo)).size} unique regions\n` +
+                `✅ Tier distribution: T1: ${this.importedData.filter(rep => rep.tier === 1).length}, T2: ${this.importedData.filter(rep => rep.tier === 2).length}, T3: ${this.importedData.filter(rep => rep.tier === 3).length}`
+            );
             
             this.cancelImport();
             
+            // Refresh other modules if they exist
             if (typeof contactsModule !== 'undefined' && contactsModule.renderIfActive) {
                 contactsModule.renderIfActive();
+            }
+            if (typeof teamsModule !== 'undefined' && teamsModule.renderIfActive) {
+                teamsModule.renderIfActive();
             }
 
         } catch (error) {
@@ -718,12 +984,16 @@ class TeamImportModule {
 
     downloadTemplate() {
         const templateData = [
-            ['Full Name', 'First Name', 'Email', 'District', 'Team Name', 'Role'],
-            ['John Smith', 'John', 'john.smith@company.com', 'West Region', 'Sales Team A', 'DM'],
-            ['Jane Doe', 'Jane', 'jane.doe@company.com', 'East Region', 'Sales Team B', 'PSM'],
-            ['Mike Johnson', 'Mike', 'mike.johnson@company.com', 'Central Region', 'Technical Team', 'AM'],
-            ['Sarah Wilson', 'Sarah', 'sarah.wilson@company.com', 'West Region', 'Sales Team A', 'LoL'],
-            ['Tom Rodriguez', 'Tom', 'tom.rodriguez@company.com', 'Central Region', 'Technical Team', 'SA']
+            ['Full Name', 'First Name', 'Email', 'GEO', 'Team Name', 'Role', 'Tier'],
+            ['John Smith', 'John', 'john.smith@company.com', 'West Coast', 'Sales Team A', 'DM', '2'],
+            ['Jane Doe', 'Jane', 'jane.doe@company.com', 'East Coast', 'Sales Team B', 'PSM', '1'],
+            ['Mike Johnson', 'Mike', 'mike.johnson@company.com', 'EMEA', 'Technical Team', 'AM', '3'],
+            ['Sarah Wilson', 'Sarah', 'sarah.wilson@company.com', 'APAC', 'Sales Team A', 'LoL', '1'],
+            ['Tom Rodriguez', 'Tom', 'tom.rodriguez@company.com', 'Central', 'Technical Team', 'SA', '2'],
+            ['Lisa Chen', 'Lisa', 'lisa.chen@company.com', 'APAC', 'Enterprise Team', 'PSM', '1'],
+            ['David Brown', 'David', 'david.brown@company.com', 'West Coast', 'Enterprise Team', 'AM', '3'],
+            ['Maria Garcia', 'Maria', 'maria.garcia@company.com', 'LATAM', 'Global Team', 'DM', '2'],
+            ['Robert Kim', 'Robert', 'robert.kim@company.com', 'APAC', 'Global Team', 'SA', '3']
         ];
 
         const csvContent = templateData.map(row => row.join(',')).join('\n');
@@ -732,12 +1002,15 @@ class TeamImportModule {
         
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'team-import-template.csv';
+        a.download = 'team-import-template-with-geo-tier.csv';
         a.click();
         
         URL.revokeObjectURL(url);
+        
         if (typeof UIHelpers !== 'undefined' && UIHelpers.showNotification) {
-            UIHelpers.showNotification('Template downloaded successfully', 'success');
+            UIHelpers.showNotification('Enhanced template downloaded successfully! 📋', 'success');
+        } else {
+            alert('Template downloaded successfully!');
         }
     }
 
@@ -757,21 +1030,43 @@ class TeamImportModule {
         });
 
         if (Object.keys(teams).length === 0) {
-            container.innerHTML = '<p style="color: #666; text-align: center;">No teams imported yet. Use the import tool above to get started.</p>';
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <div style="font-size: 3em; margin-bottom: 15px;">📭</div>
+                    <h4>No teams imported yet</h4>
+                    <p>Use the import tool above to get started with your team data.</p>
+                </div>
+            `;
             return;
         }
 
-        const teamsHTML = Object.entries(teams).map(([teamName, reps]) => `
-            <div class="current-team-item">
-                <div>
-                    <strong>${teamName}</strong>
-                    <span style="color: #666; margin-left: 10px;">(${reps.length} reps)</span>
+        const teamsHTML = Object.entries(teams).map(([teamName, reps]) => {
+            const geoBreakdown = this.getGeoBreakdown(reps);
+            const tierBreakdown = this.getTierBreakdown(reps);
+            const roleBreakdown = this.getTeamRoleBreakdown(reps);
+            
+            return `
+                <div class="current-team-item">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <strong style="font-size: 1.1em; color: #232F3E;">${teamName}</strong>
+                            <span style="background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 500;">
+                                ${reps.length} member${reps.length !== 1 ? 's' : ''}
+                            </span>
+                        </div>
+                        <div class="team-stats">
+                            <div style="margin-bottom: 4px;"><strong>Roles:</strong> ${roleBreakdown}</div>
+                            <div style="margin-bottom: 4px;"><strong>GEOs:</strong> ${geoBreakdown}</div>
+                            <div><strong>Tiers:</strong> ${tierBreakdown}</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right; color: #666; font-size: 0.9em;">
+                        Last updated:<br>
+                        ${new Date().toLocaleDateString()}
+                    </div>
                 </div>
-                <div style="font-size: 0.9em; color: #666;">
-                    Roles: ${this.getTeamRoleBreakdown(reps)}
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         container.innerHTML = teamsHTML;
     }
@@ -783,7 +1078,34 @@ class TeamImportModule {
             roles[role] = (roles[role] || 0) + 1;
         });
         
-        return Object.entries(roles).map(([role, count]) => `${role}: ${count}`).join(' | ');
+        return Object.entries(roles)
+            .map(([role, count]) => `${role}: ${count}`)
+            .join(' | ') || 'No roles assigned';
+    }
+
+    getGeoBreakdown(reps) {
+        const geos = {};
+        reps.forEach(rep => {
+            const geo = rep.geo || 'No GEO';
+            geos[geo] = (geos[geo] || 0) + 1;
+        });
+        
+        return Object.entries(geos)
+            .map(([geo, count]) => `${geo}: ${count}`)
+            .join(' | ') || 'No GEOs assigned';
+    }
+
+    getTierBreakdown(reps) {
+        const tiers = {1: 0, 2: 0, 3: 0};
+        reps.forEach(rep => {
+            const tier = rep.tier || 3;
+            tiers[tier] = (tiers[tier] || 0) + 1;
+        });
+        
+        return Object.entries(tiers)
+            .filter(([tier, count]) => count > 0)
+            .map(([tier, count]) => `T${tier}: ${count}`)
+            .join(' | ') || 'No tiers assigned';
     }
 
     showProcessing(message) {
@@ -810,31 +1132,31 @@ class TeamImportModule {
     showError(message) {
         const errorDiv = document.createElement('div');
         errorDiv.className = 'error-message';
-        errorDiv.textContent = message;
+        errorDiv.innerHTML = `<strong>Error:</strong> ${message}`;
         
         const previewSection = document.getElementById('previewSection');
-        if (previewSection) {
+        if (previewSection && previewSection.style.display !== 'none') {
             previewSection.insertBefore(errorDiv, previewSection.firstChild);
         } else {
             const uploadSection = document.getElementById('uploadSection');
             uploadSection.appendChild(errorDiv);
         }
         
-        setTimeout(() => errorDiv.remove(), 5000);
+        setTimeout(() => errorDiv.remove(), 8000);
     }
 
     showSuccess(message) {
         const successDiv = document.createElement('div');
         successDiv.className = 'success-message';
-        successDiv.textContent = message;
+        successDiv.innerHTML = message.replace(/\n/g, '<br>');
         
         const uploadSection = document.getElementById('uploadSection');
         uploadSection.appendChild(successDiv);
         
-        setTimeout(() => successDiv.remove(), 5000);
+        setTimeout(() => successDiv.remove(), 10000);
     }
 }
 
 // Create global instance
 const teamImportModule = new TeamImportModule();
-console.log('✅ Team Import module with role support loaded successfully');
+console.log('✅ Enhanced Team Import module with GEO and tier support loaded successfully');
