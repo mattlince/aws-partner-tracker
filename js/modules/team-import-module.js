@@ -1,4 +1,4 @@
-// Team Import Module - Production Ready Version
+// Team Import Module - Complete with Role Support (Everyone Tier 3)
 class TeamImportModule {
     constructor() {
         this.importedData = [];
@@ -31,7 +31,7 @@ class TeamImportModule {
             <div class="team-import-container">
                 <div class="import-header">
                     <h2>🏢 Import Team & Rep Data</h2>
-                    <p>Upload Excel/CSV with columns: <strong>Full Name | First Name | Email | District | Team Name</strong></p>
+                    <p>Upload Excel/CSV with columns: <strong>Full Name | First Name | Email | District | Team Name | Role</strong></p>
                 </div>
 
                 <div class="upload-section" id="uploadSection">
@@ -48,7 +48,7 @@ class TeamImportModule {
                             📋 Download Template
                         </button>
                         <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
-                            Download a CSV template with the correct column format
+                            Download a CSV template with the correct column format including roles
                         </p>
                     </div>
                 </div>
@@ -214,7 +214,7 @@ class TeamImportModule {
 
                 .rep-item {
                     display: grid;
-                    grid-template-columns: 2fr 2fr 1fr 1fr;
+                    grid-template-columns: 2fr 1.5fr 2fr 1fr;
                     gap: 15px;
                     padding: 12px 20px;
                     border-bottom: 1px solid #f0f0f0;
@@ -247,17 +247,25 @@ class TeamImportModule {
                     color: #1a73e8;
                 }
 
-                .tier-selector {
-                    padding: 6px 12px;
+                .role-selector {
+                    padding: 4px 8px;
                     border: 1px solid #ddd;
-                    border-radius: 6px;
+                    border-radius: 4px;
                     background: white;
-                    font-size: 0.9em;
+                    font-size: 0.85em;
+                    margin-bottom: 5px;
+                    width: 100%;
                 }
 
-                .tier-1 { background: #ffe6e6; color: #d63384; }
-                .tier-2 { background: #fff3e0; color: #fd7e14; }
-                .tier-3 { background: #e8f5e8; color: #198754; }
+                .tier-display {
+                    padding: 6px 12px;
+                    background: #e8f5e8;
+                    color: #198754;
+                    border-radius: 6px;
+                    font-size: 0.9em;
+                    text-align: center;
+                    font-weight: 500;
+                }
 
                 .import-actions {
                     display: flex;
@@ -474,7 +482,8 @@ class TeamImportModule {
             email: row["Email"] || row["E-mail"] || '',
             district: row["District"] || row["Region"] || '',
             teamName: row["Team Name"] || row["Team"] || 'Unassigned',
-            tier: 3,
+            role: row["Role"] || 'AM',
+            tier: 3, // Always Tier 3 for imports
             engagementScore: 0,
             lastContactDate: null,
             activeDeals: 0,
@@ -591,14 +600,17 @@ class TeamImportModule {
                                 </div>
                                 <div class="rep-district">${rep.district || 'No District'}</div>
                                 <div style="font-size: 0.9em; color: #666;">
-                                    ${rep.firstName || 'N/A'}
+                                    <select class="role-selector" onchange="teamImportModule.updateRepRole('${teamName}', ${index}, this.value)">
+                                        <option value="LoL" ${rep.role === 'LoL' ? 'selected' : ''}>LoL - Leader of Leaders</option>
+                                        <option value="DM" ${rep.role === 'DM' ? 'selected' : ''}>DM - District Manager</option>
+                                        <option value="PSM" ${rep.role === 'PSM' ? 'selected' : ''}>PSM - Partner Sales Manager</option>
+                                        <option value="AM" ${rep.role === 'AM' ? 'selected' : ''}>AM - Account Manager</option>
+                                        <option value="SA" ${rep.role === 'SA' ? 'selected' : ''}>SA - Solution Architect</option>
+                                    </select>
                                 </div>
-                                <select class="tier-selector tier-${rep.tier}" 
-                                        onchange="teamImportModule.updateRepTier('${teamName}', ${index}, this.value)">
-                                    <option value="3" ${rep.tier === 3 ? 'selected' : ''}>Tier 3</option>
-                                    <option value="2" ${rep.tier === 2 ? 'selected' : ''}>Tier 2</option>
-                                    <option value="1" ${rep.tier === 1 ? 'selected' : ''}>Tier 1</option>
-                                </select>
+                                <div class="tier-display">
+                                    Tier 3
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -609,11 +621,10 @@ class TeamImportModule {
         container.innerHTML = teamHTML;
     }
 
-    updateRepTier(teamName, repIndex, newTier) {
-        this.teamGroups[teamName][repIndex].tier = parseInt(newTier);
-        
-        const selector = event.target;
-        selector.className = `tier-selector tier-${newTier}`;
+    updateRepRole(teamName, repIndex, newRole) {
+        this.teamGroups[teamName][repIndex].role = newRole;
+        // Tier always stays 3 for imports
+        this.teamGroups[teamName][repIndex].tier = 3;
         
         this.processTeamGroups();
     }
@@ -630,6 +641,7 @@ class TeamImportModule {
                     company: rep.district ? `Team: ${rep.teamName}` : rep.teamName,
                     district: rep.district,
                     teamName: rep.teamName,
+                    role: rep.role,
                     type: 'rep',
                     tier: rep.tier,
                     engagementScore: rep.engagementScore,
@@ -643,6 +655,26 @@ class TeamImportModule {
                 DataManager.addContact(contactData);
             });
 
+            // Also create team member records directly
+            Object.entries(this.teamGroups).forEach(([teamName, reps]) => {
+                const teamId = DataManager.getOrCreateTeamId(teamName);
+                
+                reps.forEach(rep => {
+                    const teamMember = {
+                        id: rep.id + '_member',
+                        name: rep.name,
+                        email: rep.email,
+                        role: rep.role,
+                        startDate: rep.importDate?.split('T')[0] || new Date().toISOString().split('T')[0],
+                        phone: rep.phone || '',
+                        notes: `Imported from ${rep.teamName} (District: ${rep.district || 'N/A'})`
+                    };
+                    
+                    DataManager.addTeamMember(teamId, teamMember);
+                });
+            });
+
+            // Store team metadata
             Object.keys(this.teamGroups).forEach(teamName => {
                 const teamData = {
                     id: `team-${teamName.toLowerCase().replace(/\s+/g, '-')}`,
@@ -661,7 +693,7 @@ class TeamImportModule {
             });
 
             this.hideProcessing();
-            this.showSuccess(`Successfully imported ${this.importedData.length} reps across ${Object.keys(this.teamGroups).length} teams!`);
+            this.showSuccess(`Successfully imported ${this.importedData.length} reps across ${Object.keys(this.teamGroups).length} teams with roles!`);
             
             this.cancelImport();
             
@@ -686,10 +718,12 @@ class TeamImportModule {
 
     downloadTemplate() {
         const templateData = [
-            ['Full Name', 'First Name', 'Email', 'District', 'Team Name'],
-            ['John Smith', 'John', 'john.smith@company.com', 'West Region', 'Sales Team A'],
-            ['Jane Doe', 'Jane', 'jane.doe@company.com', 'East Region', 'Sales Team B'],
-            ['Mike Johnson', 'Mike', 'mike.johnson@company.com', 'Central Region', 'Technical Team']
+            ['Full Name', 'First Name', 'Email', 'District', 'Team Name', 'Role'],
+            ['John Smith', 'John', 'john.smith@company.com', 'West Region', 'Sales Team A', 'DM'],
+            ['Jane Doe', 'Jane', 'jane.doe@company.com', 'East Region', 'Sales Team B', 'PSM'],
+            ['Mike Johnson', 'Mike', 'mike.johnson@company.com', 'Central Region', 'Technical Team', 'AM'],
+            ['Sarah Wilson', 'Sarah', 'sarah.wilson@company.com', 'West Region', 'Sales Team A', 'LoL'],
+            ['Tom Rodriguez', 'Tom', 'tom.rodriguez@company.com', 'Central Region', 'Technical Team', 'SA']
         ];
 
         const csvContent = templateData.map(row => row.join(',')).join('\n');
@@ -734,14 +768,22 @@ class TeamImportModule {
                     <span style="color: #666; margin-left: 10px;">(${reps.length} reps)</span>
                 </div>
                 <div style="font-size: 0.9em; color: #666;">
-                    Tier 1: ${reps.filter(r => r.tier === 1).length} | 
-                    Tier 2: ${reps.filter(r => r.tier === 2).length} | 
-                    Tier 3: ${reps.filter(r => r.tier === 3).length}
+                    Roles: ${this.getTeamRoleBreakdown(reps)}
                 </div>
             </div>
         `).join('');
 
         container.innerHTML = teamsHTML;
+    }
+
+    getTeamRoleBreakdown(reps) {
+        const roles = {};
+        reps.forEach(rep => {
+            const role = rep.role || 'Unknown';
+            roles[role] = (roles[role] || 0) + 1;
+        });
+        
+        return Object.entries(roles).map(([role, count]) => `${role}: ${count}`).join(' | ');
     }
 
     showProcessing(message) {
@@ -795,4 +837,4 @@ class TeamImportModule {
 
 // Create global instance
 const teamImportModule = new TeamImportModule();
-console.log('✅ Team Import module loaded successfully');
+console.log('✅ Team Import module with role support loaded successfully');
