@@ -1,4 +1,4 @@
-// Data Manager - Centralized data handling and storage
+// Data Manager - Centralized data handling and storage with Referral Tracking
 const DataManager = {
     data: {
         teams: {},
@@ -178,7 +178,6 @@ const DataManager = {
         
         // If transferring contacts, move related contacts too
         if (includeContacts) {
-            // This is a simplified transfer - in reality you might want more sophisticated contact assignment logic
             const fromContacts = this.data.contacts[fromTeamId] || [];
             const contactsToTransfer = fromContacts.splice(0, Math.ceil(fromContacts.length * (toTransfer.length / (fromMembers.length + toTransfer.length))));
             
@@ -249,7 +248,7 @@ const DataManager = {
         }
     },
 
-    // Deals methods
+    // Enhanced Deals methods with Referral Tracking
     getDeals() {
         return this.data.deals || [];
     },
@@ -263,6 +262,14 @@ const DataManager = {
         if (!this.data.deals) this.data.deals = [];
         deal.id = deal.id || this.generateId();
         deal.createdAt = new Date().toISOString();
+        
+        // Referral tracking fields - add these to every deal
+        deal.referralSource = deal.referralSource || null; // Contact ID who referred
+        deal.referralTeam = deal.referralTeam || null; // Team ID that referred
+        deal.referralType = deal.referralType || 'direct'; // 'direct', 'warm_intro', 'event', 'cold'
+        deal.referralNotes = deal.referralNotes || ''; // How the referral happened
+        deal.referralDate = deal.referralDate || deal.createdAt; // When referral was made
+        
         this.data.deals.push(deal);
         this.emit('deal:added', deal);
         this.saveToStorage();
@@ -291,6 +298,165 @@ const DataManager = {
             this.emit('deal:deleted', dealId);
             this.saveToStorage();
         }
+    },
+
+    // Referral tracking methods
+    getDealsByReferralSource(contactId) {
+        return this.getDeals().filter(deal => deal.referralSource === contactId);
+    },
+
+    getDealsByReferralTeam(teamId) {
+        return this.getDeals().filter(deal => deal.referralTeam === teamId);
+    },
+
+    getReferralAttribution() {
+        const deals = this.getDeals();
+        const attribution = {
+            byContact: {},
+            byTeam: {},
+            byType: {},
+            summary: {
+                totalReferredValue: 0,
+                totalReferredDeals: 0,
+                avgReferralValue: 0,
+                topReferrer: null,
+                topReferralTeam: null
+            }
+        };
+
+        deals.forEach(deal => {
+            const value = deal.value || 0;
+            const stage = deal.stage;
+            const isWon = stage === 'deal-won';
+            
+            // Only count deals that have a referral source
+            if (!deal.referralSource) return;
+            
+            // Track by contact
+            if (!attribution.byContact[deal.referralSource]) {
+                attribution.byContact[deal.referralSource] = {
+                    contactId: deal.referralSource,
+                    totalValue: 0,
+                    wonValue: 0,
+                    dealCount: 0,
+                    wonDeals: 0,
+                    avgDealSize: 0,
+                    winRate: 0
+                };
+            }
+            
+            const contact = attribution.byContact[deal.referralSource];
+            contact.totalValue += value;
+            contact.dealCount += 1;
+            if (isWon) {
+                contact.wonValue += value;
+                contact.wonDeals += 1;
+            }
+            
+            // Track by team
+            if (deal.referralTeam) {
+                if (!attribution.byTeam[deal.referralTeam]) {
+                    attribution.byTeam[deal.referralTeam] = {
+                        teamId: deal.referralTeam,
+                        totalValue: 0,
+                        wonValue: 0,
+                        dealCount: 0,
+                        wonDeals: 0,
+                        avgDealSize: 0,
+                        winRate: 0
+                    };
+                }
+                
+                const team = attribution.byTeam[deal.referralTeam];
+                team.totalValue += value;
+                team.dealCount += 1;
+                if (isWon) {
+                    team.wonValue += value;
+                    team.wonDeals += 1;
+                }
+            }
+            
+            // Track by type
+            if (!attribution.byType[deal.referralType]) {
+                attribution.byType[deal.referralType] = {
+                    totalValue: 0,
+                    wonValue: 0,
+                    dealCount: 0,
+                    wonDeals: 0
+                };
+            }
+            attribution.byType[deal.referralType].totalValue += value;
+            attribution.byType[deal.referralType].dealCount += 1;
+            if (isWon) {
+                attribution.byType[deal.referralType].wonValue += value;
+                attribution.byType[deal.referralType].wonDeals += 1;
+            }
+        });
+
+        // Calculate averages and rates
+        Object.keys(attribution.byContact).forEach(contactId => {
+            const contact = attribution.byContact[contactId];
+            contact.avgDealSize = contact.dealCount > 0 ? contact.totalValue / contact.dealCount : 0;
+            contact.winRate = contact.dealCount > 0 ? (contact.wonDeals / contact.dealCount) * 100 : 0;
+        });
+
+        Object.keys(attribution.byTeam).forEach(teamId => {
+            const team = attribution.byTeam[teamId];
+            team.avgDealSize = team.dealCount > 0 ? team.totalValue / team.dealCount : 0;
+            team.winRate = team.dealCount > 0 ? (team.wonDeals / team.dealCount) * 100 : 0;
+        });
+
+        // Calculate summary
+        const referredDeals = deals.filter(d => d.referralSource);
+        attribution.summary.totalReferredValue = referredDeals.reduce((sum, deal) => sum + (deal.value || 0), 0);
+        attribution.summary.totalReferredDeals = referredDeals.length;
+        attribution.summary.avgReferralValue = attribution.summary.totalReferredDeals > 0 ? 
+            attribution.summary.totalReferredValue / attribution.summary.totalReferredDeals : 0;
+
+        // Find top performers
+        const topContact = Object.values(attribution.byContact).sort((a, b) => b.wonValue - a.wonValue)[0];
+        const topTeam = Object.values(attribution.byTeam).sort((a, b) => b.wonValue - a.wonValue)[0];
+        
+        attribution.summary.topReferrer = topContact ? topContact.contactId : null;
+        attribution.summary.topReferralTeam = topTeam ? topTeam.teamId : null;
+
+        return attribution;
+    },
+
+    getReferralSourceName(contactId) {
+        if (!contactId) return 'Direct/Unknown';
+        const contact = this.getContactById(contactId);
+        return contact ? `${contact.name} (${contact.company})` : 'Unknown Contact';
+    },
+
+    getReferralTeamName(teamId) {
+        if (!teamId) return 'Unknown Team';
+        const teams = this.getTeams();
+        const team = teams[teamId];
+        return team ? team.name : 'Unknown Team';
+    },
+
+    migrateDealsForReferralTracking() {
+        const deals = this.getDeals();
+        let updated = 0;
+        
+        deals.forEach(deal => {
+            if (deal.referralSource === undefined) {
+                deal.referralSource = null;
+                deal.referralTeam = null;
+                deal.referralType = 'direct';
+                deal.referralNotes = '';
+                deal.referralDate = deal.createdAt;
+                updated++;
+            }
+        });
+        
+        if (updated > 0) {
+            this.saveToStorage();
+            console.log(`Updated ${updated} deals with referral tracking fields`);
+        }
+        
+        return updated;
     },
 
     // Touchpoints methods
@@ -479,5 +645,13 @@ const DataManager = {
     // Clear all data (for testing/reset)
     clearAllData() {
         this.clearAllSampleData();
+    },
+
+    // Sample data loading (stub for clean start)
+    loadSampleData() {
+        // This method is intentionally empty for a clean start
+        // If you want to re-enable sample data, you can add sample data here later
+        console.log('📝 Sample data loading skipped - starting with clean data');
+        this.emit('data:loaded');
     }
 };
